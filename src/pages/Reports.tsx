@@ -69,7 +69,14 @@ export const Reports: React.FC = () => {
         setEvaluations(Array.isArray(evalRes) ? evalRes.filter(Boolean) : [])
         setEvaluationAnswers(Array.isArray(answersRes) ? answersRes.filter(Boolean) : [])
         setEvaluationCriteria(Array.isArray(critRes) ? critRes.filter(Boolean) : [])
-        setAuditLogs(Array.isArray(audRes) ? audRes.filter(Boolean) : [])
+        setAuditLogs(
+          Array.isArray(audRes)
+            ? audRes.filter(
+                (log) =>
+                  (log?.expand?.user?.email || '').trim().toLowerCase() !== 'valdknupp@gmail.com',
+              )
+            : [],
+        )
       } catch (err) {
         console.error(err)
       } finally {

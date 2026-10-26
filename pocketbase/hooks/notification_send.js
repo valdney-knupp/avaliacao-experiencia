@@ -1,5 +1,11 @@
 // Handles notification email delivery asynchronously without failing the operation
 onRecordAfterCreateSuccess((e) => {
+  try {
+    e.next()
+  } catch (nextErr) {
+    console.error('Erro na cadeia do hook de notificação:', nextErr)
+  }
+
   const notif = e.record
   const status = notif.getString('status')
   if (status !== 'Pendente') {
@@ -43,8 +49,8 @@ onRecordAfterCreateSuccess((e) => {
 
     const message = new MailerMessage({
       from: {
-        address: $app.settings().meta.senderAddress || 'naoresponda@rpontes.com.br',
-        name: $app.settings().meta.senderName || 'Avaliação de Experiência - R. Pontes',
+        address: $app.settings().meta.senderAddress || 'naoresponda@avaliacao.com.br',
+        name: $app.settings().meta.senderName || 'Sistema de Avaliação de Experiência',
       },
       to: [{ address: recipient }],
       subject: subject,
@@ -52,8 +58,8 @@ onRecordAfterCreateSuccess((e) => {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E8E8E8; border-radius: 8px; background-color: #FFFFFF;">
           <div style="background-color: #111111; padding: 18px 20px; border-radius: 6px; text-align: center; margin-bottom: 24px;">
-            <h2 style="color: #54D769; margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">Construtora R. Pontes</h2>
-            <p style="color: #FFFFFF; margin: 6px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Avaliação de Experiência</p>
+            <h2 style="color: #54D769; margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">Sistema de Avaliação de Experiência</h2>
+            <p style="color: #FFFFFF; margin: 6px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Acompanhamento de Período Probatório</p>
           </div>
           <div style="color: #333333; line-height: 1.6; font-size: 15px; margin-bottom: 28px;">
             ${body.replace(/\n/g, '<br>')}
@@ -64,7 +70,7 @@ onRecordAfterCreateSuccess((e) => {
             </a>
           </div>
           <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #E8E8E8; font-size: 12px; color: #777777; text-align: center; line-height: 1.5;">
-            Este é um e-mail automático gerado pelo sistema de Avaliação de Experiência da Construtora R. Pontes.<br>
+            Este é um e-mail automático gerado pelo Sistema de Avaliação de Experiência.<br>
             Se o botão não funcionar, copie e cole este link no seu navegador: <a href="${appUrl}" style="color: #111111; text-decoration: underline;">${appUrl}</a>
           </div>
         </div>

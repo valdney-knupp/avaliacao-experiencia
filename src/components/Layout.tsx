@@ -202,16 +202,9 @@ export const Layout: React.FC = () => {
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex w-64 flex-col fixed inset-y-0 left-0 bg-[#111111] z-30 border-r border-black/40">
         {/* Brand */}
-        <div className="flex flex-col border-b border-white/10 px-5 py-4">
-          <div className="flex flex-col items-center text-center gap-2">
-            <RPontesLogo
-              variant="dark-bg"
-              imgClassName="h-11 w-auto max-w-[170px] object-contain"
-              alt="Construtora R. Pontes"
-            />
-            <p className="text-[11px] font-semibold text-[#54D769] tracking-wider uppercase">
-              Avaliação de Experiência
-            </p>
+        <div className="flex flex-col border-b border-white/10 px-5 py-5">
+          <div className="flex flex-col items-center text-center">
+            <RPontesLogo variant="dark-bg" />
           </div>
         </div>
 
@@ -266,15 +259,8 @@ export const Layout: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative flex items-center justify-center border-b border-white/10 px-5 py-4">
-              <div className="flex flex-col items-center text-center gap-1">
-                <RPontesLogo
-                  variant="dark-bg"
-                  imgClassName="h-9 w-auto max-w-[150px] object-contain"
-                  alt="Construtora R. Pontes"
-                />
-                <span className="text-[10px] font-semibold text-[#54D769] tracking-wider uppercase">
-                  Avaliação de Experiência
-                </span>
+              <div className="flex flex-col items-center text-center">
+                <RPontesLogo variant="dark-bg" />
               </div>
               <Button
                 variant="ghost"
@@ -414,7 +400,7 @@ export const Layout: React.FC = () => {
 
         {/* Global Footer */}
         <footer className="mt-auto border-t border-[#E8E8E8] bg-white px-6 py-4 text-xs text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Construtora R. Pontes — Avaliação de Experiência</span>
+          <span>Sistema de Avaliação de Experiência</span>
           <span className="text-gray-400">v1.0.0 • Gestão de Pessoas</span>
         </footer>
       </div>

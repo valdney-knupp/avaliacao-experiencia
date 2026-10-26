@@ -88,7 +88,13 @@ export const CollaboratorDetail: React.FC = () => {
           sort: '-created',
           expand: 'user',
         })
-        setAuditLogs(audits)
+        const cleanAudits = Array.isArray(audits)
+          ? audits.filter(
+              (log) =>
+                (log?.expand?.user?.email || '').trim().toLowerCase() !== 'valdknupp@gmail.com',
+            )
+          : []
+        setAuditLogs(cleanAudits)
       }
     } catch (err: unknown) {
       setError(

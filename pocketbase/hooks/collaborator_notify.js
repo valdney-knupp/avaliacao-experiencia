@@ -1,5 +1,11 @@
 // Triggered when a collaborator is created: sends notification to ADMIN, HR, and evaluation managers
 onRecordAfterCreateSuccess((e) => {
+  try {
+    e.next()
+  } catch (err) {
+    console.error('Erro na cadeia do hook de colaborador:', err)
+  }
+
   const collab = e.record
   const collabId = collab.id
   const collabName = collab.getString('name')
@@ -93,7 +99,7 @@ onRecordAfterCreateSuccess((e) => {
   if (sectorName) {
     body += `\n• Setor: ${sectorName}`
   }
-  body += `\n• Data de Admissão: ${admissionDateBR || 'Não informada'}\n• Cadastrado por: ${createdByName}\n\nAcesse o sistema para acompanhar os prazos e avaliações.\n\nConstrutora R. Pontes`
+  body += `\n• Data de Admissão: ${admissionDateBR || 'Não informada'}\n• Cadastrado por: ${createdByName}\n\nAcesse o sistema para acompanhar os prazos e avaliações.\n\nAvaliação de Experiência`
 
   try {
     const notifsCol = $app.findCollectionByNameOrId('notifications')

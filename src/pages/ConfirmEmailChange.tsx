@@ -52,9 +52,9 @@ export const ConfirmEmailChange: React.FC = () => {
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#161616]/90 p-8 shadow-2xl backdrop-blur-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex justify-center">
-            <RPontesLogo variant="dark-bg" imgClassName="h-16 w-auto object-contain" />
+            <RPontesLogo variant="dark-bg" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-white">
+          <h1 className="text-xl font-bold tracking-tight text-white mt-4">
             Confirmar Alteração de E-mail
           </h1>
           <p className="mt-1 text-sm text-gray-400">

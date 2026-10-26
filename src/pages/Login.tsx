@@ -67,10 +67,9 @@ export const Login: React.FC = () => {
         {/* Logo & Header */}
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex w-full justify-center">
-            <RPontesLogo variant="dark-bg" imgClassName="h-20 w-auto object-contain" />
+            <RPontesLogo variant="dark-bg" />
           </div>
-          <p className="text-base font-semibold text-[#54D769]">Avaliação de Experiência</p>
-          <p className="mt-1.5 text-xs text-gray-400">
+          <p className="mt-2 text-xs text-gray-400">
             Acesso restrito para colaboradores e gestores autorizados
           </p>
         </div>
@@ -91,7 +90,7 @@ export const Login: React.FC = () => {
               <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 type="email"
-                placeholder="seu.email@rpontes.com.br"
+                placeholder="seu.email@empresa.com.br"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

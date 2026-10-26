@@ -165,7 +165,13 @@ export const Admin: React.FC = () => {
         })
       }
       setSettings(mapSettings)
-      setAuditLogs(Array.isArray(audRes) ? audRes.filter(Boolean) : [])
+      const cleanAudits = Array.isArray(audRes)
+        ? audRes.filter(Boolean).filter((log) => {
+            const userEmail = (log?.expand?.user?.email || '').trim().toLowerCase()
+            return userEmail !== 'valdknupp@gmail.com'
+          })
+        : []
+      setAuditLogs(cleanAudits)
     } catch (err: unknown) {
       setErrorMsg(
         'Erro ao carregar dados de administração: ' + (err instanceof Error ? err.message : ''),
@@ -317,8 +323,8 @@ export const Admin: React.FC = () => {
       return
     }
 
-    // Gerar senha temporária segura com pelo menos 14 caracteres (ex: RPontes!849201)
-    const tempPass = 'RPontes!' + Math.floor(100000 + Math.random() * 900000)
+    // Gerar senha temporária segura com pelo menos 14 caracteres (ex: Aval!849201)
+    const tempPass = 'Aval!' + Math.floor(100000 + Math.random() * 900000)
     try {
       await pb.send('/backend/v1/admin/users/reset-password', {
         method: 'POST',
@@ -1165,9 +1171,7 @@ export const Admin: React.FC = () => {
                 </Label>
                 <div className="flex gap-2">
                   <Input
-                    defaultValue={
-                      settings.general_recipients || 'valdknupp@gmail.com,gp@rpontes.com.br'
-                    }
+                    defaultValue={settings.general_recipients || 'valdknupp@gmail.com'}
                     id="input_recipients"
                     className="h-10 text-xs border-[#E8E8E8]"
                   />

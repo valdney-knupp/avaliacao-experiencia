@@ -162,7 +162,7 @@ onRecordAfterCreateSuccess((e) => {
     }
 
     const subject = `[Avaliação de Experiência] ${eventLabel}: ${collabName}`
-    const body = `Prezados,\n\nA avaliação de ${stage} do colaborador foi concluída no sistema:\n\n• Colaborador: ${collabName}\n• Função: ${collabRole}\n• Centro de Custo: ${costCenterName || 'Não informado'}\n• Etapa: ${stage}\n• Decisão: ${decisionLabel}\n${responsibleLines}• Avaliador: ${evaluatorName}\n• Data da Avaliação: ${evalDateBR || 'Não informada'}\n• Nova situação: ${newSituation}\n\nAcesse o sistema para verificar os detalhes da avaliação.\n\nConstrutora R. Pontes`
+    const body = `Prezados,\n\nA avaliação de ${stage} do colaborador foi concluída no sistema:\n\n• Colaborador: ${collabName}\n• Função: ${collabRole}\n• Centro de Custo: ${costCenterName || 'Não informado'}\n• Etapa: ${stage}\n• Decisão: ${decisionLabel}\n${responsibleLines}• Avaliador: ${evaluatorName}\n• Data da Avaliação: ${evalDateBR || 'Não informada'}\n• Nova situação: ${newSituation}\n\nAcesse o sistema para verificar os detalhes da avaliação.\n\nAvaliação de Experiência`
 
     for (const email of recipientsSet) {
       const dedupeKey = `${collabId}_${stage}_${email}_${evalRecord.id}`

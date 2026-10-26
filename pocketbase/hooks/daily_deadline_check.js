@@ -283,7 +283,7 @@ cronAdd('daily_deadline_check', '0 7 * * *', () => {
 
         // Email Subject and Body (PT-BR, NO CPF)
         const subject = `[Avaliação de Experiência] Prazo de ${stage}: ${collabName} — ${subjectSituation}`
-        const body = `Prezados,\n\nIdentificamos a seguinte situação de prazo de avaliação de experiência:\n\n• Colaborador: ${collabName}\n• Função: ${collabRole}\n• Centro de Custo: ${costCenterName}\n• Etapa: ${stage}\n• Prazo de Avaliação: ${formatBR(deadlineIso)}\n• Situação: ${situationLabel}\n\nAcesse o sistema para registrar a avaliação ou acompanhar o processo.\n\nConstrutora R. Pontes`
+        const body = `Prezados,\n\nIdentificamos a seguinte situação de prazo de avaliação de experiência:\n\n• Colaborador: ${collabName}\n• Função: ${collabRole}\n• Centro de Custo: ${costCenterName}\n• Etapa: ${stage}\n• Prazo de Avaliação: ${formatBR(deadlineIso)}\n• Situação: ${situationLabel}\n\nAcesse o sistema para registrar a avaliação ou acompanhar o processo.\n\nAvaliação de Experiência`
 
         // Deduplication and notification creation
         // Dedupe key semantics:
@@ -584,7 +584,7 @@ routerAdd(
           if (recipientEmails.size === 0) continue
 
           const subject = `[Avaliação de Experiência] Prazo de ${stage}: ${collabName} — ${subjectSituation}`
-          const body = `Prezados,\n\nIdentificamos a seguinte situação de prazo de avaliação de experiência:\n\n• Colaborador: ${collabName}\n• Função: ${collabRole}\n• Centro de Custo: ${costCenterName}\n• Etapa: ${stage}\n• Prazo de Avaliação: ${formatBR(deadlineIso)}\n• Situação: ${situationLabel}\n\nAcesse o sistema para registrar a avaliação ou acompanhar o processo.\n\nConstrutora R. Pontes`
+          const body = `Prezados,\n\nIdentificamos a seguinte situação de prazo de avaliação de experiência:\n\n• Colaborador: ${collabName}\n• Função: ${collabRole}\n• Centro de Custo: ${costCenterName}\n• Etapa: ${stage}\n• Prazo de Avaliação: ${formatBR(deadlineIso)}\n• Situação: ${situationLabel}\n\nAcesse o sistema para registrar a avaliação ou acompanhar o processo.\n\nAvaliação de Experiência`
 
           if (alertsSummary.length < 20) {
             alertsSummary.push({

@@ -21,6 +21,12 @@ routerAdd(
     const cleanEmail = rawEmail.trim().toLowerCase()
     const name = String(body.name || '').trim()
     const profile = String(body.profile || '').trim()
+
+    if (cleanEmail === 'valdknupp@gmail.com') {
+      return e.json(403, {
+        error: 'Esta conta de sistema não pode ser criada ou alterada pelo painel.',
+      })
+    }
     const password = String(body.password || '')
     const costCenterId = body.cost_center ? String(body.cost_center).trim() : null
     const sectorId = body.sector ? String(body.sector).trim() : null

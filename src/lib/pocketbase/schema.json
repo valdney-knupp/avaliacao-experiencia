@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-10-26T13:10:50.503Z",
+  "generatedAt": "2026-10-26T13:23:02.368Z",
   "collections": [
     {
       "name": "users",
       "type": "auth",
       "apiRules": {
-        "list": "id = @request.auth.id",
-        "view": "id = @request.auth.id",
-        "create": "",
-        "update": "id = @request.auth.id",
-        "delete": "id = @request.auth.id"
+        "list": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)",
+        "view": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)",
+        "create": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
       },
       "fields": [
         {
@@ -37,11 +37,734 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "profile",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "ADMIN",
+            "HR",
+            "MANAGER_WORKSITE",
+            "MANAGER_DEPARTMENT",
+            "ADMIN_ASSISTANT",
+            "VIEWER"
+          ]
+        },
+        {
+          "name": "cost_center",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cost_centers"
+        },
+        {
+          "name": "sector",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "sectors"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_accessed",
+          "type": "date",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
         "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "cost_centers",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Escritório", "Obra"]
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "email_recipients",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_cost_centers_name ON cost_centers (name)"]
+    },
+    {
+      "name": "sectors",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_sectors_name ON sectors (name)"]
+    },
+    {
+      "name": "evaluation_criteria",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "order",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "category",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["OBRAS", "ESCRITORIO"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "settings",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "value",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_settings_key ON settings (key)"]
+    },
+    {
+      "name": "imports",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "view": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "create": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "update": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "filename",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["colaboradores", "avaliacoes"]
+        },
+        {
+          "name": "user",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["simulated", "executed", "replaced"]
+        },
+        {
+          "name": "report",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "executed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "collaborators",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'ADMIN_ASSISTANT' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER')",
+        "view": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'ADMIN_ASSISTANT' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER')",
+        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'ADMIN_ASSISTANT' && cost_center = @request.auth.cost_center))",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "cpf_hash",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "cpf_encrypted",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "cost_center",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cost_centers"
+        },
+        {
+          "name": "sector",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "sectors"
+        },
+        {
+          "name": "role",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "admission_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "deadline_45",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deadline_90",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "situation",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Em experiência", "Efetivado", "Desligado", "Inativo"]
+        },
+        {
+          "name": "created_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "import_reference",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "imports"
+        },
+        {
+          "name": "import_line",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_collab_situation ON collaborators (situation)",
+        "CREATE INDEX idx_collab_cost_center ON collaborators (cost_center)",
+        "CREATE INDEX idx_collab_admission_date ON collaborators (admission_date)",
+        "CREATE INDEX idx_collab_cpf_hash ON collaborators (cpf_hash)"
+      ]
+    },
+    {
+      "name": "evaluations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "collaborator",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "collaborators"
+        },
+        {
+          "name": "stage",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["45 dias", "90 dias"]
+        },
+        {
+          "name": "evaluator",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "decision",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["EXTEND", "TERMINATE", "EFFECTIVATE"]
+        },
+        {
+          "name": "justification",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "evaluated_at",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "origin",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["manual", "import"]
+        },
+        {
+          "name": "import_reference",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "imports"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "responsible_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responsible_role",
+          "type": "text",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_eval_collaborator ON evaluations (collaborator)",
+        "CREATE INDEX idx_eval_stage ON evaluations (stage)",
+        "CREATE INDEX idx_eval_evaluated_at ON evaluations (evaluated_at)"
+      ]
+    },
+    {
+      "name": "evaluation_answers",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "evaluation",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "evaluations"
+        },
+        {
+          "name": "criterion",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "evaluation_criteria"
+        },
+        {
+          "name": "answer",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["PARTIALLY_MEETS", "MEETS", "DOES_NOT_MEET", "EXCEEDS"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_answers_evaluation ON evaluation_answers (evaluation)"]
+    },
+    {
+      "name": "audit_logs",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "view": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "create": "@request.auth.id != ''",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "entity_type",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "entity_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "action",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "summary",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_audit_created ON audit_logs (created DESC)"]
+    },
+    {
+      "name": "notifications",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "event",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "new_collaborator",
+            "approaching_deadline",
+            "overdue",
+            "eval_45_done",
+            "eval_90_done",
+            "effective",
+            "terminated",
+            "processing_failure"
+          ]
+        },
+        {
+          "name": "recipient",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "body",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Pendente", "Enviada", "Falha"]
+        },
+        {
+          "name": "attempts",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_error",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dedupe_key",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sent_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_notif_status ON notifications (status)",
+        "CREATE INDEX idx_notif_dedupe ON notifications (dedupe_key)"
       ]
     }
   ]

@@ -157,6 +157,440 @@ export const DataImport: React.FC = () => {
       if (records.length > 0 && records[0].status === 'executed') {
         const latest = records[0]
         try {
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+          if (expectedCollabs > 0 && actualCollabs.totalItems < expectedCollabs) {
+            setPartialLoadDetected({
+              importId: latest.id,
+              filename: latest.filename,
+              date: formatDateTimeBR(latest.created),
+            })
+          } else {
+            setPartialLoadDetected(null)
+          }
+        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+          const expectedCollabs = rep.newCollaborators || 0
+          if (expectedCollabs > 0 && actualCollabs.totalItems < expectedCollabs) {
+            setPartialLoadDetected({
+              importId: latest.id,
+              filename: latest.filename,
+              date: formatDateTimeBR(latest.created),
+            })
+          } else {
+            setPartialLoadDetected(null)
+          }
+        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+          if (expectedCollabs > 0 && actualCollabs.totalItems < expectedCollabs) {
+            setPartialLoadDetected({
+              importId: latest.id,
+              filename: latest.filename,
+              date: formatDateTimeBR(latest.created),
+            })
+          } else {
+            setPartialLoadDetected(null)
+          }
+        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+          const expectedCollabs = rep.newCollaborators || 0
+          if (expectedCollabs > 0 && actualCollabs.totalItems < expectedCollabs) {
+            setPartialLoadDetected({
+              importId: latest.id,
+              filename: latest.filename,
+              date: formatDateTimeBR(latest.created),
+            })
+          } else {
+            setPartialLoadDetected(null)
+          }
+        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+          if (expectedCollabs > 0 && actualCollabs.totalItems < expectedCollabs) {
+            setPartialLoadDetected({
+              importId: latest.id,
+              filename: latest.filename,
+              date: formatDateTimeBR(latest.created),
+            })
+          } else {
+            setPartialLoadDetected(null)
+          }
+        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+
+  useEffect(() => {
+    loadPastImports()
+  }, [])
+=======
           const rep = latest.report ? JSON.parse(latest.report) : {}
           // Verify if collaborators count or evaluations count in DB matches report
           const actualCollabs = await pb.collection('collaborators').getList(1, 1, {
@@ -173,6 +607,288 @@ export const DataImport: React.FC = () => {
             setPartialLoadDetected(null)
           }
         } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+
+  useEffect(() => {
+    loadPastImports()
+  }, [])
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+          if (expectedCollabs > 0 && actualCollabs.totalItems < expectedCollabs) {
+            setPartialLoadDetected({
+              importId: latest.id,
+              filename: latest.filename,
+              date: formatDateTimeBR(latest.created),
+            })
+          } else {
+            setPartialLoadDetected(null)
+          }
+        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+          const expectedCollabs = rep.newCollaborators || 0
+          if (expectedCollabs > 0 && actualCollabs.totalItems < expectedCollabs) {
+            setPartialLoadDetected({
+              importId: latest.id,
+              filename: latest.filename,
+              date: formatDateTimeBR(latest.created),
+            })
+          } else {
+            setPartialLoadDetected(null)
+          }
+        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+=======
+          if (expectedCollabs > 0 && actualCollabs.totalItems < expectedCollabs) {
+            setPartialLoadDetected({
+              importId: latest.id,
+              filename: latest.filename,
+              date: formatDateTimeBR(latest.created),
+            })
+          } else {
+            setPartialLoadDetected(null)
+          }
+        } catch (_) {
+          setPartialLoadDetected(null)
+        }
+      } else {
+        setPartialLoadDetected(null)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico de importações:', err)
+    }
+  }
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================        } catch (_) {
           setPartialLoadDetected(null)
         }
       } else {
@@ -766,6 +1482,284 @@ export const DataImport: React.FC = () => {
       const d = res.deleted || {}
       const summaryMsg = `Banco de dados limpo com sucesso! Registros removidos: ${d.collaborators || 0} colaboradores, ${d.evaluations || 0} avaliações, ${d.evaluation_answers || 0} respostas de critérios, ${d.imports || 0} lotes de importação e ${d.notifications || 0} notificações operacionais. Usuários, centros de custo, setores, critérios, configurações e histórico de auditoria foram preservados.`
 
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+
+RESUMO CONSOLIDADO:
+=======
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+
+RESUMO CONSOLIDADO:
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+
+RESUMO CONSOLIDADO:
+- Arquivos processados: ${simulationResult.consolidated.totalFiles}
+- Total de linhas lidas: ${simulationResult.consolidated.totalLines}
+- Novos colaboradores previstos: ${simulationResult.consolidated.newCollaboratorsCount}
+- Novas avaliações unificadas previstas: ${simulationResult.consolidated.newEvaluationsCount}
+- Duplicidades bloqueadas: ${simulationResult.consolidated.duplicateEvaluationsCount}
+- CPFs matematicamente inválidos: ${simulationResult.consolidated.invalidCpfsCount}
+- Linhas rejeitadas: ${simulationResult.consolidated.rejectedCount}
+- Registros não correspondidos: ${simulationResult.consolidated.unmatchedEvaluationsCount}
+- Total final de registros a gravar: ${simulationResult.consolidated.totalNewRecordsToSave}
+
+================================================================================
+DETALHAMENTO POR ARQUIVO:
+================================================================================
+`
+=======
+    } catch (err: unknown) {
+      console.error('Falha ao limpar banco de dados:', err)
+      const msg =
+        (err as any)?.response?.data?.error ||
+        (err instanceof Error
+          ? err.message
+          : 'Não foi possível concluir a limpeza do banco de dados. Tente novamente mais tarde.')
+      setResetFeedback({
+        type: 'error',
+        message: msg,
+      })
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+
+RESUMO CONSOLIDADO:
+- Arquivos processados: ${simulationResult.consolidated.totalFiles}
+- Total de linhas lidas: ${simulationResult.consolidated.totalLines}
+- Novos colaboradores previstos: ${simulationResult.consolidated.newCollaboratorsCount}
+- Novas avaliações unificadas previstas: ${simulationResult.consolidated.newEvaluationsCount}
+- Duplicidades bloqueadas: ${simulationResult.consolidated.duplicateEvaluationsCount}
+- CPFs matematicamente inválidos: ${simulationResult.consolidated.invalidCpfsCount}
+- Linhas rejeitadas: ${simulationResult.consolidated.rejectedCount}
+- Registros não correspondidos: ${simulationResult.consolidated.unmatchedEvaluationsCount}
+- Total final de registros a gravar: ${simulationResult.consolidated.totalNewRecordsToSave}
+
+================================================================================
+DETALHAMENTO POR ARQUIVO:
+================================================================================
+`
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+
+RESUMO CONSOLIDADO:
+=======
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+
+RESUMO CONSOLIDADO:
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+
+RESUMO CONSOLIDADO:
+- Arquivos processados: ${simulationResult.consolidated.totalFiles}
+- Total de linhas lidas: ${simulationResult.consolidated.totalLines}
+- Novos colaboradores previstos: ${simulationResult.consolidated.newCollaboratorsCount}
+- Novas avaliações unificadas previstas: ${simulationResult.consolidated.newEvaluationsCount}
+- Duplicidades bloqueadas: ${simulationResult.consolidated.duplicateEvaluationsCount}
+- CPFs matematicamente inválidos: ${simulationResult.consolidated.invalidCpfsCount}
+- Linhas rejeitadas: ${simulationResult.consolidated.rejectedCount}
+- Registros não correspondidos: ${simulationResult.consolidated.unmatchedEvaluationsCount}
+- Total final de registros a gravar: ${simulationResult.consolidated.totalNewRecordsToSave}
+
+================================================================================
+DETALHAMENTO POR ARQUIVO:
+================================================================================
+`
+=======
       setIsResetDialogOpen(false)
       setExecutionResult(summaryMsg)
       setErrorMsg(null)
@@ -795,8 +1789,286 @@ export const DataImport: React.FC = () => {
 
     let content = `================================================================================
 RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
-Sistema de Avaliação de Experiência - Construtora R. Pontes
+Sistema de Avaliação de Experiência
 Data: ${formatDateTimeBR(new Date())}
+================================================================================
+
+RESUMO CONSOLIDADO:
+- Arquivos processados: ${simulationResult.consolidated.totalFiles}
+- Total de linhas lidas: ${simulationResult.consolidated.totalLines}
+- Novos colaboradores previstos: ${simulationResult.consolidated.newCollaboratorsCount}
+- Novas avaliações unificadas previstas: ${simulationResult.consolidated.newEvaluationsCount}
+- Duplicidades bloqueadas: ${simulationResult.consolidated.duplicateEvaluationsCount}
+- CPFs matematicamente inválidos: ${simulationResult.consolidated.invalidCpfsCount}
+- Linhas rejeitadas: ${simulationResult.consolidated.rejectedCount}
+- Registros não correspondidos: ${simulationResult.consolidated.unmatchedEvaluationsCount}
+- Total final de registros a gravar: ${simulationResult.consolidated.totalNewRecordsToSave}
+
+================================================================================
+DETALHAMENTO POR ARQUIVO:
+================================================================================
+`
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+
+RESUMO CONSOLIDADO:
+=======
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+
+RESUMO CONSOLIDADO:
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+
+RESUMO CONSOLIDADO:
+- Arquivos processados: ${simulationResult.consolidated.totalFiles}
+- Total de linhas lidas: ${simulationResult.consolidated.totalLines}
+- Novos colaboradores previstos: ${simulationResult.consolidated.newCollaboratorsCount}
+- Novas avaliações unificadas previstas: ${simulationResult.consolidated.newEvaluationsCount}
+- Duplicidades bloqueadas: ${simulationResult.consolidated.duplicateEvaluationsCount}
+- CPFs matematicamente inválidos: ${simulationResult.consolidated.invalidCpfsCount}
+- Linhas rejeitadas: ${simulationResult.consolidated.rejectedCount}
+- Registros não correspondidos: ${simulationResult.consolidated.unmatchedEvaluationsCount}
+- Total final de registros a gravar: ${simulationResult.consolidated.totalNewRecordsToSave}
+
+================================================================================
+DETALHAMENTO POR ARQUIVO:
+================================================================================
+`
+=======
+    } catch (err: unknown) {
+      console.error('Falha ao limpar banco de dados:', err)
+      const msg =
+        (err as any)?.response?.data?.error ||
+        (err instanceof Error
+          ? err.message
+          : 'Não foi possível concluir a limpeza do banco de dados. Tente novamente mais tarde.')
+      setResetFeedback({
+        type: 'error',
+        message: msg,
+      })
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+
+RESUMO CONSOLIDADO:
+- Arquivos processados: ${simulationResult.consolidated.totalFiles}
+- Total de linhas lidas: ${simulationResult.consolidated.totalLines}
+- Novos colaboradores previstos: ${simulationResult.consolidated.newCollaboratorsCount}
+- Novas avaliações unificadas previstas: ${simulationResult.consolidated.newEvaluationsCount}
+- Duplicidades bloqueadas: ${simulationResult.consolidated.duplicateEvaluationsCount}
+- CPFs matematicamente inválidos: ${simulationResult.consolidated.invalidCpfsCount}
+- Linhas rejeitadas: ${simulationResult.consolidated.rejectedCount}
+- Registros não correspondidos: ${simulationResult.consolidated.unmatchedEvaluationsCount}
+- Total final de registros a gravar: ${simulationResult.consolidated.totalNewRecordsToSave}
+
+================================================================================
+DETALHAMENTO POR ARQUIVO:
+================================================================================
+`
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+
+RESUMO CONSOLIDADO:
+=======
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  // Download simulation report as text
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+
+RESUMO CONSOLIDADO:
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+================================================================================
+================================================================================
+=======
+  const downloadReportTxt = () => {
+    if (!simulationResult) return
+
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
+=======
+    let content = `================================================================================
+RELATÓRIO DE SIMULAÇÃO DE IMPORTAÇÃO UNIFICADA
+Sistema de Avaliação de Experiência
+Data: ${formatDateTimeBR(new Date())}
+================================================================================
 ================================================================================
 
 RESUMO CONSOLIDADO:
