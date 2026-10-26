@@ -45,6 +45,7 @@ import {
   simulateCollaboratorsSheet,
   simulateEvaluationSheet,
 } from '@/lib/importRules'
+import { downloadImportTemplate } from '@/lib/importTemplates'
 
 interface FileSlotState {
   id: 'colaboradores' | EvaluationFileSlot
@@ -1003,7 +1004,19 @@ Duplicidades: ${rep.duplicates.length} | CPFs inválidos: ${rep.invalidCpfs.leng
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-100">
+                    <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadImportTemplate(slot.id)}
+                        className="w-full text-xs border-[#54D769]/50 text-gray-800 hover:bg-[#54D769]/10 hover:text-gray-950 font-medium h-8"
+                        title="Baixar planilha modelo .xlsx com as colunas corretas e dados de exemplo"
+                      >
+                        <Download className="mr-1.5 h-3.5 w-3.5 text-green-600 shrink-0" />
+                        <span>Baixar planilha modelo (.xlsx)</span>
+                      </Button>
+
                       {isSelected ? (
                         <div className="flex items-center justify-between bg-green-50/60 p-2 rounded-xl border border-green-100">
                           <div className="flex items-center gap-2 overflow-hidden">
