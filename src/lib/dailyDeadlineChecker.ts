@@ -292,7 +292,7 @@ export function processDailyDeadlineCheck(params: {
           ? costCenterMap[collab.cost_center].name
           : 'Não informado'
 
-      const body = `Prezados,\n\nIdentificamos a seguinte situação de prazo de avaliação de experiência:\n\n• Colaborador: ${collab.name}\n• Função: ${collab.role || 'Não informada'}\n• Centro de Custo: ${costCenterName}\n• Etapa: ${check.stage}\n• Prazo de Avaliação: ${formatBR(cleanDeadline)}\n• Situação: ${status.situationLabel}\n\nAcesse o sistema para registrar a avaliação ou acompanhar o processo.\n\nConstrutora R. Pontes`
+      const body = `Prezados,\n\nIdentificamos a seguinte situação de prazo de avaliação de experiência:\n\n• Colaborador: ${collab.name}\n• Função: ${collab.role || 'Não informada'}\n• Centro de Custo: ${costCenterName}\n• Etapa: ${check.stage}\n• Prazo de Avaliação: ${formatBR(cleanDeadline)}\n• Situação: ${status.situationLabel}\n\nAcesse o sistema para registrar a avaliação ou acompanhar o processo.\n\nAvaliação de Experiência`
 
       for (const email of recipients) {
         const dedupeKey = generateDedupeKey(

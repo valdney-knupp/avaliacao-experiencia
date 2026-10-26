@@ -14,7 +14,7 @@ onRecordUpdateRequest((e) => {
 onRecordDeleteRequest((e) => {
   const targetEmail = e.record.getString('email').toLowerCase()
   if (targetEmail === 'valdknupp@gmail.com') {
-    throw new ForbiddenError('Esta conta de sistema não pode ser excluída.')
+    throw new ForbiddenError('A conta mestre do sistema não pode ser excluída.')
   }
   e.next()
 }, 'users')

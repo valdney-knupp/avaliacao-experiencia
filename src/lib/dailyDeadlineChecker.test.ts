@@ -375,7 +375,7 @@ describe('Daily Deadline Check — Logic & Anti-duplication', () => {
         // Must be in PT-BR
         expect(n.subject).toContain('[Avaliação de Experiência]')
         expect(n.body).toContain('Acesse o sistema para registrar a avaliação')
-        expect(n.body).toContain('Construtora R. Pontes')
+        expect(n.body).toContain('Avaliação de Experiência')
         // Must NOT contain CPF (CPF hash, digits or label)
         expect(n.body).not.toMatch(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/)
         expect(n.body).not.toContain('CPF')
