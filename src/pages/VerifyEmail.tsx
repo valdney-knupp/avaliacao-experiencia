@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import pb from '@/lib/pocketbase/client'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { RPontesLogo } from '@/components/RPontesLogo'
+import { AppLogo } from '@/components/AppLogo'
 
 export const VerifyEmail: React.FC = () => {
   const [searchParams] = useSearchParams()
@@ -41,7 +41,7 @@ export const VerifyEmail: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#111111] via-[#1a1a1a] to-[#0d1f12] p-4">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#161616]/90 p-8 shadow-2xl backdrop-blur-md text-center">
         <div className="mx-auto mb-4 flex justify-center">
-          <RPontesLogo variant="dark-bg" />
+          <AppLogo variant="dark-bg" size="lg" layout="full" align="center" />
         </div>
         <h1 className="text-xl font-bold tracking-tight text-white mb-2 mt-4">
           Verificação de E-mail

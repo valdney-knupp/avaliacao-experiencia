@@ -5,7 +5,7 @@ import { Mail, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RPontesLogo } from '@/components/RPontesLogo'
+import { AppLogo } from '@/components/AppLogo'
 
 export const ForgotPassword: React.FC = () => {
   const { requestPasswordReset } = useAuth()
@@ -42,10 +42,10 @@ export const ForgotPassword: React.FC = () => {
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#161616]/90 p-8 shadow-2xl backdrop-blur-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex justify-center">
-            <RPontesLogo variant="dark-bg" />
+            <AppLogo variant="dark-bg" size="lg" layout="full" align="center" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-white mt-4">Recuperação de Senha</h1>
-          <p className="mt-1 text-sm text-gray-400">Avaliação de Experiência</p>
+          <p className="mt-1 text-sm text-gray-400">Ciclo de 45 e 90 dias</p>
         </div>
 
         {submitted ? (

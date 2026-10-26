@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { formatDateTimeBR } from '@/lib/dateAndCpfUtils'
-import { RPontesLogo } from '@/components/RPontesLogo'
+import { AppLogo } from '@/components/AppLogo'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export const Layout: React.FC = () => {
@@ -204,7 +204,7 @@ export const Layout: React.FC = () => {
         {/* Brand */}
         <div className="flex flex-col border-b border-white/10 px-5 py-5">
           <div className="flex flex-col items-center text-center">
-            <RPontesLogo variant="dark-bg" />
+            <AppLogo variant="dark-bg" size="md" layout="full" align="center" />
           </div>
         </div>
 
@@ -260,7 +260,7 @@ export const Layout: React.FC = () => {
           >
             <div className="relative flex items-center justify-center border-b border-white/10 px-5 py-4">
               <div className="flex flex-col items-center text-center">
-                <RPontesLogo variant="dark-bg" />
+                <AppLogo variant="dark-bg" size="md" layout="full" align="center" />
               </div>
               <Button
                 variant="ghost"

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="fav-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6EE787" />
+      <stop offset="60%" stop-color="#54D769" />
+      <stop offset="100%" stop-color="#2CA840" />
+    </linearGradient>
+    <linearGradient id="fav-arc" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#54D769" stop-opacity="0.4" />
+      <stop offset="60%" stop-color="#54D769" />
+      <stop offset="100%" stop-color="#A3F3B1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Fundo escuro com cantos arredondados para contraste de favicon em qualquer tema de navegador -->
+  <rect width="64" height="64" rx="14" fill="#111512" />
+
+  <!-- Arco orbital dos ciclos 45/90 dias -->
+  <path d="M 12 36 A 23 23 0 1 1 52 38" stroke="url(#fav-arc)" stroke-width="4" stroke-linecap="round" fill="none" />
+
+  <!-- Marcos 45d e 90d -->
+  <circle cx="17" cy="20" r="3.2" fill="#54D769" stroke="#111512" stroke-width="1.5" />
+  <circle cx="47" cy="20" r="3.6" fill="#54D769" stroke="#111512" stroke-width="1.5" />
+  <circle cx="47" cy="20" r="1.5" fill="#FFFFFF" />
+
+  <!-- Escudo central -->
+  <path d="M 32 15 L 43 21 V 34 C 43 41.5 38 46.5 32 49 C 26 46.5 21 41.5 21 34 V 21 Z" fill="#181D19" stroke="#54D769" stroke-width="1.6" stroke-linejoin="round" />
+
+  <!-- Gráfico de evolução ascendente (3 barras) -->
+  <rect x="25.5" y="32" width="3.2" height="7.5" rx="1.2" fill="url(#fav-green)" fill-opacity="0.6" />
+  <rect x="30.4" y="28" width="3.2" height="11.5" rx="1.2" fill="url(#fav-green)" fill-opacity="0.85" />
+  <rect x="35.3" y="23.5" width="3.2" height="16" rx="1.2" fill="url(#fav-green)" />
+
+  <!-- Check de verificação/aprovação -->
+  <path d="M 26 31 L 31.5 36.5 L 44 24" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

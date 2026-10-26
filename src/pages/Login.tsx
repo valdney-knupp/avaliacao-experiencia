@@ -5,7 +5,7 @@ import { Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RPontesLogo } from '@/components/RPontesLogo'
+import { AppLogo } from '@/components/AppLogo'
 
 export const Login: React.FC = () => {
   const { signIn } = useAuth()
@@ -67,9 +67,9 @@ export const Login: React.FC = () => {
         {/* Logo & Header */}
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex w-full justify-center">
-            <RPontesLogo variant="dark-bg" />
+            <AppLogo variant="dark-bg" size="lg" layout="full" align="center" />
           </div>
-          <p className="mt-2 text-xs text-gray-400">
+          <p className="mt-3 text-xs text-gray-400">
             Acesso restrito para colaboradores e gestores autorizados
           </p>
         </div>
