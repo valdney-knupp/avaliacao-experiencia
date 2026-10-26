@@ -37,6 +37,7 @@ export interface EvaluationCriterionRecord {
   name: string
   order: number
   category?: 'OBRAS' | 'ESCRITORIO'
+  sector?: string | null
 }
 
 export interface CollaboratorRecord {

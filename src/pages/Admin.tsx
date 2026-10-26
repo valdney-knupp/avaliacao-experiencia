@@ -18,6 +18,8 @@ import {
   ArrowUp,
   ArrowDown,
   Trash2,
+  Copy,
+  RotateCcw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -91,14 +93,18 @@ export const Admin: React.FC = () => {
   const [editingSector, setEditingSector] = useState<any | null>(null)
   const [sectorForm, setSectorForm] = useState({ name: '', active: true })
 
-  // Criterion modal & Category filter
-  const [critCategoryTab, setCritCategoryTab] = useState<'OBRAS' | 'ESCRITORIO'>('OBRAS')
+  // Criterion modal, Category filter & Sector Link
+  const [critCategoryTab, setCritCategoryTab] = useState<'OBRAS' | 'ESCRITORIO'>('ESCRITORIO')
+  const [critSelectedSectorId, setCritSelectedSectorId] = useState<string>('__DEFAULT_ESCRITORIO__')
   const [critModalOpen, setCritModalOpen] = useState(false)
+  const [quickNewSectorOpen, setQuickNewSectorOpen] = useState(false)
+  const [quickNewSectorName, setQuickNewSectorName] = useState('')
   const [editingCrit, setEditingCrit] = useState<any | null>(null)
   const [critForm, setCritForm] = useState({
     name: '',
     description: '',
-    category: 'OBRAS' as 'OBRAS' | 'ESCRITORIO',
+    category: 'ESCRITORIO' as 'OBRAS' | 'ESCRITORIO',
+    sector: '' as string,
     active: true,
   })
 
@@ -433,6 +439,118 @@ export const Admin: React.FC = () => {
   }
 
   // 4. Criteria Handlers & Reordering
+  const handleQuickCreateSector = async () => {
+    setErrorMsg(null)
+    const cleanName = quickNewSectorName.trim().toUpperCase()
+    if (!cleanName) {
+      setErrorMsg('Informe o nome do setor a ser criado.')
+      return
+    }
+    try {
+      const newSec = await pb.collection('sectors').create({
+        name: cleanName,
+        active: true,
+      })
+      await pb.collection('audit_logs').create({
+        user: user?.id,
+        entity_type: 'sectors',
+        entity_id: newSec.id,
+        action: 'CREATE_SECTOR',
+        summary: `Novo setor criado em Critérios: ${cleanName}`,
+      })
+      setQuickNewSectorName('')
+      setQuickNewSectorOpen(false)
+      setFeedbackMsg(
+        `Setor "${cleanName}" criado com sucesso! Selecione-o para configurar seus critérios.`,
+      )
+      await loadAll()
+      setCritCategoryTab('ESCRITORIO')
+      setCritSelectedSectorId(newSec.id)
+    } catch (err: unknown) {
+      setErrorMsg('Erro ao criar setor: ' + (err instanceof Error ? err.message : ''))
+    }
+  }
+
+  const handleCopyDefaultEscritorioToSector = async (sectorId: string) => {
+    setErrorMsg(null)
+    setFeedbackMsg(null)
+    if (!sectorId || sectorId === '__DEFAULT_ESCRITORIO__') return
+
+    try {
+      // Pega os critérios padrão de escritório (sem sector)
+      const defaultCriteria = criteria
+        .filter((c) => (c.category || 'OBRAS') === 'ESCRITORIO' && !c.sector)
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+
+      if (defaultCriteria.length === 0) {
+        setErrorMsg('Nenhum critério padrão de escritório disponível para copiar.')
+        return
+      }
+
+      // Cria para o setor selecionado
+      for (let i = 0; i < defaultCriteria.length; i++) {
+        const item = defaultCriteria[i]
+        await pb.collection('evaluation_criteria').create({
+          name: item.name,
+          description: item.description || '',
+          order: i + 1,
+          category: 'ESCRITORIO',
+          sector: sectorId,
+          active: true,
+        })
+      }
+
+      const secName = sectors.find((s) => s.id === sectorId)?.name || 'Setor'
+      await pb.collection('audit_logs').create({
+        user: user?.id,
+        entity_type: 'evaluation_criteria',
+        entity_id: sectorId,
+        action: 'CUSTOMIZE_SECTOR_CRITERIA',
+        summary: `Critérios padrão de escritório copiados para o setor ${secName}`,
+      })
+
+      setFeedbackMsg(
+        `Critérios padrão copiados para ${secName}! Agora você pode editá-los individualmente.`,
+      )
+      await loadAll()
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Erro ao inicializar critérios do setor: ' + (err instanceof Error ? err.message : ''),
+      )
+    }
+  }
+
+  const handleResetSectorToDefault = async (sectorId: string) => {
+    if (!sectorId || sectorId === '__DEFAULT_ESCRITORIO__') return
+    const secName = sectors.find((s) => s.id === sectorId)?.name || 'Setor'
+    const confirmReset = window.confirm(
+      `Deseja realmente remover os critérios personalizados de "${secName}" e voltar a utilizar os critérios padrão de escritório?`,
+    )
+    if (!confirmReset) return
+
+    try {
+      const sectorCrits = criteria.filter((c) => c.sector === sectorId)
+      for (const sc of sectorCrits) {
+        await pb.collection('evaluation_criteria').delete(sc.id)
+      }
+
+      await pb.collection('audit_logs').create({
+        user: user?.id,
+        entity_type: 'evaluation_criteria',
+        entity_id: sectorId,
+        action: 'RESET_SECTOR_CRITERIA',
+        summary: `Critérios personalizados removidos do setor ${secName} (retornou ao padrão)`,
+      })
+
+      setFeedbackMsg(
+        `Critérios personalizados removidos. O setor "${secName}" voltou a usar o padrão de escritório.`,
+      )
+      await loadAll()
+    } catch (err: unknown) {
+      setErrorMsg('Erro ao restaurar critérios: ' + (err instanceof Error ? err.message : ''))
+    }
+  }
+
   const handleSaveCriterion = async () => {
     setErrorMsg(null)
     const cleanName = critForm.name.trim()
@@ -447,15 +565,26 @@ export const Admin: React.FC = () => {
           name: cleanName,
           description: critForm.description.trim(),
           category: critForm.category,
+          sector: critForm.sector || null,
           active: critForm.active,
         })
       } else {
-        const criteriaInCat = criteria.filter((c) => (c.category || 'OBRAS') === critForm.category)
-        const nextOrder = criteriaInCat.length + 1
+        const targetSector = critForm.sector || null
+        const siblingCriteria = criteria.filter((c) => {
+          if (critForm.category === 'OBRAS') {
+            return (c.category || 'OBRAS') === 'OBRAS'
+          }
+          if (targetSector) {
+            return c.sector === targetSector
+          }
+          return (c.category || 'OBRAS') === 'ESCRITORIO' && !c.sector
+        })
+        const nextOrder = siblingCriteria.length + 1
         await pb.collection('evaluation_criteria').create({
           name: cleanName,
           description: critForm.description.trim(),
           category: critForm.category,
+          sector: targetSector,
           order: nextOrder,
           active: critForm.active,
         })
@@ -468,17 +597,25 @@ export const Admin: React.FC = () => {
   }
 
   const handleMoveCriterion = async (critId: string, direction: 'up' | 'down') => {
-    const activeCategoryCriteria = criteria.filter(
-      (c) => (c.category || 'OBRAS') === critCategoryTab,
-    )
-    const idx = activeCategoryCriteria.findIndex((c) => c.id === critId)
+    let currentScopeList: any[] = []
+    if (critCategoryTab === 'OBRAS') {
+      currentScopeList = criteria.filter((c) => (c.category || 'OBRAS') === 'OBRAS')
+    } else if (critSelectedSectorId === '__DEFAULT_ESCRITORIO__') {
+      currentScopeList = criteria.filter(
+        (c) => (c.category || 'OBRAS') === 'ESCRITORIO' && !c.sector,
+      )
+    } else {
+      currentScopeList = criteria.filter((c) => c.sector === critSelectedSectorId)
+    }
+
+    const idx = currentScopeList.findIndex((c) => c.id === critId)
     if (idx === -1) return
     if (direction === 'up' && idx === 0) return
-    if (direction === 'down' && idx === activeCategoryCriteria.length - 1) return
+    if (direction === 'down' && idx === currentScopeList.length - 1) return
 
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1
-    const current = activeCategoryCriteria[idx]
-    const target = activeCategoryCriteria[swapIdx]
+    const current = currentScopeList[idx]
+    const target = currentScopeList[swapIdx]
 
     try {
       await Promise.all([
@@ -917,29 +1054,59 @@ export const Admin: React.FC = () => {
             <div>
               <h2 className="text-base font-bold text-gray-900">Critérios de Avaliação</h2>
               <p className="text-xs text-gray-500">
-                Critérios diferenciados para Obras e Escritório. Totalmente editáveis e ordenáveis.
+                Critérios vinculados por setor ou padrão de escritório/obras. Totalmente editáveis e
+                personalizáveis.
               </p>
             </div>
-            <Button
-              onClick={() => {
-                setEditingCrit(null)
-                setCritForm({
-                  name: '',
-                  description: '',
-                  category: critCategoryTab,
-                  active: true,
-                })
-                setCritModalOpen(true)
-              }}
-              className="bg-[#54D769] text-[#111111] font-semibold hover:bg-[#3DBE52] text-xs"
-            >
-              <Plus className="mr-1 h-3.5 w-3.5" /> Novo Critério (
-              {critCategoryTab === 'OBRAS' ? 'Obras' : 'Escritório'})
-            </Button>
+            <div className="flex items-center gap-2">
+              {critCategoryTab === 'ESCRITORIO' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQuickNewSectorOpen(true)}
+                  className="text-xs border-[#E8E8E8] text-gray-700 hover:text-black"
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Novo Setor
+                </Button>
+              )}
+              <Button
+                onClick={() => {
+                  setEditingCrit(null)
+                  setCritForm({
+                    name: '',
+                    description: '',
+                    category: critCategoryTab,
+                    sector:
+                      critCategoryTab === 'ESCRITORIO' &&
+                      critSelectedSectorId !== '__DEFAULT_ESCRITORIO__'
+                        ? critSelectedSectorId
+                        : '',
+                    active: true,
+                  })
+                  setCritModalOpen(true)
+                }}
+                className="bg-[#54D769] text-[#111111] font-semibold hover:bg-[#3DBE52] text-xs"
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" /> Novo Critério
+              </Button>
+            </div>
           </div>
 
-          {/* Sub-tabs / Seletor Obras vs Escritório */}
+          {/* Sub-tabs / Seletor Obras vs Escritório / Setores */}
           <div className="flex items-center gap-2 border-b border-[#E8E8E8] pb-2">
+            <button
+              type="button"
+              onClick={() => setCritCategoryTab('ESCRITORIO')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                critCategoryTab === 'ESCRITORIO'
+                  ? 'bg-[#111111] text-white shadow-xs'
+                  : 'bg-white text-gray-600 border border-[#E8E8E8] hover:bg-gray-50'
+              }`}
+            >
+              <FolderTree className="h-3.5 w-3.5" />
+              Escritório & Setores (
+              {criteria.filter((c) => (c.category || 'OBRAS') === 'ESCRITORIO').length})
+            </button>
             <button
               type="button"
               onClick={() => setCritCategoryTab('OBRAS')}
@@ -953,129 +1120,442 @@ export const Admin: React.FC = () => {
               Critérios de Obras (
               {criteria.filter((c) => (c.category || 'OBRAS') === 'OBRAS').length})
             </button>
-            <button
-              type="button"
-              onClick={() => setCritCategoryTab('ESCRITORIO')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                critCategoryTab === 'ESCRITORIO'
-                  ? 'bg-[#111111] text-white shadow-xs'
-                  : 'bg-white text-gray-600 border border-[#E8E8E8] hover:bg-gray-50'
-              }`}
-            >
-              <FolderTree className="h-3.5 w-3.5" />
-              Critérios de Escritório (
-              {criteria.filter((c) => (c.category || 'OBRAS') === 'ESCRITORIO').length})
-            </button>
           </div>
 
-          <div className="rounded-2xl border border-[#E8E8E8] bg-white shadow-xs overflow-hidden">
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left text-xs md:text-sm table-fixed">
-                <thead className="bg-[#F9FAFB] text-[11px] md:text-xs font-semibold text-gray-600 uppercase border-b border-[#E8E8E8]">
-                  <tr>
-                    <th className="w-[7%] px-2 py-2.5 text-center">Ordem</th>
-                    <th className="w-[25%] px-2.5 md:px-3 py-2.5">Critério</th>
-                    <th className="w-[13%] px-2 py-2.5">Categoria</th>
-                    <th className="w-[37%] px-2.5 md:px-3 py-2.5">Descrição / Orientações</th>
-                    <th className="w-[8%] px-1 md:px-2 py-2.5 text-center">Status</th>
-                    <th className="w-[10%] px-2 md:px-3 py-2.5 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E8E8E8]">
-                  {criteria
-                    .filter((c) => (c.category || 'OBRAS') === critCategoryTab)
-                    .map((crit, idx, filteredArr) => (
-                      <tr key={crit.id} className="hover:bg-gray-50/80">
-                        <td className="px-2 py-2 text-center font-bold text-xs text-gray-700">
-                          {crit.order || idx + 1}
-                        </td>
-                        <td
-                          className="px-2.5 md:px-3 py-2 font-bold text-gray-900 truncate"
-                          title={crit.name}
-                        >
-                          {crit.name}
-                        </td>
-                        <td className="px-2 py-2 text-xs">
-                          <span
-                            className={`px-2 py-0.5 rounded-full font-semibold text-[11px] whitespace-nowrap ${
-                              (crit.category || 'OBRAS') === 'ESCRITORIO'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}
+          {critCategoryTab === 'OBRAS' ? (
+            /* Vista de Obras */
+            <div className="rounded-2xl border border-[#E8E8E8] bg-white shadow-xs overflow-hidden">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left text-xs md:text-sm table-fixed">
+                  <thead className="bg-[#F9FAFB] text-[11px] md:text-xs font-semibold text-gray-600 uppercase border-b border-[#E8E8E8]">
+                    <tr>
+                      <th className="w-[7%] px-2 py-2.5 text-center">Ordem</th>
+                      <th className="w-[25%] px-2.5 md:px-3 py-2.5">Critério</th>
+                      <th className="w-[13%] px-2 py-2.5">Categoria</th>
+                      <th className="w-[37%] px-2.5 md:px-3 py-2.5">Descrição / Orientações</th>
+                      <th className="w-[8%] px-1 md:px-2 py-2.5 text-center">Status</th>
+                      <th className="w-[10%] px-2 md:px-3 py-2.5 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E8E8E8]">
+                    {criteria
+                      .filter((c) => (c.category || 'OBRAS') === 'OBRAS')
+                      .map((crit, idx, filteredArr) => (
+                        <tr key={crit.id} className="hover:bg-gray-50/80">
+                          <td className="px-2 py-2 text-center font-bold text-xs text-gray-700">
+                            {crit.order || idx + 1}
+                          </td>
+                          <td
+                            className="px-2.5 md:px-3 py-2 font-bold text-gray-900 truncate"
+                            title={crit.name}
                           >
-                            {(crit.category || 'OBRAS') === 'ESCRITORIO' ? 'Escritório' : 'Obras'}
-                          </span>
-                        </td>
-                        <td
-                          className="px-2.5 md:px-3 py-2 text-xs text-gray-600 truncate"
-                          title={crit.description || '-'}
-                        >
-                          {crit.description || '-'}
-                        </td>
-                        <td className="px-1 md:px-2 py-2 text-center">
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${
-                              crit.active !== false
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}
+                            {crit.name}
+                          </td>
+                          <td className="px-2 py-2 text-xs">
+                            <span className="px-2 py-0.5 rounded-full font-semibold text-[11px] whitespace-nowrap bg-blue-100 text-blue-800">
+                              Obras
+                            </span>
+                          </td>
+                          <td
+                            className="px-2.5 md:px-3 py-2 text-xs text-gray-600 truncate"
+                            title={crit.description || '-'}
                           >
-                            {crit.active !== false ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </td>
-                        <td className="px-2 md:px-3 py-2 text-right space-x-1 whitespace-nowrap">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={idx === 0}
-                            onClick={() => handleMoveCriterion(crit.id, 'up')}
-                            className="h-7 w-7 text-gray-500"
-                            title="Mover para cima"
-                          >
-                            <ArrowUp className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={idx === filteredArr.length - 1}
-                            onClick={() => handleMoveCriterion(crit.id, 'down')}
-                            className="h-7 w-7 text-gray-500"
-                            title="Mover para baixo"
-                          >
-                            <ArrowDown className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingCrit(crit)
-                              setCritForm({
-                                name: crit.name,
-                                description: crit.description || '',
-                                category: crit.category || 'OBRAS',
-                                active: crit.active !== false,
-                              })
-                              setCritModalOpen(true)
-                            }}
-                            className="text-xs text-gray-600 hover:text-black"
-                          >
-                            <Edit2 className="h-3.5 w-3.5 mr-1" /> Editar
-                          </Button>
+                            {crit.description || '-'}
+                          </td>
+                          <td className="px-1 md:px-2 py-2 text-center">
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${
+                                crit.active !== false
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}
+                            >
+                              {crit.active !== false ? 'Ativo' : 'Inativo'}
+                            </span>
+                          </td>
+                          <td className="px-2 md:px-3 py-2 text-right space-x-1 whitespace-nowrap">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={idx === 0}
+                              onClick={() => handleMoveCriterion(crit.id, 'up')}
+                              className="h-7 w-7 text-gray-500"
+                              title="Mover para cima"
+                            >
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={idx === filteredArr.length - 1}
+                              onClick={() => handleMoveCriterion(crit.id, 'down')}
+                              className="h-7 w-7 text-gray-500"
+                              title="Mover para baixo"
+                            >
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingCrit(crit)
+                                setCritForm({
+                                  name: crit.name,
+                                  description: crit.description || '',
+                                  category: 'OBRAS',
+                                  sector: '',
+                                  active: crit.active !== false,
+                                })
+                                setCritModalOpen(true)
+                              }}
+                              className="text-xs text-gray-600 hover:text-black"
+                            >
+                              <Edit2 className="h-3.5 w-3.5 mr-1" /> Editar
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    {criteria.filter((c) => (c.category || 'OBRAS') === 'OBRAS').length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-5 py-8 text-center text-xs text-gray-500">
+                          Nenhum critério cadastrado para Obras.
                         </td>
                       </tr>
-                    ))}
-                  {criteria.filter((c) => (c.category || 'OBRAS') === critCategoryTab).length ===
-                    0 && (
-                    <tr>
-                      <td colSpan={6} className="px-5 py-8 text-center text-xs text-gray-500">
-                        Nenhum critério cadastrado nesta categoria.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Vista de Escritório com Vínculo de Setores (Layout em 2 colunas) */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Coluna Esquerda: Lista de Setores e Padrão Escritório */}
+              <div className="lg:col-span-4 space-y-3">
+                <div className="rounded-2xl border border-[#E8E8E8] bg-white p-4 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-600">
+                      Áreas / Setores
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQuickNewSectorOpen(true)}
+                      className="h-7 px-2 text-xs font-semibold text-[#111111] hover:bg-gray-100"
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" /> Criar Setor
+                    </Button>
+                  </div>
+
+                  {/* Item Padrão Escritório */}
+                  {(() => {
+                    const defaultCritsCount = criteria.filter(
+                      (c) => (c.category || 'OBRAS') === 'ESCRITORIO' && !c.sector,
+                    ).length
+                    const isSelected = critSelectedSectorId === '__DEFAULT_ESCRITORIO__'
+                    return (
+                      <div
+                        onClick={() => setCritSelectedSectorId('__DEFAULT_ESCRITORIO__')}
+                        className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-[#111111] bg-[#111111] text-white shadow-xs'
+                            : 'border-[#E8E8E8] bg-[#F9FAFB] hover:border-gray-400 text-gray-900'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FolderTree
+                              className={`h-4 w-4 ${isSelected ? 'text-[#54D769]' : 'text-gray-500'}`}
+                            />
+                            <span className="text-xs font-bold">Padrão de Escritório</span>
+                          </div>
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                              isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
+                            }`}
+                          >
+                            {defaultCritsCount} critérios
+                          </span>
+                        </div>
+                        <p
+                          className={`text-[11px] mt-1.5 ${isSelected ? 'text-gray-300' : 'text-gray-500'}`}
+                        >
+                          Critérios padrão aplicados a setores e centros de custo sem critérios
+                          específicos. Editável.
+                        </p>
+                      </div>
+                    )
+                  })()}
+
+                  <div className="border-t border-[#E8E8E8] pt-2">
+                    <span className="text-[11px] font-semibold text-gray-500 uppercase">
+                      Setores Cadastrados ({sectors.length})
+                    </span>
+                  </div>
+
+                  {sectors.length === 0 ? (
+                    <div className="p-4 text-center rounded-xl bg-gray-50 border border-dashed border-gray-200">
+                      <p className="text-xs text-gray-500">Nenhum setor cadastrado.</p>
+                      <Button
+                        size="sm"
+                        onClick={() => setQuickNewSectorOpen(true)}
+                        className="mt-2 text-xs bg-[#54D769] text-[#111111] hover:bg-[#3DBE52]"
+                      >
+                        <Plus className="mr-1 h-3.5 w-3.5" /> Criar primeiro setor
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1">
+                      {sectors.map((sec) => {
+                        const customCrits = criteria.filter((c) => c.sector === sec.id)
+                        const hasCustom = customCrits.length > 0
+                        const isSelected = critSelectedSectorId === sec.id
+                        return (
+                          <div
+                            key={sec.id}
+                            onClick={() => setCritSelectedSectorId(sec.id)}
+                            className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-[#54D769] bg-[#54D769]/10 shadow-xs'
+                                : 'border-[#E8E8E8] bg-white hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span
+                                className={`text-xs font-bold truncate max-w-[170px] ${
+                                  isSelected ? 'text-gray-900' : 'text-gray-800'
+                                }`}
+                                title={sec.name}
+                              >
+                                {sec.name}
+                              </span>
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                                  hasCustom
+                                    ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {hasCustom ? `${customCrits.length} próprios` : 'Usa padrão'}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Coluna Direita: Critérios do Escopo Selecionado (Padrão ou do Setor) */}
+              <div className="lg:col-span-8 space-y-3">
+                {(() => {
+                  const isDefaultView = critSelectedSectorId === '__DEFAULT_ESCRITORIO__'
+                  const selectedSector = sectors.find((s) => s.id === critSelectedSectorId)
+                  const sectorCustomCrits = criteria.filter(
+                    (c) => c.sector === critSelectedSectorId,
+                  )
+                  const hasCustomCrits = sectorCustomCrits.length > 0
+                  const defaultCrits = criteria
+                    .filter((c) => (c.category || 'OBRAS') === 'ESCRITORIO' && !c.sector)
+                    .sort((a, b) => (a.order || 0) - (b.order || 0))
+
+                  // Critérios a exibir: se for padrão, exibe defaultCrits; se setor tem próprios, exibe próprios; senão, mostra que está usando o padrão
+                  const displayedCrits = isDefaultView
+                    ? defaultCrits
+                    : hasCustomCrits
+                      ? sectorCustomCrits.sort((a, b) => (a.order || 0) - (b.order || 0))
+                      : defaultCrits
+
+                  return (
+                    <div className="space-y-3">
+                      {/* Header do Escopo */}
+                      <div className="rounded-2xl border border-[#E8E8E8] bg-white p-4 shadow-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-base font-bold text-gray-900">
+                                {isDefaultView
+                                  ? 'Critérios Padrão de Escritório'
+                                  : `Setor: ${selectedSector?.name || 'Setor'}`}
+                              </h3>
+                              {!isDefaultView && (
+                                <span
+                                  className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
+                                    hasCustomCrits
+                                      ? 'bg-purple-100 text-purple-800'
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`}
+                                >
+                                  {hasCustomCrits
+                                    ? 'Critérios específicos ativos'
+                                    : 'Utilizando critérios padrão de escritório'}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {isDefaultView
+                                ? 'Conjunto base editável aplicado a qualquer setor que ainda não tenha critérios próprios.'
+                                : hasCustomCrits
+                                  ? 'Este setor possui critérios exclusivos. Alterações aqui afetam apenas as avaliações deste setor.'
+                                  : 'Este setor está herdando os critérios padrão de escritório. Você pode copiar o padrão para editá-lo separadamente.'}
+                            </p>
+                          </div>
+
+                          {/* Ações contextuais de Setor */}
+                          {!isDefaultView && selectedSector && (
+                            <div className="flex items-center gap-2 shrink-0">
+                              {!hasCustomCrits ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleCopyDefaultEscritorioToSector(selectedSector.id)
+                                  }
+                                  className="bg-[#54D769] text-[#111111] font-semibold hover:bg-[#3DBE52] text-xs"
+                                >
+                                  <Copy className="mr-1.5 h-3.5 w-3.5" />
+                                  Personalizar para este Setor
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleResetSectorToDefault(selectedSector.id)}
+                                  className="text-xs text-red-600 border-red-200 hover:bg-red-50"
+                                >
+                                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                  Voltar ao Padrão
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Tabela de Critérios do Escopo */}
+                      <div className="rounded-2xl border border-[#E8E8E8] bg-white shadow-xs overflow-hidden">
+                        <div className="overflow-x-auto w-full">
+                          <table className="w-full text-left text-xs md:text-sm table-fixed">
+                            <thead className="bg-[#F9FAFB] text-[11px] md:text-xs font-semibold text-gray-600 uppercase border-b border-[#E8E8E8]">
+                              <tr>
+                                <th className="w-[8%] px-2 py-2.5 text-center">Ordem</th>
+                                <th className="w-[30%] px-2.5 md:px-3 py-2.5">Critério</th>
+                                <th className="w-[38%] px-2.5 md:px-3 py-2.5">Descrição</th>
+                                <th className="w-[10%] px-1 md:px-2 py-2.5 text-center">Status</th>
+                                <th className="w-[14%] px-2 md:px-3 py-2.5 text-right">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#E8E8E8]">
+                              {displayedCrits.map((crit, idx, filteredArr) => {
+                                const isInheritedFromDefault = !isDefaultView && !hasCustomCrits
+                                return (
+                                  <tr key={crit.id} className="hover:bg-gray-50/80">
+                                    <td className="px-2 py-2 text-center font-bold text-xs text-gray-700">
+                                      {crit.order || idx + 1}
+                                    </td>
+                                    <td
+                                      className="px-2.5 md:px-3 py-2 font-bold text-gray-900 truncate"
+                                      title={crit.name}
+                                    >
+                                      {crit.name}
+                                    </td>
+                                    <td
+                                      className="px-2.5 md:px-3 py-2 text-xs text-gray-600 truncate"
+                                      title={crit.description || '-'}
+                                    >
+                                      {crit.description || '-'}
+                                    </td>
+                                    <td className="px-1 md:px-2 py-2 text-center">
+                                      <span
+                                        className={`text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${
+                                          crit.active !== false
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-red-100 text-red-700'
+                                        }`}
+                                      >
+                                        {crit.active !== false ? 'Ativo' : 'Inativo'}
+                                      </span>
+                                    </td>
+                                    <td className="px-2 md:px-3 py-2 text-right space-x-1 whitespace-nowrap">
+                                      {isInheritedFromDefault ? (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            if (selectedSector) {
+                                              handleCopyDefaultEscritorioToSector(selectedSector.id)
+                                            }
+                                          }}
+                                          title="Copie os critérios para editar este setor individualmente"
+                                          className="text-xs text-[#111111] hover:bg-gray-100 h-7 px-2"
+                                        >
+                                          <Edit2 className="h-3 w-3 mr-1" /> Editar setor
+                                        </Button>
+                                      ) : (
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            disabled={idx === 0}
+                                            onClick={() => handleMoveCriterion(crit.id, 'up')}
+                                            className="h-7 w-7 text-gray-500"
+                                            title="Mover para cima"
+                                          >
+                                            <ArrowUp className="h-3.5 w-3.5" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            disabled={idx === filteredArr.length - 1}
+                                            onClick={() => handleMoveCriterion(crit.id, 'down')}
+                                            className="h-7 w-7 text-gray-500"
+                                            title="Mover para baixo"
+                                          >
+                                            <ArrowDown className="h-3.5 w-3.5" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                              setEditingCrit(crit)
+                                              setCritForm({
+                                                name: crit.name,
+                                                description: crit.description || '',
+                                                category: 'ESCRITORIO',
+                                                sector: isDefaultView ? '' : crit.sector || '',
+                                                active: crit.active !== false,
+                                              })
+                                              setCritModalOpen(true)
+                                            }}
+                                            className="text-xs text-gray-600 hover:text-black h-7 px-2"
+                                          >
+                                            <Edit2 className="h-3.5 w-3.5 mr-1" /> Editar
+                                          </Button>
+                                        </>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                              {displayedCrits.length === 0 && (
+                                <tr>
+                                  <td
+                                    colSpan={5}
+                                    className="px-5 py-8 text-center text-xs text-gray-500"
+                                  >
+                                    Nenhum critério cadastrado para este escopo.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            </div>
+          )}
         </TabsContent>
         {/* TAB 5: SETTINGS */}
         <TabsContent value="settings" className="space-y-4">
@@ -1521,33 +2001,99 @@ export const Admin: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* QUICK NEW SECTOR MODAL (FROM CRITERIA TAB) */}
+      <Dialog open={quickNewSectorOpen} onOpenChange={setQuickNewSectorOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar Novo Setor</DialogTitle>
+            <DialogDescription>
+              Cadastre o setor para em seguida lançar ou personalizar os critérios exclusivos dele.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-sm">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-gray-700">Nome do Setor</Label>
+              <Input
+                value={quickNewSectorName}
+                onChange={(e) => setQuickNewSectorName(e.target.value)}
+                placeholder="Ex: SETOR FINANCEIRO"
+                className="h-10 text-xs uppercase"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickNewSectorOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleQuickCreateSector}
+              className="bg-[#54D769] text-[#111111] font-semibold hover:bg-[#3DBE52]"
+            >
+              Criar e Configurar Critérios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* CRITERION MODAL */}
       <Dialog open={critModalOpen} onOpenChange={setCritModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editingCrit ? 'Editar Critério' : 'Novo Critério'}</DialogTitle>
             <DialogDescription>
-              Configure o nome, descrição, categoria (Obras ou Escritório) e status do critério.
+              Configure o nome, descrição, categoria, setor e status do critério.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2 text-sm">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-gray-700">Categoria</Label>
-              <Select
-                value={critForm.category}
-                onValueChange={(val: 'OBRAS' | 'ESCRITORIO') =>
-                  setCritForm({ ...critForm, category: val })
-                }
-              >
-                <SelectTrigger className="h-10 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="OBRAS">Obras</SelectItem>
-                  <SelectItem value="ESCRITORIO">Escritório</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-gray-700">Categoria</Label>
+                <Select
+                  value={critForm.category}
+                  onValueChange={(val: 'OBRAS' | 'ESCRITORIO') =>
+                    setCritForm({
+                      ...critForm,
+                      category: val,
+                      sector: val === 'OBRAS' ? '' : critForm.sector,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-10 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="OBRAS">Obras</SelectItem>
+                    <SelectItem value="ESCRITORIO">Escritório</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {critForm.category === 'ESCRITORIO' && (
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-gray-700">Vínculo de Setor</Label>
+                  <Select
+                    value={critForm.sector || '__DEFAULT__'}
+                    onValueChange={(val) =>
+                      setCritForm({ ...critForm, sector: val === '__DEFAULT__' ? '' : val })
+                    }
+                  >
+                    <SelectTrigger className="h-10 text-xs">
+                      <SelectValue placeholder="Padrão Geral" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__DEFAULT__">Padrão Geral (Escritório)</SelectItem>
+                      {sectors.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          Setor: {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
+
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-gray-700">Nome do Critério</Label>
               <Input

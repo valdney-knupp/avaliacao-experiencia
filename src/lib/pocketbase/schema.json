@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T14:52:47.510Z",
+  "generatedAt": "2026-10-26T16:52:50.325Z",
   "collections": [
     {
       "name": "users",
@@ -232,6 +232,13 @@
           "required": false,
           "system": false,
           "selectValues": ["OBRAS", "ESCRITORIO"]
+        },
+        {
+          "name": "sector",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "sectors"
         }
       ],
       "indexes": []

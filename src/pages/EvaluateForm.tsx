@@ -106,12 +106,39 @@ export const EvaluateForm: React.FC = () => {
         const isEscritorio = collab.expand?.cost_center?.type === 'Escritório'
         const targetCategory = isEscritorio ? 'ESCRITORIO' : 'OBRAS'
 
-        // Load active criteria ordered for the collaborator's category
-        const critList = await pb.collection('evaluation_criteria').getFullList({
-          filter: `active = true && category = '${targetCategory}'`,
-          sort: 'order',
-        })
-        setCriteria(Array.isArray(critList) ? critList.filter(Boolean) : [])
+        let resolvedCriteria: any[] = []
+
+        if (targetCategory === 'ESCRITORIO') {
+          // Se o colaborador pertencer a um setor, verifica se existem critérios personalizados para esse setor
+          const sectorId = collab.sector || collab.expand?.sector?.id
+          if (sectorId) {
+            const sectorCrits = await pb.collection('evaluation_criteria').getFullList({
+              filter: `active = true && sector = '${sectorId}'`,
+              sort: 'order',
+            })
+            if (Array.isArray(sectorCrits) && sectorCrits.length > 0) {
+              resolvedCriteria = sectorCrits
+            }
+          }
+
+          // Se não encontrou critérios específicos do setor, usa os critérios padrão de escritório (sem sector)
+          if (resolvedCriteria.length === 0) {
+            const defaultEscritorioCrits = await pb.collection('evaluation_criteria').getFullList({
+              filter: `active = true && category = 'ESCRITORIO' && (sector = null || sector = '')`,
+              sort: 'order',
+            })
+            resolvedCriteria = Array.isArray(defaultEscritorioCrits) ? defaultEscritorioCrits : []
+          }
+        } else {
+          // Categoria OBRAS
+          const obrasCrits = await pb.collection('evaluation_criteria').getFullList({
+            filter: `active = true && category = 'OBRAS'`,
+            sort: 'order',
+          })
+          resolvedCriteria = Array.isArray(obrasCrits) ? obrasCrits : []
+        }
+
+        setCriteria(resolvedCriteria.filter(Boolean))
 
         // Pre-fill default decisions
         if (stage === '45 dias') {
