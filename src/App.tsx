@@ -11,6 +11,8 @@ import { ForgotPassword } from '@/pages/ForgotPassword'
 import { ResetPassword } from '@/pages/ResetPassword'
 import { VerifyEmail } from '@/pages/VerifyEmail'
 import { ConfirmEmailChange } from '@/pages/ConfirmEmailChange'
+import { Sales } from '@/pages/Sales'
+import { ThankYou } from '@/pages/ThankYou'
 
 import Dashboard from '@/pages/Dashboard'
 import DashboardDetail from '@/pages/DashboardDetail'
@@ -33,12 +35,14 @@ export const App: React.FC = () => {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public Auth Routes */}
+            {/* Public Auth & Sales Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
+            <Route path="/vendas" element={<Sales />} />
+            <Route path="/obrigado" element={<ThankYou />} />
 
             {/* Authenticated Application Shell */}
             <Route

@@ -147,6 +147,18 @@ export const Login: React.FC = () => {
             )}
           </Button>
         </form>
+
+        {/* Link discreto para a página de vendas / contratação */}
+        <div className="mt-6 pt-4 border-t border-white/5 text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/vendas')}
+            className="text-xs text-gray-400 hover:text-[#54D769] transition-colors"
+          >
+            Ainda não tem acesso?{' '}
+            <span className="underline font-medium">Conheça os planos e assine online</span>
+          </button>
+        </div>
       </div>
     </div>
   )
