@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T02:28:13.713Z",
+  "generatedAt": "2026-10-27T19:51:17.618Z",
   "collections": [
     {
       "name": "users",
@@ -772,6 +772,106 @@
       "indexes": [
         "CREATE INDEX idx_notif_status ON notifications (status)",
         "CREATE INDEX idx_notif_dedupe ON notifications (dedupe_key)"
+      ]
+    },
+    {
+      "name": "sales",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "view": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "create": "",
+        "update": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "plan",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["MENSAL", "ANUAL", "OUTRO"]
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "amount_label",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["succeeded", "pending", "canceled", "active", "checkout_started"]
+        },
+        {
+          "name": "customer_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "customer_email",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "payment_method",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stripe_event_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stripe_subscription_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stripe_customer_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_sales_created ON sales (created DESC)",
+        "CREATE INDEX idx_sales_status ON sales (status)",
+        "CREATE INDEX idx_sales_plan ON sales (plan)"
       ]
     }
   ]

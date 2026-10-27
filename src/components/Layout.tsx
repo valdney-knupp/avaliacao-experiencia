@@ -151,7 +151,7 @@ export const Layout: React.FC = () => {
 
   const handleLogout = async () => {
     await signOut()
-    navigate('/login')
+    navigate('/vendas')
   }
 
   const getPageTitle = () => {
@@ -401,7 +401,7 @@ export const Layout: React.FC = () => {
         {/* Global Footer */}
         <footer className="mt-auto border-t border-[#E8E8E8] bg-white px-6 py-4 text-xs text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Sistema de Avaliação de Experiência</span>
-          <span className="text-gray-400">v1.0.0 • Gestão de Pessoas</span>
+          <span className="text-gray-400">v1.1.0 • Gestão de Pessoas</span>
         </footer>
       </div>
     </div>

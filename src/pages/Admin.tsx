@@ -43,6 +43,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { formatDateTimeBR, formatDateBR } from '@/lib/dateAndCpfUtils'
+import { AdminPricesAndSales, AdminSalesTracking } from '@/components/AdminPricesAndSales'
+import { DollarSign, TrendingUp } from 'lucide-react'
 
 export const Admin: React.FC = () => {
   const { user, canViewAudit } = useAuth()
@@ -705,10 +707,22 @@ export const Admin: React.FC = () => {
             <ListOrdered className="mr-1.5 h-3.5 w-3.5" /> Critérios
           </TabsTrigger>
           <TabsTrigger
+            value="prices"
+            className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
+          >
+            <DollarSign className="mr-1.5 h-3.5 w-3.5" /> Preços & Planos
+          </TabsTrigger>
+          <TabsTrigger
+            value="sales"
+            className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
+          >
+            <TrendingUp className="mr-1.5 h-3.5 w-3.5" /> Acompanhamento de Vendas
+          </TabsTrigger>
+          <TabsTrigger
             value="settings"
             className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
           >
-            <Sliders className="mr-1.5 h-3.5 w-3.5" /> Configurações
+            <Sliders className="mr-1.5 h-3.5 w-3.5" /> Configurações Gerais
           </TabsTrigger>
           {canViewAudit && (
             <TabsTrigger
@@ -1557,6 +1571,43 @@ export const Admin: React.FC = () => {
             </div>
           )}
         </TabsContent>
+        {/* TAB: PRICES */}
+        <TabsContent value="prices" className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-gray-900">
+                Administração de Preços & Planos
+              </h2>
+              <p className="text-xs text-gray-500">
+                Edite o valor e payment links do Plano Mensal e Anual, altere a visibilidade e gere
+                links na Stripe.
+              </p>
+            </div>
+          </div>
+          <AdminPricesAndSales
+            settings={settings}
+            onSaveSetting={async (k, v) => {
+              await handleSaveSetting(k, v)
+              setSettings((prev) => ({ ...prev, [k]: v }))
+            }}
+            isSuperAdmin={isSuperAdmin}
+          />
+        </TabsContent>
+
+        {/* TAB: SALES TRACKING */}
+        <TabsContent value="sales" className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Acompanhamento de Vendas</h2>
+              <p className="text-xs text-gray-500">
+                Visualize as assinaturas e checkouts realizados via Stripe ou registrados na base do
+                sistema.
+              </p>
+            </div>
+          </div>
+          <AdminSalesTracking isSuperAdmin={isSuperAdmin} />
+        </TabsContent>
+
         {/* TAB 5: SETTINGS */}
         <TabsContent value="settings" className="space-y-4">
           <div className="rounded-2xl border border-[#E8E8E8] bg-white p-6 shadow-xs space-y-6 max-w-2xl">

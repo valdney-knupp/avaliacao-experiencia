@@ -9,14 +9,13 @@ import {
   BellRing,
   ArrowRight,
   TrendingUp,
-  Users,
-  ChevronDown,
   Sparkles,
   Lock,
   Zap,
   HelpCircle,
   Clock,
   Briefcase,
+  Users,
   AlertTriangle,
   BadgeCheck,
 } from 'lucide-react'
@@ -28,18 +27,22 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import { getStripeCheckoutConfig, FALLBACK_CHECKOUT_CONFIG } from '@/lib/stripeCheckout'
+import {
+  getStripeCheckoutConfig,
+  FALLBACK_CHECKOUT_CONFIG,
+  StripeCheckoutConfig,
+} from '@/lib/stripeCheckout'
 
 export const Sales: React.FC = () => {
-  const [checkoutUrl, setCheckoutUrl] = useState<string>(FALLBACK_CHECKOUT_CONFIG.payment_link)
+  const [config, setConfig] = useState<StripeCheckoutConfig>(FALLBACK_CHECKOUT_CONFIG)
   const [loadingCheckout, setLoadingCheckout] = useState(true)
 
   useEffect(() => {
     let isMounted = true
     getStripeCheckoutConfig()
       .then((cfg) => {
-        if (isMounted && cfg.payment_link) {
-          setCheckoutUrl(cfg.payment_link)
+        if (isMounted && cfg) {
+          setConfig(cfg)
         }
       })
       .catch((err) => {
@@ -53,10 +56,17 @@ export const Sales: React.FC = () => {
     }
   }, [])
 
-  const handleCtaClick = () => {
-    // Redireciona diretamente para o checkout do Stripe
-    window.location.href = checkoutUrl
+  const handleCheckout = (url: string) => {
+    if (url) {
+      window.location.href = url
+    }
   }
+
+  // Preço principal padrão para atalhos do hero/topo
+  const primaryCheckoutUrl =
+    config.annual?.active !== false && config.annual?.payment_link
+      ? config.annual.payment_link
+      : config.monthly?.payment_link || config.payment_link
 
   return (
     <div className="min-h-screen bg-[#0D0F0E] text-gray-100 selection:bg-[#54D769] selection:text-black">
@@ -64,9 +74,11 @@ export const Sales: React.FC = () => {
       <div className="bg-gradient-to-r from-[#17381F] via-[#102315] to-[#17381F] border-b border-[#54D769]/20 px-4 py-2 text-center text-xs sm:text-sm font-medium text-emerald-300 flex items-center justify-center gap-2">
         <Sparkles className="h-4 w-4 text-[#54D769] shrink-0 animate-pulse" />
         <span>
-          <strong>Lançamento Especial:</strong> Assinatura comercial por apenas{' '}
-          <strong className="text-white">R$ 297/mês</strong> — Cancele quando quiser, sem
-          fidelidade.
+          <strong>Lançamento Especial:</strong> Escolha entre os planos{' '}
+          <strong className="text-white">Mensal</strong> (R${' '}
+          {config.monthly?.price_label || '297,00'}) e{' '}
+          <strong className="text-white">Anual com 2 meses grátis</strong> (R${' '}
+          {config.annual?.price_label || '2.970,00'}).
         </span>
       </div>
 
@@ -87,8 +99,8 @@ export const Sales: React.FC = () => {
             <a href="#para-quem-e" className="hover:text-[#54D769] transition-colors">
               Público-alvo
             </a>
-            <a href="#preco" className="hover:text-[#54D769] transition-colors">
-              Plano & Preço
+            <a href="#precos" className="hover:text-[#54D769] transition-colors">
+              Planos & Preços
             </a>
             <a href="#faq" className="hover:text-[#54D769] transition-colors">
               Dúvidas
@@ -102,21 +114,19 @@ export const Sales: React.FC = () => {
             >
               Já sou cliente
             </Link>
-            <Button
-              onClick={handleCtaClick}
-              disabled={loadingCheckout}
-              className="bg-gradient-to-r from-[#6EE787] to-[#2CA840] hover:from-[#54D769] hover:to-[#259136] text-black font-bold shadow-lg shadow-[#54D769]/20 px-5 py-2.5 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+            <a
+              href="#precos"
+              className="inline-flex items-center justify-center bg-gradient-to-r from-[#6EE787] to-[#2CA840] hover:from-[#54D769] hover:to-[#259136] text-black font-bold shadow-lg shadow-[#54D769]/20 px-5 py-2.5 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] text-sm"
             >
-              Assinar agora
+              Ver Planos
               <ArrowRight className="ml-1.5 h-4 w-4" />
-            </Button>
+            </a>
           </div>
         </div>
       </header>
 
       {/* HERO SECTION */}
       <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
-        {/* Glow de fundo */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#54D769]/15 blur-[120px] rounded-full pointer-events-none" />
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
@@ -139,15 +149,13 @@ export const Sales: React.FC = () => {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              onClick={handleCtaClick}
-              disabled={loadingCheckout}
-              className="w-full sm:w-auto h-14 px-8 text-base font-extrabold bg-gradient-to-r from-[#6EE787] via-[#54D769] to-[#2CA840] hover:from-[#54D769] hover:to-[#228734] text-black rounded-xl shadow-xl shadow-[#54D769]/25 transition-all transform hover:scale-[1.03]"
+            <a
+              href="#precos"
+              className="w-full sm:w-auto h-14 px-8 inline-flex items-center justify-center text-base font-extrabold bg-gradient-to-r from-[#6EE787] via-[#54D769] to-[#2CA840] hover:from-[#54D769] hover:to-[#228734] text-black rounded-xl shadow-xl shadow-[#54D769]/25 transition-all transform hover:scale-[1.03]"
             >
-              Começar agora por R$ 297/mês
+              Escolher plano & assinar
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            </a>
             <a
               href="#como-funciona"
               className="w-full sm:w-auto h-14 px-6 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-200 font-semibold transition-colors"
@@ -174,7 +182,6 @@ export const Sales: React.FC = () => {
           {/* Mockup / Dashboard Preview Card */}
           <div className="mt-14 relative rounded-2xl p-1 bg-gradient-to-b from-[#54D769]/30 via-white/5 to-white/0 shadow-2xl">
             <div className="rounded-xl overflow-hidden bg-[#141815] border border-white/10 text-left">
-              {/* Fake window top bar */}
               <div className="px-4 py-3 bg-[#0F1210] border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500/70" />
@@ -190,7 +197,6 @@ export const Sales: React.FC = () => {
                 </div>
               </div>
 
-              {/* Fake dashboard cards inside */}
               <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-[#1B221E] p-4 rounded-lg border border-white/5">
                   <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
@@ -224,7 +230,6 @@ export const Sales: React.FC = () => {
                 </div>
               </div>
 
-              {/* Fake Table Snapshot */}
               <div className="px-6 pb-6 overflow-x-auto">
                 <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                   Colaboradores em Acompanhamento Ativo
@@ -469,15 +474,13 @@ export const Sales: React.FC = () => {
           </div>
 
           <div className="mt-12 text-center">
-            <Button
-              size="lg"
-              onClick={handleCtaClick}
-              disabled={loadingCheckout}
-              className="bg-[#54D769] hover:bg-[#3ebe52] text-black font-extrabold px-8 py-3 rounded-xl shadow-lg shadow-[#54D769]/20"
+            <a
+              href="#precos"
+              className="inline-flex items-center justify-center bg-[#54D769] hover:bg-[#3ebe52] text-black font-extrabold px-8 py-3 rounded-xl shadow-lg shadow-[#54D769]/20 transition-all"
             >
               Garantir minha assinatura
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            </a>
           </div>
         </div>
       </section>
@@ -523,82 +526,168 @@ export const Sales: React.FC = () => {
         </div>
       </section>
 
-      {/* PLANO & PREÇO (STRIPE CHECKOUT CTA) */}
+      {/* PLANOS & PREÇOS (MENSAL E ANUAL) */}
       <section
-        id="preco"
+        id="precos"
         className="py-20 bg-gradient-to-b from-[#111613] to-[#0A0D0B] border-t border-white/5"
       >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#54D769]/10 border border-[#54D769]/30 text-[#6EE787] text-xs font-semibold uppercase tracking-wider mb-4">
-            Plano Único e Transparente
+            Planos Transparentes & Flexíveis
           </div>
           <h2 className="text-3xl sm:text-5xl font-extrabold text-white">
             Investimento que se paga na primeira rescisão evitada
           </h2>
           <p className="mt-4 text-gray-400 text-sm sm:text-base max-w-xl mx-auto">
-            Sem pegadinhas, sem cobrança por colaborador cadastrado, sem contrato de fidelidade.
+            Sem pegadinhas, sem cobrança por colaborador cadastrado. Escolha a periodicidade ideal
+            para a sua empresa.
           </p>
 
-          <div className="mt-12 max-w-md mx-auto rounded-3xl p-1 bg-gradient-to-b from-[#54D769] via-[#38B94F] to-[#17381F] shadow-2xl shadow-[#54D769]/20">
-            <div className="bg-[#141815] rounded-[22px] p-8 sm:p-10 text-left">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#54D769]">
-                    Assinatura Mensal
-                  </span>
-                  <h3 className="text-2xl font-black text-white mt-1">Plano Comercial</h3>
-                </div>
-                <div className="px-3 py-1 rounded-full bg-[#54D769]/20 text-[#54D769] text-xs font-bold">
-                  Acesso Total
-                </div>
-              </div>
+          <div className="mt-14 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+            {/* CARD 1: PLANO MENSAL */}
+            {config.monthly?.active !== false && (
+              <div className="rounded-3xl p-1 bg-gradient-to-b from-white/15 via-white/5 to-white/0 border border-white/10 flex flex-col justify-between">
+                <div className="bg-[#141815] rounded-[22px] p-8 sm:p-9 text-left flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                          Assinatura Flexível
+                        </span>
+                        <h3 className="text-2xl font-black text-white mt-1">Plano Mensal</h3>
+                      </div>
+                      <div className="px-3 py-1 rounded-full bg-white/10 text-gray-300 text-xs font-semibold">
+                        Sem Fidelidade
+                      </div>
+                    </div>
 
-              <div className="mt-6 flex items-baseline">
-                <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
-                  R$ 297
-                </span>
-                <span className="text-gray-400 ml-2 font-medium">/mês</span>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Cobrança recorrente mensal no cartão de crédito.
-              </p>
+                    <div className="mt-6 flex items-baseline">
+                      <span className="text-xs text-gray-400 mr-1.5 font-semibold">R$</span>
+                      <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+                        {config.monthly?.price_label || '297,00'}
+                      </span>
+                      <span className="text-gray-400 ml-2 font-medium">/mês</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Cobrança mensal recorrente com cancelamento livre a qualquer momento.
+                    </p>
 
-              <div className="my-8 border-t border-white/10" />
+                    <div className="my-7 border-t border-white/10" />
 
-              <div className="space-y-3.5 text-sm">
-                {[
-                  'Colaboradores ilimitados em experiência',
-                  'Gestão completa de 45 e 90 dias',
-                  'Centros de custo e setores ilimitados',
-                  'Critérios personalizáveis (Obra e Escritório)',
-                  'Múltiplos perfis (Admin, RH, Gestores, Assistentes)',
-                  'Importação e exportação de planilhas Excel',
-                  'Notificações e alertas preventivos diários',
-                  'Log de auditoria e segurança LGPD',
-                  'Suporte prioritário e atualizações contínuas',
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-3 text-gray-200">
-                    <CheckCircle2 className="h-5 w-5 text-[#54D769] shrink-0 mt-0.5" />
-                    <span>{item}</span>
+                    <div className="space-y-3 text-sm">
+                      {[
+                        'Colaboradores ilimitados em experiência',
+                        'Gestão completa de 45 e 90 dias',
+                        'Centros de custo e setores ilimitados',
+                        'Critérios personalizáveis (Obra e Escritório)',
+                        'Múltiplos perfis (Admin, RH, Gestores, Assistentes)',
+                        'Importação e exportação de planilhas Excel',
+                        'Notificações e alertas preventivos diários',
+                        'Log de auditoria e segurança LGPD',
+                        'Suporte e atualizações inclusas',
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-3 text-gray-300">
+                          <CheckCircle2 className="h-4 w-4 text-[#54D769] shrink-0 mt-0.5" />
+                          <span className="text-xs sm:text-sm">{item}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              <Button
-                size="lg"
-                onClick={handleCtaClick}
-                disabled={loadingCheckout}
-                className="w-full mt-8 h-14 text-base font-extrabold bg-gradient-to-r from-[#6EE787] via-[#54D769] to-[#2CA840] hover:from-[#54D769] hover:to-[#228734] text-black rounded-xl shadow-xl shadow-[#54D769]/30 transition-all transform hover:scale-[1.02]"
-              >
-                Assinar agora por R$ 297/mês
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
-                <Lock className="h-3.5 w-3.5 text-gray-400" />
-                <span>Processado com segurança pelo Stripe</span>
+                  <div className="mt-8 pt-4">
+                    <Button
+                      size="lg"
+                      onClick={() => handleCheckout(config.monthly.payment_link)}
+                      disabled={loadingCheckout}
+                      variant="outline"
+                      className="w-full h-13 text-sm sm:text-base font-bold border-[#54D769]/40 bg-[#162419] hover:bg-[#1E3423] text-white hover:text-[#54D769] rounded-xl transition-all"
+                    >
+                      Assinar Plano Mensal
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                    <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
+                      <Lock className="h-3 w-3 text-gray-400" />
+                      <span>Processado com segurança pelo Stripe</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* CARD 2: PLANO ANUAL (DESTAQUE / MELHOR VALOR) */}
+            {config.annual?.active !== false && (
+              <div className="rounded-3xl p-1 bg-gradient-to-b from-[#6EE787] via-[#54D769] to-[#1E602A] shadow-2xl shadow-[#54D769]/25 flex flex-col justify-between relative">
+                {/* Badge Destaque */}
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#6EE787] to-[#2CA840] text-black font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {config.annual?.badge || '2 meses grátis • Melhor valor'}
+                </div>
+
+                <div className="bg-[#141815] rounded-[22px] p-8 sm:p-9 text-left flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#54D769]">
+                          Economia Máxima
+                        </span>
+                        <h3 className="text-2xl font-black text-white mt-1">Plano Anual</h3>
+                      </div>
+                      <div className="px-3 py-1 rounded-full bg-[#54D769]/20 text-[#54D769] text-xs font-extrabold">
+                        12 meses pelo preço de 10
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex items-baseline">
+                      <span className="text-xs text-gray-400 mr-1.5 font-semibold">R$</span>
+                      <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+                        {config.annual?.price_label || '2.970,00'}
+                      </span>
+                      <span className="text-gray-400 ml-2 font-medium">/ano</span>
+                    </div>
+                    <p className="text-xs text-[#6EE787] mt-1 font-medium">
+                      Equivalente a apenas R$ 247,50/mês (2 meses 100% grátis).
+                    </p>
+
+                    <div className="my-7 border-t border-white/10" />
+
+                    <div className="space-y-3 text-sm">
+                      {[
+                        'Tudo incluído no Plano Mensal',
+                        '2 meses inteiros gratuitos (economia de R$ 594)',
+                        'Colaboradores e avaliações ilimitadas',
+                        'Atendimento e onboarding prioritário',
+                        'Garantia de preço congelado por 12 meses',
+                        'Relatórios consolidados anuais para auditoria',
+                        'Notificações automáticas ativas o ano todo',
+                        'Faturamento unificado e nota fiscal anual',
+                        'Acesso prioritário a novos módulos do sistema',
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-3 text-gray-200">
+                          <CheckCircle2 className="h-4 w-4 text-[#54D769] shrink-0 mt-0.5" />
+                          <span className="text-xs sm:text-sm">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-4">
+                    <Button
+                      size="lg"
+                      onClick={() => handleCheckout(config.annual.payment_link)}
+                      disabled={loadingCheckout}
+                      className="w-full h-14 text-base font-extrabold bg-gradient-to-r from-[#6EE787] via-[#54D769] to-[#2CA840] hover:from-[#54D769] hover:to-[#228734] text-black rounded-xl shadow-xl shadow-[#54D769]/30 transition-all transform hover:scale-[1.02]"
+                    >
+                      Assinar Plano Anual (Melhor Valor)
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                    <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
+                      <Lock className="h-3 w-3 text-gray-400" />
+                      <span>Processado com segurança pelo Stripe</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -610,13 +699,28 @@ export const Sales: React.FC = () => {
             <HelpCircle className="h-4 w-4" /> Perguntas Frequentes
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            Tire suas dúvidas sobre o sistema
+            Tire suas dúvidas sobre o sistema e planos
           </h2>
         </div>
 
         <Accordion type="single" collapsible className="space-y-4">
           <AccordionItem
             value="item-1"
+            className="border border-white/10 rounded-xl px-6 bg-[#141815]"
+          >
+            <AccordionTrigger className="text-left font-bold text-white hover:text-[#54D769] py-5">
+              Qual a diferença entre o Plano Mensal e o Plano Anual?
+            </AccordionTrigger>
+            <AccordionContent className="text-sm text-gray-300 leading-relaxed pb-5">
+              Ambos dão acesso irrestrito e idêntico a todas as funcionalidades do sistema,
+              colaboradores e obras ilimitadas. A vantagem do Plano Anual é a economia direta: você
+              paga por 10 meses e ganha 2 meses grátis (R${' '}
+              {config.annual?.price_label || '2.970,00'}/ano em vez de R$ 3.564,00).
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem
+            value="item-2"
             className="border border-white/10 rounded-xl px-6 bg-[#141815]"
           >
             <AccordionTrigger className="text-left font-bold text-white hover:text-[#54D769] py-5">
@@ -631,20 +735,21 @@ export const Sales: React.FC = () => {
           </AccordionItem>
 
           <AccordionItem
-            value="item-2"
+            value="item-3"
             className="border border-white/10 rounded-xl px-6 bg-[#141815]"
           >
             <AccordionTrigger className="text-left font-bold text-white hover:text-[#54D769] py-5">
               Quantos colaboradores posso cadastrar na minha conta?
             </AccordionTrigger>
             <AccordionContent className="text-sm text-gray-300 leading-relaxed pb-5">
-              O plano de R$ 297/mês dá acesso ilimitado. Você pode cadastrar quantos colaboradores,
-              obras e setores precisar, sem qualquer cobrança adicional por volume de dados.
+              Tanto o plano mensal quanto o anual oferecem capacidade ilimitada. Você pode cadastrar
+              quantos colaboradores, obras e setores precisar, sem qualquer cobrança adicional por
+              volume de dados.
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem
-            value="item-3"
+            value="item-4"
             className="border border-white/10 rounded-xl px-6 bg-[#141815]"
           >
             <AccordionTrigger className="text-left font-bold text-white hover:text-[#54D769] py-5">
@@ -659,30 +764,15 @@ export const Sales: React.FC = () => {
           </AccordionItem>
 
           <AccordionItem
-            value="item-4"
+            value="item-5"
             className="border border-white/10 rounded-xl px-6 bg-[#141815]"
           >
             <AccordionTrigger className="text-left font-bold text-white hover:text-[#54D769] py-5">
               Posso cancelar a assinatura quando quiser?
             </AccordionTrigger>
             <AccordionContent className="text-sm text-gray-300 leading-relaxed pb-5">
-              Sim, totalmente livre. Não exigimos tempo mínimo de permanência nem multas
-              rescisórias. Você gerencia sua assinatura com total autonomia e pode cancelar a
-              renovação com um clique.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="item-5"
-            className="border border-white/10 rounded-xl px-6 bg-[#141815]"
-          >
-            <AccordionTrigger className="text-left font-bold text-white hover:text-[#54D769] py-5">
-              Como meus gestores de obra e departamentos acessam o sistema?
-            </AccordionTrigger>
-            <AccordionContent className="text-sm text-gray-300 leading-relaxed pb-5">
-              O administrador cria os usuários com o perfil correspondente (Gestor de Obra ou Gestor
-              de Departamento) vinculado ao seu respectivo centro de custo. Cada gestor acessa por
-              e-mail e senha e enxerga apenas a sua equipe designada.
+              Sim, totalmente livre. No plano mensal não há fidelidade. Você gerencia sua assinatura
+              com total autonomia e pode desativar a renovação quando preferir.
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -695,20 +785,18 @@ export const Sales: React.FC = () => {
             Pronto para profissionalizar as avaliações de experiência da sua empresa?
           </h2>
           <p className="mt-4 text-gray-300 text-base max-w-xl mx-auto">
-            Comece hoje mesmo por apenas R$ 297/mês. Proteja sua empresa contra passivos
-            trabalhistas com o sistema líder em gestão de experiência.
+            Comece hoje mesmo com o plano Mensal ou garanta 2 meses grátis no plano Anual. Proteja
+            sua empresa contra passivos trabalhistas.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              onClick={handleCtaClick}
-              disabled={loadingCheckout}
-              className="w-full sm:w-auto h-14 px-8 text-base font-extrabold bg-[#54D769] hover:bg-[#3ebe52] text-black rounded-xl shadow-xl shadow-[#54D769]/30"
+            <a
+              href="#precos"
+              className="w-full sm:w-auto h-14 px-8 inline-flex items-center justify-center text-base font-extrabold bg-[#54D769] hover:bg-[#3ebe52] text-black rounded-xl shadow-xl shadow-[#54D769]/30"
             >
               Assinar agora via Stripe
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            </a>
             <Link
               to="/login"
               className="text-sm text-gray-300 hover:text-white font-medium py-2 px-4 transition-colors"
@@ -736,8 +824,8 @@ export const Sales: React.FC = () => {
             <a href="#como-funciona" className="hover:text-[#54D769] transition-colors">
               Como funciona
             </a>
-            <a href="#preco" className="hover:text-[#54D769] transition-colors">
-              Preço
+            <a href="#precos" className="hover:text-[#54D769] transition-colors">
+              Preços & Planos
             </a>
             <a href="#faq" className="hover:text-[#54D769] transition-colors">
               FAQ
