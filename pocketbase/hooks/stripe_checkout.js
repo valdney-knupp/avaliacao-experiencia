@@ -61,13 +61,23 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
 
   // 2. Se o Stripe estiver conectado no Conectores, criar ou obter os dois preços e payment links
   let stripeConnected = false
+  let syncError = null
   try {
     // 2.1 Verificar / criar o produto "Avaliação de Experiência"
     let productId = null
-    const prodListRes = $connectors.executeAsOwner('STRIPE_LIST_PRODUCTS', {
-      limit: 20,
-      active: true,
-    })
+    let prodListRes = null
+    try {
+      prodListRes = $connectors.executeAsOwner('STRIPE_LIST_PRODUCTS', {
+        limit: 20,
+        active: true,
+      })
+    } catch (callErr) {
+      syncError = callErr && callErr.message ? callErr.message : String(callErr)
+      console.warn(
+        '[Stripe Connect] Erro ao chamar executeAsOwner(STRIPE_LIST_PRODUCTS):',
+        syncError,
+      )
+    }
 
     if (prodListRes && prodListRes.successful) {
       stripeConnected = true
@@ -81,10 +91,15 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
       )
       if (found) {
         productId = found.id
+        console.log('[Stripe Connect] Produto existente reutilizado:', productId)
       }
+    } else if (prodListRes && !prodListRes.successful) {
+      syncError = prodListRes.error || 'Falha ao listar produtos no Stripe'
+      console.warn('[Stripe Connect] Falha ao listar produtos no Stripe:', syncError)
     }
 
     if (stripeConnected && !productId) {
+      console.log('[Stripe Connect] Criando produto:', PRODUCT_NAME)
       const prodCreateRes = $connectors.executeAsOwner('STRIPE_CREATE_PRODUCT', {
         name: PRODUCT_NAME,
         description: PRODUCT_DESC,
@@ -92,6 +107,10 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
       })
       if (prodCreateRes && prodCreateRes.successful && prodCreateRes.data) {
         productId = prodCreateRes.data.id
+        console.log('[Stripe Connect] Produto criado com sucesso:', productId)
+      } else {
+        syncError = (prodCreateRes && prodCreateRes.error) || 'Falha ao criar produto no Stripe'
+        console.warn('[Stripe Connect] Falha ao criar produto:', syncError)
       }
     }
 
@@ -280,11 +299,24 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
       }
     }
   } catch (stripeErr) {
-    console.warn('Aviso na integração com Stripe Connect:', stripeErr)
+    syncError = stripeErr && stripeErr.message ? stripeErr.message : String(stripeErr)
+    console.warn('[Stripe Connect] Aviso na integração com Stripe Connect:', stripeErr)
   }
+
+  // Identificar se os links atuais são oficiais da Stripe gerados na conta (não placeholder de teste)
+  const isRealOfficialStripeUrl = (u) => {
+    if (!u || typeof u !== 'string') return false
+    // Um link oficial da Stripe ativo possui formato https://buy.stripe.com/... e não contém 'test_avaliacao'
+    return u.startsWith('https://buy.stripe.com/') && !u.includes('test_avaliacao_experiencia')
+  }
+
+  const monthlyIsOfficial = isRealOfficialStripeUrl(monthlyPaymentLink)
+  const annualIsOfficial = isRealOfficialStripeUrl(annualPaymentLink)
 
   return e.json(200, {
     stripe_connected: stripeConnected,
+    sync_error: syncError,
+    is_official_link: stripeConnected || (monthlyIsOfficial && annualIsOfficial),
     // Compatibilidade com código legado
     payment_link: monthlyPaymentLink,
     price_id: monthlyPriceId,
@@ -298,6 +330,7 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
       amount_cents: monthlyAmountCents,
       active: monthlyActive,
       interval: 'month',
+      is_official: monthlyIsOfficial,
     },
     annual: {
       name: 'Plano Anual',
@@ -308,6 +341,7 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
       active: annualActive,
       interval: 'year',
       badge: '2 meses grátis',
+      is_official: annualIsOfficial,
     },
     source: stripeConnected ? 'stripe_owner_api' : 'settings_fallback',
   })
@@ -333,16 +367,19 @@ routerAdd(
     try {
       const testRes = $connectors.executeAsOwner('STRIPE_LIST_PRODUCTS', { limit: 1 })
       if (!testRes || !testRes.successful) {
+        const errMsg = testRes && testRes.error ? testRes.error : 'Conta Stripe não vinculada.'
+        console.warn('[Stripe Sync] Falha de conexão com Stripe Connect:', errMsg)
         return e.json(400, {
-          error: 'A conta Stripe ainda não está conectada no painel Conectores do Skip Cloud.',
+          error:
+            'A conta Stripe ainda não está vinculada no painel Conectores do Skip Cloud: ' + errMsg,
           stripe_connected: false,
         })
       }
     } catch (err) {
+      const errMsg = err && err.message ? err.message : String(err)
+      console.warn('[Stripe Sync] Erro capturado ao chamar executeAsOwner:', errMsg)
       return e.json(400, {
-        error:
-          'Stripe não conectado ou indisponível: ' +
-          (err && err.message ? err.message : String(err)),
+        error: 'Stripe não conectado ou indisponível: ' + errMsg,
         stripe_connected: false,
       })
     }

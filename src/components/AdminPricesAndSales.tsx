@@ -93,11 +93,20 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
   const loadSales = async () => {
     setLoadingSales(true)
     try {
-      const data = await getSalesList()
-      setSalesList(data.sales || [])
-      setStripeConnected(data.stripe_connected)
+      const [salesData, checkoutCfg] = await Promise.all([
+        getSalesList(),
+        getStripeCheckoutConfig(),
+      ])
+      setSalesList(salesData.sales || [])
+      setStripeConnected(salesData.stripe_connected || Boolean(checkoutCfg.stripe_connected))
+      if (checkoutCfg.monthly?.payment_link) {
+        setMonthlyLink(checkoutCfg.monthly.payment_link)
+      }
+      if (checkoutCfg.annual?.payment_link) {
+        setAnnualLink(checkoutCfg.annual.payment_link)
+      }
     } catch (err) {
-      console.warn('Erro ao carregar vendas:', err)
+      console.warn('Erro ao carregar vendas/checkout:', err)
     } finally {
       setLoadingSales(false)
     }
@@ -168,7 +177,12 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
         setFeedback({ type: 'success', message: res.message })
         await loadSales()
       } else {
-        setFeedback({ type: 'error', message: res.message })
+        setFeedback({
+          type: 'error',
+          message:
+            res.message ||
+            'Não foi possível sincronizar com o Stripe. Verifique a conexão no painel Conectores.',
+        })
       }
     } catch (err: any) {
       setFeedback({

@@ -76,15 +76,30 @@ export const Sales: React.FC = () => {
     }
   }, [])
 
-  const handleCheckout = (url: string) => {
+  const handleCheckout = (plan: 'monthly' | 'annual') => {
     setCheckoutError(null)
-    if (url && url.startsWith('http')) {
+    const planConfig = plan === 'monthly' ? config.monthly : config.annual
+    const url = planConfig?.payment_link
+
+    // Se o link for um placeholder de teste e o Stripe ainda não estiver conectado,
+    // não jogamos o visitante em uma URL falsa que falhará. Em vez disso, mostramos
+    // uma mensagem amigável convidando para finalizar a assinatura via WhatsApp oficial.
+    const isPlaceholder = !url || url.includes('test_avaliacao_experiencia')
+
+    if (config.stripe_connected && url && url.startsWith('http')) {
       window.location.href = url
-    } else {
-      setCheckoutError(
-        'O link de pagamento da Stripe ainda não está disponível. Por favor, tente novamente em instantes ou contate nossa equipe pelo WhatsApp.',
-      )
+      return
     }
+
+    if (!isPlaceholder && url && url.startsWith('https://buy.stripe.com/')) {
+      window.location.href = url
+      return
+    }
+
+    // Link real ainda não sincronizado da conta Stripe
+    setCheckoutError(
+      'O checkout direto da Stripe está sendo sincronizado com a conta do contratante. Por favor, finalize sua contratação diretamente com nossa equipe pelo WhatsApp ou tente em instantes.',
+    )
   }
 
   return (
@@ -620,14 +635,25 @@ export const Sales: React.FC = () => {
 
                   <div className="mt-8 pt-4">
                     {checkoutError && (
-                      <div className="mb-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-                        <span>{checkoutError}</span>
+                      <div className="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-col gap-2">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                          <span>{checkoutError}</span>
+                        </div>
+                        <a
+                          href={SYSTEM_CONTACTS.whatsappLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 font-bold text-emerald-800 hover:text-emerald-950 underline text-xs"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          Contratar via WhatsApp ({SYSTEM_CONTACTS.whatsapp})
+                        </a>
                       </div>
                     )}
                     <Button
                       size="lg"
-                      onClick={() => handleCheckout(config.monthly.payment_link)}
+                      onClick={() => handleCheckout('monthly')}
                       disabled={loadingCheckout}
                       variant="outline"
                       className="w-full h-13 text-sm sm:text-base font-bold border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-800 rounded-xl transition-all"
@@ -702,14 +728,25 @@ export const Sales: React.FC = () => {
 
                   <div className="mt-8 pt-4">
                     {checkoutError && (
-                      <div className="mb-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-                        <span>{checkoutError}</span>
+                      <div className="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-col gap-2">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                          <span>{checkoutError}</span>
+                        </div>
+                        <a
+                          href={SYSTEM_CONTACTS.whatsappLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 font-bold text-emerald-800 hover:text-emerald-950 underline text-xs"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          Contratar via WhatsApp ({SYSTEM_CONTACTS.whatsapp})
+                        </a>
                       </div>
                     )}
                     <Button
                       size="lg"
-                      onClick={() => handleCheckout(config.annual.payment_link)}
+                      onClick={() => handleCheckout('annual')}
                       disabled={loadingCheckout}
                       className="w-full h-14 text-base font-extrabold bg-gradient-to-r from-[#54D769] to-[#2CA840] hover:from-[#43c457] hover:to-[#228734] text-white rounded-xl shadow-md shadow-emerald-500/25 transition-all transform hover:scale-[1.02]"
                     >

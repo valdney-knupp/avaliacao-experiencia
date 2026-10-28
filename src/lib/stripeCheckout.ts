@@ -9,6 +9,7 @@ export interface PlanConfig {
   active: boolean
   interval: 'month' | 'year'
   badge?: string
+  is_official?: boolean
 }
 
 export interface StripeCheckoutConfig {
@@ -16,8 +17,15 @@ export interface StripeCheckoutConfig {
   price_id: string
   price_label: string
   stripe_connected?: boolean
+  sync_error?: string | null
+  is_official_link?: boolean
   monthly: PlanConfig
   annual: PlanConfig
+}
+
+export const isOfficialStripeLink = (url: string): boolean => {
+  if (!url || typeof url !== 'string') return false
+  return url.startsWith('https://buy.stripe.com/') && !url.includes('test_avaliacao_experiencia')
 }
 
 export const FALLBACK_CHECKOUT_CONFIG: StripeCheckoutConfig = {
@@ -25,6 +33,7 @@ export const FALLBACK_CHECKOUT_CONFIG: StripeCheckoutConfig = {
   price_id: 'price_avaliacao_experiencia_297',
   price_label: 'R$ 297,00',
   stripe_connected: false,
+  is_official_link: false,
   monthly: {
     name: 'Plano Mensal',
     price_id: 'price_avaliacao_experiencia_297',
@@ -33,6 +42,7 @@ export const FALLBACK_CHECKOUT_CONFIG: StripeCheckoutConfig = {
     amount_cents: 29700,
     active: true,
     interval: 'month',
+    is_official: false,
   },
   annual: {
     name: 'Plano Anual',
@@ -43,6 +53,7 @@ export const FALLBACK_CHECKOUT_CONFIG: StripeCheckoutConfig = {
     active: true,
     interval: 'year',
     badge: '2 meses grátis',
+    is_official: false,
   },
 }
 
@@ -75,37 +86,45 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
     if (res.ok) {
       const data = await res.json()
       if (data && (data.monthly || data.payment_link)) {
+        const monthlyLink = data.monthly?.payment_link || data.payment_link || ''
+        const annualLink = data.annual?.payment_link || ''
+        const monthlyIsOfficial = Boolean(
+          data.monthly?.is_official ?? isOfficialStripeLink(monthlyLink),
+        )
+        const annualIsOfficial = Boolean(
+          data.annual?.is_official ?? isOfficialStripeLink(annualLink),
+        )
+
         return {
-          payment_link:
-            data.monthly?.payment_link ||
-            data.payment_link ||
-            FALLBACK_CHECKOUT_CONFIG.payment_link,
+          payment_link: monthlyLink || FALLBACK_CHECKOUT_CONFIG.payment_link,
           price_id: data.monthly?.price_id || data.price_id || FALLBACK_CHECKOUT_CONFIG.price_id,
           price_label: data.monthly?.price_label
             ? `R$ ${data.monthly.price_label}`
             : FALLBACK_CHECKOUT_CONFIG.price_label,
           stripe_connected: Boolean(data.stripe_connected),
+          sync_error: data.sync_error || null,
+          is_official_link:
+            Boolean(data.stripe_connected) || (monthlyIsOfficial && annualIsOfficial),
           monthly: {
             name: data.monthly?.name || 'Plano Mensal',
             price_id: data.monthly?.price_id || FALLBACK_CHECKOUT_CONFIG.monthly.price_id,
-            payment_link:
-              data.monthly?.payment_link ||
-              data.payment_link ||
-              FALLBACK_CHECKOUT_CONFIG.monthly.payment_link,
+            payment_link: monthlyLink || FALLBACK_CHECKOUT_CONFIG.monthly.payment_link,
             price_label: data.monthly?.price_label || '297,00',
             amount_cents: data.monthly?.amount_cents || 29700,
             active: data.monthly?.active !== false,
             interval: 'month',
+            is_official: monthlyIsOfficial,
           },
           annual: {
             name: data.annual?.name || 'Plano Anual',
             price_id: data.annual?.price_id || FALLBACK_CHECKOUT_CONFIG.annual.price_id,
-            payment_link: data.annual?.payment_link || FALLBACK_CHECKOUT_CONFIG.annual.payment_link,
+            payment_link: annualLink || FALLBACK_CHECKOUT_CONFIG.annual.payment_link,
             price_label: data.annual?.price_label || '2.970,00',
             amount_cents: data.annual?.amount_cents || 297000,
             active: data.annual?.active !== false,
             interval: 'year',
             badge: data.annual?.badge || '2 meses grátis',
+            is_official: annualIsOfficial,
           },
         }
       }
@@ -132,11 +151,15 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
     const annualLabel = getVal('stripe_annual_price_label') || '2.970,00'
     const annualActive = getVal('stripe_annual_active') !== 'false'
 
+    const monthlyIsOfficial = isOfficialStripeLink(monthlyLink || '')
+    const annualIsOfficial = isOfficialStripeLink(annualLink || '')
+
     return {
       payment_link: monthlyLink || FALLBACK_CHECKOUT_CONFIG.payment_link,
       price_id: monthlyPriceId || FALLBACK_CHECKOUT_CONFIG.price_id,
       price_label: `R$ ${monthlyLabel}`,
       stripe_connected: false,
+      is_official_link: monthlyIsOfficial && annualIsOfficial,
       monthly: {
         name: 'Plano Mensal',
         price_id: monthlyPriceId || FALLBACK_CHECKOUT_CONFIG.monthly.price_id,
@@ -145,6 +168,7 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
         amount_cents: 29700,
         active: monthlyActive,
         interval: 'month',
+        is_official: monthlyIsOfficial,
       },
       annual: {
         name: 'Plano Anual',
@@ -155,6 +179,7 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
         active: annualActive,
         interval: 'year',
         badge: '2 meses grátis',
+        is_official: annualIsOfficial,
       },
     }
   } catch (err) {
