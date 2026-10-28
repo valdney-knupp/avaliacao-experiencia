@@ -93,6 +93,7 @@ describe('Dashboard component test', () => {
     await waitFor(() => {
       expect(screen.getByText('Visão geral')).toBeDefined()
       expect(screen.getByText('ESCRITÓRIO')).toBeDefined()
+      expect(screen.getByText('Métricas de Engajamento e Adesão')).toBeDefined()
     })
   })
 
@@ -737,6 +738,144 @@ describe('Dashboard component test', () => {
 
       const fiftyPcts = screen.getAllByText('50%')
       expect(fiftyPcts.length).toBe(2)
+    })
+  })
+
+  describe('Métricas de Engajamento no Dashboard', () => {
+    it('exibe empty state amigável e explicativo quando não houver colaboradores (banco zerado)', async () => {
+      vi.spyOn(pb, 'collection').mockImplementation(
+        () =>
+          ({
+            getFullList: vi.fn().mockResolvedValue([]),
+            subscribe: vi.fn().mockResolvedValue(() => {}),
+          }) as any,
+      )
+
+      render(
+        <MemoryRouter>
+          <Dashboard />
+        </MemoryRouter>,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Métricas de Engajamento Prontas para Uso')).toBeDefined()
+        expect(
+          screen.getByText(/Nenhum colaborador ou avaliação cadastrada no momento/i),
+        ).toBeDefined()
+        expect(screen.getByText(/Importar Colaboradores via Planilha/i)).toBeDefined()
+      })
+    })
+
+    it('calcula métricas de engajamento (pontualidade, prazos 7d/15d, taxa de conclusão, média de notas) corretamente', async () => {
+      const mockCollabs = [
+        {
+          id: 'c1',
+          name: 'Colab No Prazo 45d',
+          admission_date: '2026-09-01',
+          deadline_45: '2026-10-16',
+          deadline_90: '2026-11-30',
+          situation: 'Em experiência',
+          cost_center: 'cc1',
+          sector: 'sec1',
+          expand: {
+            cost_center: { id: 'cc1', name: 'CENTRAL', type: 'Escritório' },
+            sector: { id: 'sec1', name: 'RH' },
+          },
+        },
+        {
+          id: 'c2',
+          name: 'Colab Efetivado 90d',
+          admission_date: '2026-06-01',
+          deadline_45: '2026-07-16',
+          deadline_90: '2026-08-30',
+          situation: 'Efetivado',
+          cost_center: 'cc2',
+          expand: { cost_center: { id: 'cc2', name: 'OBRA NORTE', type: 'Obra' } },
+        },
+      ]
+
+      const mockEvals = [
+        {
+          id: 'ev1',
+          collaborator: 'c1',
+          stage: '45 dias',
+          evaluated_at: '2026-10-10', // Antes de 2026-10-16 -> no prazo
+          decision: 'EXTEND',
+          created: '2026-10-10',
+        },
+        {
+          id: 'ev2',
+          collaborator: 'c2',
+          stage: '90 dias',
+          evaluated_at: '2026-08-25', // Antes de 2026-08-30 -> no prazo
+          decision: 'EFFECTIVATE',
+          created: '2026-08-25',
+        },
+      ]
+
+      const mockAnswers = [
+        { id: 'a1', evaluation: 'ev1', answer: 'EXCEEDS' }, // 10.0
+        { id: 'a2', evaluation: 'ev1', answer: 'MEETS' }, // 7.5
+        { id: 'a3', evaluation: 'ev2', answer: 'EXCEEDS' }, // 10.0
+      ]
+
+      const mockCostCenters = [
+        { id: 'cc1', name: 'CENTRAL', type: 'Escritório' },
+        { id: 'cc2', name: 'OBRA NORTE', type: 'Obra' },
+      ]
+
+      const mockSectors = [{ id: 'sec1', name: 'RH' }]
+
+      vi.spyOn(pb, 'collection').mockImplementation((name: string) => {
+        if (name === 'collaborators') {
+          return {
+            getFullList: vi.fn().mockResolvedValue(mockCollabs),
+            subscribe: vi.fn().mockResolvedValue(() => {}),
+          } as any
+        }
+        if (name === 'evaluations') {
+          return {
+            getFullList: vi.fn().mockResolvedValue(mockEvals),
+            subscribe: vi.fn().mockResolvedValue(() => {}),
+          } as any
+        }
+        if (name === 'evaluation_answers') {
+          return {
+            getFullList: vi.fn().mockResolvedValue(mockAnswers),
+            subscribe: vi.fn().mockResolvedValue(() => {}),
+          } as any
+        }
+        if (name === 'cost_centers') {
+          return {
+            getFullList: vi.fn().mockResolvedValue(mockCostCenters),
+            subscribe: vi.fn().mockResolvedValue(() => {}),
+          } as any
+        }
+        if (name === 'sectors') {
+          return {
+            getFullList: vi.fn().mockResolvedValue(mockSectors),
+            subscribe: vi.fn().mockResolvedValue(() => {}),
+          } as any
+        }
+        return {
+          getFullList: vi.fn().mockResolvedValue([]),
+          subscribe: vi.fn().mockResolvedValue(() => {}),
+        } as any
+      })
+
+      render(
+        <MemoryRouter>
+          <Dashboard />
+        </MemoryRouter>,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Métricas de Engajamento e Adesão')).toBeDefined()
+        expect(screen.getByText('Pontualidade Geral')).toBeDefined()
+        expect(screen.getByText('Taxa de Conclusão')).toBeDefined()
+        expect(screen.getByText('Média de Desempenho por Setor / Centro')).toBeDefined()
+        expect(screen.getByText('Rumo à Efetivação')).toBeDefined()
+      })
     })
   })
 })

@@ -32,13 +32,15 @@ import {
 } from 'recharts'
 import { formatDateBR, parseDateToIso, calculateDeadlineStatus } from '@/lib/dateAndCpfUtils'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { DashboardEngagementMetrics } from '@/components/DashboardEngagementMetrics'
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate()
-  const { user, scopedCostCenterId, scopedSectorId } = useAuth()
+  const { user, scopedCostCenterId, scopedSectorId, canAccessImport } = useAuth()
 
   const [collaborators, setCollaborators] = useState<any[]>([])
   const [evaluations, setEvaluations] = useState<any[]>([])
+  const [evaluationAnswers, setEvaluationAnswers] = useState<any[]>([])
   const [costCenters, setCostCenters] = useState<any[]>([])
   const [sectors, setSectors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -52,7 +54,7 @@ export const Dashboard: React.FC = () => {
   const loadData = async (isMounted = () => true) => {
     setLoading(true)
     try {
-      const [ccRes, secRes, colRes, evalRes] = await Promise.all([
+      const [ccRes, secRes, colRes, evalRes, answersRes] = await Promise.all([
         pb
           .collection('cost_centers')
           .getFullList({ sort: 'name' })
@@ -86,6 +88,13 @@ export const Dashboard: React.FC = () => {
             console.warn('Falha ao carregar avaliações no dashboard:', err)
             return []
           }),
+        pb
+          .collection('evaluation_answers')
+          .getFullList()
+          .catch((err) => {
+            console.warn('Falha ao carregar respostas no dashboard:', err)
+            return []
+          }),
       ])
 
       if (isMounted()) {
@@ -93,6 +102,7 @@ export const Dashboard: React.FC = () => {
         setSectors(Array.isArray(secRes) ? secRes : [])
         setCollaborators(Array.isArray(colRes) ? colRes : [])
         setEvaluations(Array.isArray(evalRes) ? evalRes : [])
+        setEvaluationAnswers(Array.isArray(answersRes) ? answersRes : [])
       }
     } catch (err) {
       console.error('Erro ao carregar dados do dashboard: ', err)
@@ -111,6 +121,7 @@ export const Dashboard: React.FC = () => {
 
     let unsubCollabs: (() => void) | undefined
     let unsubEvals: (() => void) | undefined
+    let unsubAnswers: (() => void) | undefined
 
     pb.collection('collaborators')
       .subscribe('*', () => {
@@ -130,10 +141,20 @@ export const Dashboard: React.FC = () => {
       })
       .catch(() => {})
 
+    pb.collection('evaluation_answers')
+      .subscribe('*', () => {
+        if (mounted) loadData(isMounted)
+      })
+      .then((unsub) => {
+        unsubAnswers = unsub
+      })
+      .catch(() => {})
+
     return () => {
       mounted = false
       if (unsubCollabs) unsubCollabs()
       if (unsubEvals) unsubEvals()
+      if (unsubAnswers) unsubAnswers()
     }
   }, [])
 
@@ -156,6 +177,12 @@ export const Dashboard: React.FC = () => {
   const validEvaluations = useMemo(() => {
     return Array.isArray(evaluations) ? evaluations.filter((e) => e && typeof e === 'object') : []
   }, [evaluations])
+
+  const validEvaluationAnswers = useMemo(() => {
+    return Array.isArray(evaluationAnswers)
+      ? evaluationAnswers.filter((a) => a && typeof a === 'object')
+      : []
+  }, [evaluationAnswers])
 
   const selectedCostCenterObj = validCostCenters.find((c) => c.id === selectedCostCenter)
   const isEscritorio = selectedCostCenterObj?.type === 'Escritório'
@@ -295,6 +322,15 @@ export const Dashboard: React.FC = () => {
       pctTerminated45,
       pctTerminated90,
     }
+  }, [filteredCollaborators, validEvaluations])
+
+  // Avaliações pertencentes ao escopo filtrado de colaboradores
+  const scopedEvaluations = useMemo(() => {
+    const allowedCollabIds = new Set(filteredCollaborators.map((c) => c.id))
+    return validEvaluations.filter((ev) => {
+      const cId = ev.collaborator || ev.collaborator?.id
+      return allowedCollabIds.has(cId)
+    })
   }, [filteredCollaborators, validEvaluations])
 
   const costCenterBreakdown = useMemo(() => {
@@ -584,6 +620,17 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Seção de Métricas de Engajamento e Adesão */}
+      <DashboardEngagementMetrics
+        collaborators={filteredCollaborators}
+        evaluations={scopedEvaluations}
+        evaluationAnswers={validEvaluationAnswers}
+        costCenters={validCostCenters}
+        sectors={validSectors}
+        loading={loading}
+        canAccessImport={canAccessImport}
+      />
 
       <div className="rounded-2xl border border-[#E8E8E8] bg-white p-6 shadow-xs space-y-4">
         <div>
