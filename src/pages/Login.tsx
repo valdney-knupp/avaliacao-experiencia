@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Mail, AlertCircle, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -68,7 +68,14 @@ export const Login: React.FC = () => {
         {/* Logo & Header */}
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex w-full justify-center">
-            <AppLogo variant="dark-bg" size="lg" layout="full" align="center" />
+            <Link
+              to="/vendas"
+              className="inline-flex cursor-pointer rounded-xl p-1 transition-all duration-200 hover:opacity-90 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#54D769]/50"
+              title="Ir para a página de apresentação e planos (Vendas)"
+              aria-label="Ir para a página de vendas"
+            >
+              <AppLogo variant="dark-bg" size="lg" layout="full" align="center" />
+            </Link>
           </div>
           <p className="mt-3 text-xs text-gray-400">
             Acesso restrito para colaboradores e gestores autorizados
