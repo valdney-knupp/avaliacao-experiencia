@@ -64,48 +64,49 @@
   }
 
   .dark {
-    /* Change the colors to match the design system consistent with the dark mode */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Colors for dark mode tuned for good contrast with green accent */
+    --background: 220 13% 10%;
+    --foreground: 210 20% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 13% 14%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 13% 13%;
+    --popover-foreground: 210 20% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary: 130 65% 55%;
+    --primary-foreground: 220 13% 10%;
 
-    --secondary: 222.2 84% 4.9%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 210 20% 98%;
 
-    --muted: 222.2 84% 4.9%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 13% 18%;
+    --muted-foreground: 215 15% 65%;
 
-    --accent: 222.2 84% 4.9%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 13% 20%;
+    --accent-foreground: 210 20% 98%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 75% 55%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 222.2 84% 4.9%;
-    --input: 222.2 84% 4.9%;
-    --ring: 214.3 31.8% 91.4%;
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 222.2 84% 4.9%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222.2 84% 4.9%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222.2 84% 4.9%;
-    --sidebar-ring: 222.2 84% 4.9%;
+    --border: 220 13% 22%;
+    --input: 220 13% 22%;
+    --ring: 130 65% 55%;
 
-    --chart-1: 270 100% 44%;
-    --chart-2: 164 100% 38%;
-    --chart-3: 43 100% 32%;
-    --chart-4: 340 100% 50%;
-    --chart-5: 10 100% 50%;
+    --sidebar-background: 220 15% 9%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 130 65% 55%;
+    --sidebar-primary-foreground: 220 13% 10%;
+    --sidebar-accent: 220 13% 16%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 220 13% 18%;
+    --sidebar-ring: 130 65% 55%;
+
+    --chart-1: 130 65% 55%;
+    --chart-2: 200 85% 55%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 75% 55%;
+    --chart-5: 270 70% 60%;
   }
 
   /* NEVER REMOVE THIS */
@@ -113,6 +114,61 @@
     padding: 0 !important;
     margin: 0 !important;
   }
+}
+
+/* Modifiers for smooth dark theme experience across legacy internal cards and tables */
+html.dark .bg-white {
+  background-color: hsl(220 13% 14%) !important;
+}
+
+html.dark .bg-\[\#F9FAFB\] {
+  background-color: hsl(220 13% 12%) !important;
+}
+
+html.dark .bg-\[\#F5F5F5\] {
+  background-color: hsl(220 13% 10%) !important;
+}
+
+html.dark .bg-gray-50 {
+  background-color: hsl(220 13% 12%) !important;
+}
+
+html.dark .border-\[\#E8E8E8\] {
+  border-color: hsl(220 13% 22%) !important;
+}
+
+html.dark .text-\[\#111111\] {
+  color: hsl(210 20% 98%) !important;
+}
+
+html.dark .text-gray-900 {
+  color: hsl(210 20% 98%) !important;
+}
+
+html.dark .text-gray-700 {
+  color: hsl(215 15% 80%) !important;
+}
+
+html.dark .text-gray-600 {
+  color: hsl(215 15% 70%) !important;
+}
+
+html.dark .text-gray-500 {
+  color: hsl(215 15% 60%) !important;
+}
+
+html.dark .divide-\[\#E8E8E8\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: hsl(220 13% 20%) !important;
+}
+
+html.dark tr.hover\:bg-gray-50\/80:hover {
+  background-color: hsl(220 13% 18%) !important;
+}
+
+html.dark select,
+html.dark input,
+html.dark textarea {
+  color-scheme: dark;
 }
 
 @layer utilities {

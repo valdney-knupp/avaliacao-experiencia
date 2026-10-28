@@ -54,7 +54,7 @@ export const AppLogoSymbol: React.FC<{
   className?: string
   size?: number | string
   isDark?: boolean
-}> = ({ className = 'h-10 w-10', size, isDark = true }) => {
+}> = ({ className = 'h-10 w-10', size, isDark = false }) => {
   return (
     <svg
       viewBox="0 0 64 64"
@@ -84,12 +84,12 @@ export const AppLogoSymbol: React.FC<{
         <linearGradient id="ael-shield-fill" x1="50%" y1="0%" x2="50%" y2="100%">
           <stop
             offset="0%"
-            stopColor={isDark ? '#232824' : '#E8F5E9'}
+            stopColor={isDark ? '#232824' : '#EDF8EE'}
             stopOpacity={isDark ? '0.9' : '0.95'}
           />
           <stop
             offset="100%"
-            stopColor={isDark ? '#141715' : '#D1E7D5'}
+            stopColor={isDark ? '#141715' : '#DDF0E1'}
             stopOpacity={isDark ? '0.95' : '1'}
           />
         </linearGradient>
@@ -265,12 +265,12 @@ export const AppLogo: React.FC<AppLogoProps> = ({
         </div>
         <div className="flex flex-col">
           <span
-            className={`${titleSizes} leading-none ${isDark ? 'text-white' : 'text-[#111111]'}`}
+            className={`${titleSizes} leading-none ${isDark ? 'text-white' : 'text-slate-900 dark:text-white'}`}
           >
             AVALIAÇÃO
           </span>
           <span
-            className={`${subtitleSizes} font-bold uppercase text-[#54D769] leading-tight mt-1`}
+            className={`${subtitleSizes} font-bold uppercase text-[#2CA840] dark:text-[#54D769] leading-tight mt-1`}
           >
             DE EXPERIÊNCIA
           </span>
@@ -300,21 +300,23 @@ export const AppLogo: React.FC<AppLogoProps> = ({
       <div className={`flex flex-col ${isCentered ? 'items-center' : 'items-start'}`}>
         <div className="flex items-center gap-1.5">
           <span
-            className={`${titleSizes} leading-none ${isDark ? 'text-white' : 'text-[#111111]'}`}
+            className={`${titleSizes} leading-none ${isDark ? 'text-white' : 'text-slate-900 dark:text-white'}`}
           >
             AVALIAÇÃO
           </span>
         </div>
 
         <div className="flex items-center gap-2 mt-1">
-          <span className={`${subtitleSizes} font-bold uppercase text-[#54D769] leading-tight`}>
+          <span
+            className={`${subtitleSizes} font-bold uppercase text-[#2CA840] dark:text-[#54D769] leading-tight`}
+          >
             DE EXPERIÊNCIA
           </span>
           <span
             className={`${badgeSizes} font-semibold uppercase rounded-full ${
               isDark
                 ? 'bg-white/10 text-gray-300 border border-white/10'
-                : 'bg-black/5 text-gray-600 border border-black/10'
+                : 'bg-black/5 dark:bg-white/10 text-slate-600 dark:text-gray-300 border border-black/10 dark:border-white/10'
             } leading-none`}
             title="Ciclos de 45 e 90 dias"
           >

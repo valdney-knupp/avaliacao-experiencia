@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { useTheme } from '@/hooks/use-theme'
 import pb from '@/lib/pocketbase/client'
 import {
   LayoutDashboard,
@@ -14,10 +15,8 @@ import {
   Menu,
   X,
   Bell,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  UserCheck,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,6 +34,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 export const Layout: React.FC = () => {
   const { user, signOut, canAccessAdmin, canAccessImport, canExportReports, canViewAudit } =
     useAuth()
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -73,7 +74,6 @@ export const Layout: React.FC = () => {
         sort: '-created',
       })
       setNotifications(records.items)
-      // Unread: items created in last 24h or status Pendente
       const count = records.items.filter((n) => n.status === 'Pendente').length
       setUnreadCount(count)
     } catch {
@@ -184,8 +184,10 @@ export const Layout: React.FC = () => {
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-[#54D769] text-[#111111] shadow-sm font-semibold'
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                    ? 'bg-[#54D769] text-slate-950 shadow-sm font-bold'
+                    : isDark
+                      ? 'text-slate-300 hover:bg-white/10 hover:text-white'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`
               }
             >
@@ -198,13 +200,18 @@ export const Layout: React.FC = () => {
   )
 
   return (
-    <div className="flex min-h-screen bg-[#F5F5F5] text-[#111111]">
+    <div className="flex min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 selection:bg-[#54D769]/30 selection:text-current">
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden lg:flex w-64 flex-col fixed inset-y-0 left-0 bg-[#111111] z-30 border-r border-black/40">
+      <aside className="hidden lg:flex w-64 flex-col fixed inset-y-0 left-0 bg-white dark:bg-[#111512] z-30 border-r border-slate-200 dark:border-white/10 shadow-xs">
         {/* Brand */}
-        <div className="flex flex-col border-b border-white/10 px-5 py-5">
+        <div className="flex flex-col border-b border-slate-200 dark:border-white/10 px-5 py-5">
           <div className="flex flex-col items-center text-center">
-            <AppLogo variant="dark-bg" size="md" layout="full" align="center" />
+            <AppLogo
+              variant={isDark ? 'dark-bg' : 'light-bg'}
+              size="md"
+              layout="full"
+              align="center"
+            />
           </div>
         </div>
 
@@ -212,23 +219,23 @@ export const Layout: React.FC = () => {
         <div className="flex-1 overflow-y-auto">{renderNavLinks()}</div>
 
         {/* Footer User Info */}
-        <div className="shrink-0 border-t border-white/10 bg-black/40 px-3.5 py-3">
+        <div className="shrink-0 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-3.5 py-3">
           <div className="flex items-center gap-3">
             <div
-              className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#54D769] font-bold text-[#111111] text-xs shadow-sm ring-1 ring-white/10"
+              className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#54D769] font-bold text-slate-950 text-xs shadow-sm ring-1 ring-black/5 dark:ring-white/10"
               aria-label={user?.name || user?.email || 'Avatar do usuário'}
             >
               {userInitials}
             </div>
             <div className="min-w-0 flex-1">
               <p
-                className="truncate text-xs font-semibold text-white leading-tight"
+                className="truncate text-xs font-semibold text-slate-900 dark:text-white leading-tight"
                 title={user?.name || user?.email || ''}
               >
                 {user?.name || user?.email || 'Usuário'}
               </p>
               <p
-                className="truncate text-[11px] font-medium text-[#54D769] leading-tight mt-0.5"
+                className="truncate text-[11px] font-medium text-[#2CA840] dark:text-[#54D769] leading-tight mt-0.5"
                 title={friendlyProfile}
               >
                 {friendlyProfile}
@@ -238,7 +245,7 @@ export const Layout: React.FC = () => {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="h-8 w-8 shrink-0 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="h-8 w-8 shrink-0 rounded-md text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors"
               title="Sair do sistema"
               aria-label="Sair do sistema"
             >
@@ -255,18 +262,23 @@ export const Layout: React.FC = () => {
           onClick={() => setMobileMenuOpen(false)}
         >
           <div
-            className="fixed inset-y-0 left-0 w-72 bg-[#111111] shadow-2xl flex flex-col"
+            className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#111512] shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative flex items-center justify-center border-b border-white/10 px-5 py-4">
+            <div className="relative flex items-center justify-center border-b border-slate-200 dark:border-white/10 px-5 py-4">
               <div className="flex flex-col items-center text-center">
-                <AppLogo variant="dark-bg" size="md" layout="full" align="center" />
+                <AppLogo
+                  variant={isDark ? 'dark-bg' : 'light-bg'}
+                  size="md"
+                  layout="full"
+                  align="center"
+                />
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(false)}
-                className="absolute right-3 top-3 text-gray-400 hover:text-white hover:bg-white/10"
+                className="absolute right-3 top-3 text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -274,23 +286,23 @@ export const Layout: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto">{renderNavLinks()}</div>
 
-            <div className="shrink-0 border-t border-white/10 bg-black/40 px-3.5 py-3">
+            <div className="shrink-0 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-3.5 py-3">
               <div className="flex items-center gap-3">
                 <div
-                  className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#54D769] font-bold text-[#111111] text-xs shadow-sm ring-1 ring-white/10"
+                  className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#54D769] font-bold text-slate-950 text-xs shadow-sm ring-1 ring-black/5 dark:ring-white/10"
                   aria-label={user?.name || user?.email || 'Avatar do usuário'}
                 >
                   {userInitials}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p
-                    className="truncate text-xs font-semibold text-white leading-tight"
+                    className="truncate text-xs font-semibold text-slate-900 dark:text-white leading-tight"
                     title={user?.name || user?.email || ''}
                   >
                     {user?.name || user?.email || 'Usuário'}
                   </p>
                   <p
-                    className="truncate text-[11px] font-medium text-[#54D769] leading-tight mt-0.5"
+                    className="truncate text-[11px] font-medium text-[#2CA840] dark:text-[#54D769] leading-tight mt-0.5"
                     title={friendlyProfile}
                   >
                     {friendlyProfile}
@@ -300,7 +312,7 @@ export const Layout: React.FC = () => {
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
-                  className="h-8 w-8 shrink-0 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="h-8 w-8 shrink-0 rounded-md text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors"
                   title="Sair do sistema"
                   aria-label="Sair do sistema"
                 >
@@ -315,22 +327,48 @@ export const Layout: React.FC = () => {
       {/* MAIN CONTAINER */}
       <div className="flex-1 lg:pl-64 flex flex-col min-h-screen">
         {/* Top Header */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E8E8E8] bg-white px-4 sm:px-6 shadow-xs">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#141815]/95 backdrop-blur-md px-4 sm:px-6 shadow-xs">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-1.5 rounded-lg text-[#111111] hover:bg-gray-100"
+              className="lg:hidden p-1.5 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+              aria-label="Abrir menu"
             >
               <Menu className="h-6 w-6" />
             </button>
-            <h1 className="text-base sm:text-lg font-bold text-[#111111]">{getPageTitle()}</h1>
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              {getPageTitle()}
+            </h1>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-semibold transition-all"
+              title={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+              aria-label="Alternar tema claro/escuro"
+            >
+              {isDark ? (
+                <>
+                  <Sun className="h-4 w-4 text-amber-400" />
+                  <span className="hidden sm:inline">Tema Claro</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-4 w-4 text-slate-600" />
+                  <span className="hidden sm:inline">Tema Escuro</span>
+                </>
+              )}
+            </button>
+
             {/* Notification Bell */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-black transition-colors">
+                <button
+                  className="relative p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  aria-label="Notificações"
+                >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
                     <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
@@ -349,7 +387,7 @@ export const Layout: React.FC = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-gray-500">
+                  <div className="p-4 text-center text-xs text-muted-foreground">
                     Nenhuma notificação recente.
                   </div>
                 ) : (
@@ -359,14 +397,14 @@ export const Layout: React.FC = () => {
                       className="flex flex-col items-start gap-1 p-3 cursor-pointer"
                     >
                       <div className="flex w-full items-center justify-between">
-                        <span className="text-xs font-semibold text-gray-900 line-clamp-1">
+                        <span className="text-xs font-semibold text-foreground line-clamp-1">
                           {notif.subject || 'Notificação'}
                         </span>
-                        <span className="text-[10px] text-gray-400">
+                        <span className="text-[10px] text-muted-foreground">
                           {formatDateTimeBR(notif.created)}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 line-clamp-2">{notif.body}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{notif.body}</p>
                     </DropdownMenuItem>
                   ))
                 )}
@@ -375,14 +413,16 @@ export const Layout: React.FC = () => {
 
             {/* User Initials Avatar */}
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-full bg-[#54D769] font-bold text-[#111111] text-xs shadow-xs">
+              <div className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-full bg-[#54D769] font-bold text-slate-950 text-xs shadow-xs">
                 {userInitials}
               </div>
-              <div className="hidden sm:block text-left max-w-[180px]">
-                <p className="truncate text-xs font-semibold text-[#111111] leading-tight">
+              <div className="hidden sm:block text-left max-w-[160px]">
+                <p className="truncate text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                   {user?.name || user?.email}
                 </p>
-                <p className="truncate text-[11px] text-gray-500">{friendlyProfile}</p>
+                <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                  {friendlyProfile}
+                </p>
               </div>
             </div>
           </div>
@@ -399,9 +439,9 @@ export const Layout: React.FC = () => {
         </main>
 
         {/* Global Footer */}
-        <footer className="mt-auto border-t border-[#E8E8E8] bg-white px-6 py-4 text-xs text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <footer className="mt-auto border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#141815] px-6 py-4 text-xs text-slate-500 dark:text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Sistema de Avaliação de Experiência</span>
-          <span className="text-gray-400">v1.1.0 • Gestão de Pessoas</span>
+          <span className="text-slate-400 dark:text-slate-500">v1.2.0 • Gestão de Pessoas</span>
         </footer>
       </div>
     </div>

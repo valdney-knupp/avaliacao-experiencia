@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, act } from '@testing-library/react'
 import { MemoryRouter, Routes, Route, Link, Outlet } from 'react-router-dom'
 import Layout from '@/components/Layout'
+import { ThemeProvider } from '@/hooks/use-theme'
 import pb from '@/lib/pocketbase/client'
 
 // Mock useAuth com perfil de ADMIN para que todas as opções de navegação estejam liberadas
@@ -67,66 +68,68 @@ describe('Navegação entre rotas e resiliência de montagem/desmontagem (DOM Sa
     }
 
     render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route
-              path="/dashboard"
-              element={
-                <div>
-                  <h2>Tela Dashboard</h2>
-                  <NavigationHelper />
-                </div>
-              }
-            />
-            <Route
-              path="/evaluations"
-              element={
-                <div>
-                  <h2>Tela Próximas Avaliações</h2>
-                  <NavigationHelper />
-                </div>
-              }
-            />
-            <Route
-              path="/collaborators"
-              element={
-                <div>
-                  <h2>Tela Colaboradores</h2>
-                  <NavigationHelper />
-                </div>
-              }
-            />
-            <Route
-              path="/collaborators/:id"
-              element={
-                <div>
-                  <h2>Tela Detalhes Colaborador</h2>
-                  <NavigationHelper />
-                </div>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <div>
-                  <h2>Tela Administração</h2>
-                  <NavigationHelper />
-                </div>
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <div>
-                  <h2>Tela Relatórios e Exportação</h2>
-                  <NavigationHelper />
-                </div>
-              }
-            />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
+      <ThemeProvider>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route
+                path="/dashboard"
+                element={
+                  <div>
+                    <h2>Tela Dashboard</h2>
+                    <NavigationHelper />
+                  </div>
+                }
+              />
+              <Route
+                path="/evaluations"
+                element={
+                  <div>
+                    <h2>Tela Próximas Avaliações</h2>
+                    <NavigationHelper />
+                  </div>
+                }
+              />
+              <Route
+                path="/collaborators"
+                element={
+                  <div>
+                    <h2>Tela Colaboradores</h2>
+                    <NavigationHelper />
+                  </div>
+                }
+              />
+              <Route
+                path="/collaborators/:id"
+                element={
+                  <div>
+                    <h2>Tela Detalhes Colaborador</h2>
+                    <NavigationHelper />
+                  </div>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <div>
+                    <h2>Tela Administração</h2>
+                    <NavigationHelper />
+                  </div>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <div>
+                    <h2>Tela Relatórios e Exportação</h2>
+                    <NavigationHelper />
+                  </div>
+                }
+              />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </ThemeProvider>,
     )
 
     // Inicialmente no dashboard
