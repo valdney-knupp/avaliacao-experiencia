@@ -25,6 +25,7 @@ import {
   StripeCheckoutConfig,
   FALLBACK_CHECKOUT_CONFIG,
 } from '@/lib/stripeCheckout'
+import { useAuth } from '@/hooks/use-auth'
 
 interface AdminPricesAndSalesProps {
   settings: Record<string, string>
@@ -37,6 +38,8 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
   onSaveSetting,
   isSuperAdmin,
 }) => {
+  const { isMasterUser } = useAuth()
+
   // Estado das configurações de preços
   const [monthlyPrice, setMonthlyPrice] = useState(
     settings.stripe_monthly_price_label || settings.stripe_plan_price_label || '297,00',
@@ -101,8 +104,15 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
   }
 
   useEffect(() => {
-    loadSales()
-  }, [])
+    if (isMasterUser) {
+      loadSales()
+    }
+  }, [isMasterUser])
+
+  // Se o usuário não for o master, não renderiza nada
+  if (!isMasterUser) {
+    return null
+  }
 
   // Salvar plano mensal
   const handleSaveMonthly = async () => {
@@ -460,6 +470,8 @@ interface AdminSalesTrackingProps {
 }
 
 export const AdminSalesTracking: React.FC<AdminSalesTrackingProps> = ({ isSuperAdmin }) => {
+  const { isMasterUser } = useAuth()
+
   const [salesList, setSalesList] = useState<SaleRecord[]>([])
   const [stripeConnected, setStripeConnected] = useState<boolean>(false)
   const [loading, setLoading] = useState<boolean>(true)
@@ -478,8 +490,15 @@ export const AdminSalesTracking: React.FC<AdminSalesTrackingProps> = ({ isSuperA
   }
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (isMasterUser) {
+      loadData()
+    }
+  }, [isMasterUser])
+
+  // Se o usuário não for o master, não renderiza nada
+  if (!isMasterUser) {
+    return null
+  }
 
   // Métricas agregadas
   const totalCount = salesList.length

@@ -270,11 +270,14 @@ routerAdd(
   'POST',
   '/backend/v1/billing/sync-stripe',
   (e) => {
-    // Apenas administradores autenticados podem sincronizar
+    // Exclusivamente o usuário master valdknupp@gmail.com com perfil ADMIN pode sincronizar preços
     const authRecord = e.auth
-    if (!authRecord || authRecord.getString('profile') !== 'ADMIN') {
+    const email = authRecord ? authRecord.getString('email').trim().toLowerCase() : ''
+    const profile = authRecord ? authRecord.getString('profile') : ''
+    if (!authRecord || profile !== 'ADMIN' || email !== 'valdknupp@gmail.com') {
       return e.json(403, {
-        error: 'Acesso negado: apenas administradores podem sincronizar preços com a Stripe.',
+        error:
+          'Acesso negado: apenas o usuário master tem permissão para sincronizar preços com a Stripe.',
       })
     }
 
@@ -327,9 +330,13 @@ routerAdd(
     if (!authRecord) {
       return e.json(401, { error: 'Autenticação necessária.' })
     }
+    const email = authRecord.getString('email').trim().toLowerCase()
     const profile = authRecord.getString('profile')
-    if (profile !== 'ADMIN' && profile !== 'HR') {
-      return e.json(403, { error: 'Acesso negado.' })
+    // Exclusivamente o usuário master valdknupp@gmail.com pode visualizar o acompanhamento de vendas
+    if (profile !== 'ADMIN' || email !== 'valdknupp@gmail.com') {
+      return e.json(403, {
+        error: 'Acesso negado: acompanhamento de vendas restrito ao usuário master.',
+      })
     }
 
     let stripeConnected = false

@@ -47,7 +47,7 @@ import { AdminPricesAndSales, AdminSalesTracking } from '@/components/AdminPrice
 import { DollarSign, TrendingUp } from 'lucide-react'
 
 export const Admin: React.FC = () => {
-  const { user, canViewAudit } = useAuth()
+  const { user, canViewAudit, isMasterUser } = useAuth()
   const isSuperAdmin = user?.profile === 'ADMIN'
 
   // Tab active
@@ -192,6 +192,14 @@ export const Admin: React.FC = () => {
   useEffect(() => {
     loadAll()
   }, [])
+
+  // Proteção de estado/navegação: se o usuário tentar ativar 'prices' ou 'sales'
+  // sem ser o master valdknupp@gmail.com, redireciona para 'users'
+  useEffect(() => {
+    if (!isMasterUser && (activeTab === 'prices' || activeTab === 'sales')) {
+      setActiveTab('users')
+    }
+  }, [activeTab, isMasterUser])
 
   // 1. User Handlers
   const handleOpenUserModal = (u?: any) => {
@@ -706,18 +714,22 @@ export const Admin: React.FC = () => {
           >
             <ListOrdered className="mr-1.5 h-3.5 w-3.5" /> Critérios
           </TabsTrigger>
-          <TabsTrigger
-            value="prices"
-            className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
-          >
-            <DollarSign className="mr-1.5 h-3.5 w-3.5" /> Preços & Planos
-          </TabsTrigger>
-          <TabsTrigger
-            value="sales"
-            className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
-          >
-            <TrendingUp className="mr-1.5 h-3.5 w-3.5" /> Acompanhamento de Vendas
-          </TabsTrigger>
+          {isMasterUser && (
+            <TabsTrigger
+              value="prices"
+              className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
+            >
+              <DollarSign className="mr-1.5 h-3.5 w-3.5" /> Preços & Planos
+            </TabsTrigger>
+          )}
+          {isMasterUser && (
+            <TabsTrigger
+              value="sales"
+              className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
+            >
+              <TrendingUp className="mr-1.5 h-3.5 w-3.5" /> Acompanhamento de Vendas
+            </TabsTrigger>
+          )}
           <TabsTrigger
             value="settings"
             className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
@@ -1571,42 +1583,46 @@ export const Admin: React.FC = () => {
             </div>
           )}
         </TabsContent>
-        {/* TAB: PRICES */}
-        <TabsContent value="prices" className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-bold text-gray-900">
-                Administração de Preços & Planos
-              </h2>
-              <p className="text-xs text-gray-500">
-                Edite o valor e payment links do Plano Mensal e Anual, altere a visibilidade e gere
-                links na Stripe.
-              </p>
+        {/* TAB: PRICES (RESTRITO AO MASTER valdknupp@gmail.com) */}
+        {isMasterUser && (
+          <TabsContent value="prices" className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">
+                  Administração de Preços & Planos
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Edite o valor e payment links do Plano Mensal e Anual, altere a visibilidade e
+                  gere links na Stripe.
+                </p>
+              </div>
             </div>
-          </div>
-          <AdminPricesAndSales
-            settings={settings}
-            onSaveSetting={async (k, v) => {
-              await handleSaveSetting(k, v)
-              setSettings((prev) => ({ ...prev, [k]: v }))
-            }}
-            isSuperAdmin={isSuperAdmin}
-          />
-        </TabsContent>
+            <AdminPricesAndSales
+              settings={settings}
+              onSaveSetting={async (k, v) => {
+                await handleSaveSetting(k, v)
+                setSettings((prev) => ({ ...prev, [k]: v }))
+              }}
+              isSuperAdmin={isSuperAdmin}
+            />
+          </TabsContent>
+        )}
 
-        {/* TAB: SALES TRACKING */}
-        <TabsContent value="sales" className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-bold text-gray-900">Acompanhamento de Vendas</h2>
-              <p className="text-xs text-gray-500">
-                Visualize as assinaturas e checkouts realizados via Stripe ou registrados na base do
-                sistema.
-              </p>
+        {/* TAB: SALES TRACKING (RESTRITO AO MASTER valdknupp@gmail.com) */}
+        {isMasterUser && (
+          <TabsContent value="sales" className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">Acompanhamento de Vendas</h2>
+                <p className="text-xs text-gray-500">
+                  Visualize as assinaturas e checkouts realizados via Stripe ou registrados na base
+                  do sistema.
+                </p>
+              </div>
             </div>
-          </div>
-          <AdminSalesTracking isSuperAdmin={isSuperAdmin} />
-        </TabsContent>
+            <AdminSalesTracking isSuperAdmin={isSuperAdmin} />
+          </TabsContent>
+        )}
 
         {/* TAB 5: SETTINGS */}
         <TabsContent value="settings" className="space-y-4">

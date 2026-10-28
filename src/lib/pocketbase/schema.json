@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-28T13:22:04.245Z",
+  "generatedAt": "2026-10-28T14:28:38.588Z",
   "collections": [
     {
       "name": "users",
@@ -250,7 +250,7 @@
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
         "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR') && (key !~ 'stripe' || @request.auth.email = 'valdknupp@gmail.com')",
         "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
       },
       "fields": [
@@ -778,11 +778,11 @@
       "name": "sales",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "view": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
+        "list": "@request.auth.id != '' && @request.auth.profile = 'ADMIN' && @request.auth.email = 'valdknupp@gmail.com'",
+        "view": "@request.auth.id != '' && @request.auth.profile = 'ADMIN' && @request.auth.email = 'valdknupp@gmail.com'",
         "create": "",
-        "update": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "update": "@request.auth.id != '' && @request.auth.profile = 'ADMIN' && @request.auth.email = 'valdknupp@gmail.com'",
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN' && @request.auth.email = 'valdknupp@gmail.com'"
       },
       "fields": [
         {

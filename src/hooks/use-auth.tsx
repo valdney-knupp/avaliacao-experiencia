@@ -44,6 +44,7 @@ export interface AuthContextType {
   isDepartmentManager: boolean
   scopedCostCenterId: string | undefined
   scopedSectorId: string | undefined
+  isMasterUser: boolean
   refreshUser: () => Promise<void>
 }
 
@@ -263,6 +264,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const scopedCostCenterId = isWorksiteManager || isAdminAssistant ? user?.cost_center : undefined
   const scopedSectorId = isDepartmentManager ? user?.sector : undefined
 
+  // Usuário master de sistema: exclusivamente valdknupp@gmail.com com perfil ADMIN
+  const isMasterUser =
+    user?.profile === 'ADMIN' && (user?.email || '').trim().toLowerCase() === 'valdknupp@gmail.com'
+
   const value = useMemo(
     () => ({
       user,
@@ -286,9 +291,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isDepartmentManager,
       scopedCostCenterId,
       scopedSectorId,
+      isMasterUser,
       refreshUser,
     }),
-    [user, loading],
+    [user, loading, isMasterUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

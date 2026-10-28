@@ -22,6 +22,7 @@ vi.mock('@/hooks/use-auth', () => ({
     canViewAudit: true,
     canCreateCollaborator: true,
     canEvaluate: true,
+    isMasterUser: true,
   }),
 }))
 
