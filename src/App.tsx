@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from '@/hooks/use-auth'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { ThemeProvider } from '@/hooks/use-theme'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import Layout from '@/components/Layout'
@@ -27,6 +27,28 @@ import DataImport from '@/pages/DataImport'
 import Reports from '@/pages/Reports'
 import NotFound from '@/pages/NotFound'
 
+/**
+ * Rota raiz do sistema:
+ * - Se o visitante não está autenticado, renderiza a página de Vendas (Sales).
+ * - Se já estiver logado, redireciona de forma suave para o painel interno (/dashboard).
+ * - Enquanto carrega a sessão, exibe a página de vendas sem flash ou espera suavemente.
+ */
+const RootRoute: React.FC = () => {
+  const { isAuthenticated, loading } = useAuth()
+
+  if (loading) {
+    // Durante a validação inicial do token, se ainda estiver pendente, renderiza a Sales
+    // para garantir exibição imediata da página de vendas caso o usuário seja visitante.
+    return <Sales />
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return <Sales />
+}
+
 export const App: React.FC = () => {
   return (
     <ErrorBoundary
@@ -38,6 +60,8 @@ export const App: React.FC = () => {
           <BrowserRouter>
             <Routes>
               {/* Public Auth & Sales Routes */}
+              {/* Rota raiz "/" como página principal pública de vendas; se o usuário já estiver autenticado, vai direto para o sistema interno (/dashboard) */}
+              <Route path="/" element={<RootRoute />} />
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
@@ -54,7 +78,6 @@ export const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               >
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/detail" element={<DashboardDetail />} />
                 <Route path="/evaluations" element={<Evaluations />} />

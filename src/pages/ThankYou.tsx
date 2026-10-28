@@ -33,7 +33,7 @@ export const ThankYou: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 text-slate-900 flex flex-col justify-between p-4 sm:p-8">
       {/* Top Header */}
       <header className="max-w-4xl mx-auto w-full flex items-center justify-between py-4">
-        <Link to="/vendas" className="hover:opacity-90 transition-opacity">
+        <Link to="/" className="hover:opacity-90 transition-opacity">
           <AppLogo variant="light-bg" size="sm" layout="compact" />
         </Link>
         <Link
@@ -196,7 +196,7 @@ export const ThankYou: React.FC = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/vendas" className="w-full sm:w-auto">
+            <Link to="/" className="w-full sm:w-auto">
               <Button
                 variant="outline"
                 className="w-full sm:w-auto h-12 px-6 border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl"

@@ -69,7 +69,7 @@ export const Login: React.FC = () => {
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex w-full justify-center">
             <Link
-              to="/vendas"
+              to="/"
               className="inline-flex cursor-pointer rounded-xl p-1 transition-all duration-200 hover:opacity-90 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#54D769]/50"
               title="Ir para a página de apresentação e planos (Vendas)"
               aria-label="Ir para a página de vendas"
@@ -161,7 +161,7 @@ export const Login: React.FC = () => {
           <div>
             <button
               type="button"
-              onClick={() => navigate('/vendas')}
+              onClick={() => navigate('/')}
               className="text-xs text-gray-400 hover:text-[#54D769] transition-colors"
             >
               Ainda não tem acesso?{' '}

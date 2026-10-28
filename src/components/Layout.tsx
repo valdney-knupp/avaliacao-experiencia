@@ -151,7 +151,7 @@ export const Layout: React.FC = () => {
 
   const handleLogout = async () => {
     await signOut()
-    navigate('/vendas')
+    navigate('/')
   }
 
   const getPageTitle = () => {

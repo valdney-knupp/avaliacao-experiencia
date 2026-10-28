@@ -98,7 +98,7 @@ export const Sales: React.FC = () => {
       {/* Header / Navbar */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-slate-200/80 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link to="/vendas" className="hover:opacity-90 transition-opacity">
+          <Link to="/" className="hover:opacity-90 transition-opacity">
             <AppLogo variant="light-bg" size="md" layout="compact" />
           </Link>
 

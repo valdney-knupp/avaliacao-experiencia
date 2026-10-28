@@ -180,6 +180,34 @@ describe('Navegação entre rotas e resiliência de montagem/desmontagem (DOM Sa
     expect(screen.queryByText('Falha ao carregar esta página')).toBeNull()
   })
 
+  it('handleLogout no Layout redireciona para a raiz / (página de vendas)', async () => {
+    const mockSignOut = vi.fn().mockResolvedValue({})
+    // Renderiza Layout dentro de um MemoryRouter
+    render(
+      <ThemeProvider>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/dashboard" element={<div>Conteúdo Interno</div>} />
+            </Route>
+            <Route path="/" element={<div>Página de Vendas Raiz</div>} />
+          </Routes>
+        </MemoryRouter>
+      </ThemeProvider>,
+    )
+
+    // Localiza e clica no botão de logout pelo title/aria-label "Sair do sistema"
+    const logoutBtn = screen.getAllByTitle('Sair do sistema')[0]
+    expect(logoutBtn).toBeDefined()
+
+    await act(async () => {
+      logoutBtn.click()
+    })
+
+    // Deve ter navegado para a rota raiz /
+    expect(screen.getByText('Página de Vendas Raiz')).toBeDefined()
+  })
+
   it('o DOM SafeGuard trata graciosamente chamadas desalinhadas a removeChild sem lançar DOMException', () => {
     const parentA = document.createElement('div')
     const parentB = document.createElement('div')
