@@ -41,6 +41,7 @@ import {
 export const Sales: React.FC = () => {
   const [config, setConfig] = useState<StripeCheckoutConfig>(FALLBACK_CHECKOUT_CONFIG)
   const [loadingCheckout, setLoadingCheckout] = useState(true)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   // Garante que a página de vendas pública se apresente sempre em tema claro
   useEffect(() => {
@@ -76,8 +77,13 @@ export const Sales: React.FC = () => {
   }, [])
 
   const handleCheckout = (url: string) => {
-    if (url) {
+    setCheckoutError(null)
+    if (url && url.startsWith('http')) {
       window.location.href = url
+    } else {
+      setCheckoutError(
+        'O link de pagamento da Stripe ainda não está disponível. Por favor, tente novamente em instantes ou contate nossa equipe pelo WhatsApp.',
+      )
     }
   }
 
@@ -613,6 +619,12 @@ export const Sales: React.FC = () => {
                   </div>
 
                   <div className="mt-8 pt-4">
+                    {checkoutError && (
+                      <div className="mb-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                        <span>{checkoutError}</span>
+                      </div>
+                    )}
                     <Button
                       size="lg"
                       onClick={() => handleCheckout(config.monthly.payment_link)}
@@ -620,7 +632,7 @@ export const Sales: React.FC = () => {
                       variant="outline"
                       className="w-full h-13 text-sm sm:text-base font-bold border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-800 rounded-xl transition-all"
                     >
-                      Assinar Plano Mensal
+                      {loadingCheckout ? 'Carregando checkout...' : 'Assinar Plano Mensal'}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                     <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
@@ -689,13 +701,21 @@ export const Sales: React.FC = () => {
                   </div>
 
                   <div className="mt-8 pt-4">
+                    {checkoutError && (
+                      <div className="mb-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                        <span>{checkoutError}</span>
+                      </div>
+                    )}
                     <Button
                       size="lg"
                       onClick={() => handleCheckout(config.annual.payment_link)}
                       disabled={loadingCheckout}
                       className="w-full h-14 text-base font-extrabold bg-gradient-to-r from-[#54D769] to-[#2CA840] hover:from-[#43c457] hover:to-[#228734] text-white rounded-xl shadow-md shadow-emerald-500/25 transition-all transform hover:scale-[1.02]"
                     >
-                      Assinar Plano Anual (Melhor Valor)
+                      {loadingCheckout
+                        ? 'Carregando checkout...'
+                        : 'Assinar Plano Anual (Melhor Valor)'}
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                     <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">

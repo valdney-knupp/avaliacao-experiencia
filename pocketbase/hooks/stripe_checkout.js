@@ -163,9 +163,19 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
       // Redirecionamento após checkout para a página de pós-compra /obrigado
       let afterCompletion = undefined
       try {
-        const appUrlSetting = $app.findFirstRecordByData('settings', 'key', 'app_url')
-        if (appUrlSetting && appUrlSetting.getString('value')) {
-          const baseUrl = appUrlSetting.getString('value').replace(/\/+$/, '')
+        let baseUrl = ''
+        try {
+          const appUrlSetting = $app.findFirstRecordByData('settings', 'key', 'app_url')
+          if (appUrlSetting && appUrlSetting.getString('value')) {
+            baseUrl = appUrlSetting.getString('value').trim().replace(/\/+$/, '')
+          }
+        } catch (_) {}
+
+        if (!baseUrl) {
+          baseUrl = 'https://app.avaliacaodeexperiencia.com.br'
+        }
+
+        if (baseUrl) {
           afterCompletion = {
             type: 'redirect',
             redirect: { url: baseUrl + '/obrigado' },
@@ -175,19 +185,57 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
 
       const findOrCreatePaymentLink = (priceId) => {
         if (!priceId) return null
-        const found = existingLinks.find((l) => {
-          if (!l || !l.url || l.active === false) return false
+        // Procurar por link ativo correspondente ao preço
+        let matchedActiveLink = null
+        let matchedInactiveLink = null
+
+        for (const l of existingLinks) {
+          if (!l || !l.id) continue
           const items = l.line_items && Array.isArray(l.line_items.data) ? l.line_items.data : []
-          return items.some(
+          const matchesPrice = items.some(
             (it) => it && (it.price === priceId || (it.price && it.price.id === priceId)),
           )
-        })
-        if (found) return found.url
+          if (matchesPrice) {
+            if (l.active !== false && l.url) {
+              matchedActiveLink = l
+              break
+            } else if (!matchedInactiveLink) {
+              matchedInactiveLink = l
+            }
+          }
+        }
 
-        const plCreateRes = $connectors.executeAsOwner('STRIPE_CREATE_PAYMENT_LINK', {
+        if (matchedActiveLink && matchedActiveLink.url) {
+          return matchedActiveLink.url
+        }
+
+        // Se encontrou link correspondente inativo, tentar reativar
+        if (matchedInactiveLink && matchedInactiveLink.id) {
+          try {
+            const reactivateRes = $connectors.executeAsOwner('STRIPE_UPDATE_PAYMENT_LINK', {
+              payment_link: matchedInactiveLink.id,
+              active: true,
+              after_completion: afterCompletion,
+            })
+            if (
+              reactivateRes &&
+              reactivateRes.successful &&
+              reactivateRes.data &&
+              reactivateRes.data.url
+            ) {
+              return reactivateRes.data.url
+            }
+          } catch (_) {}
+        }
+
+        const createPayload = {
           line_items: [{ price: priceId, quantity: 1 }],
-          after_completion: afterCompletion,
-        })
+        }
+        if (afterCompletion) {
+          createPayload.after_completion = afterCompletion
+        }
+
+        const plCreateRes = $connectors.executeAsOwner('STRIPE_CREATE_PAYMENT_LINK', createPayload)
         if (plCreateRes && plCreateRes.successful && plCreateRes.data) {
           return plCreateRes.data.url
         }
