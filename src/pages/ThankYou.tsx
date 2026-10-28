@@ -1,8 +1,19 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, ArrowRight, Sparkles, HelpCircle, Clock } from 'lucide-react'
+import {
+  CheckCircle2,
+  ArrowRight,
+  Sparkles,
+  HelpCircle,
+  Clock,
+  MessageCircle,
+  Phone,
+  Mail,
+  Headphones,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AppLogo } from '@/components/AppLogo'
+import { SYSTEM_CONTACTS } from '@/lib/contacts'
 
 export const ThankYou: React.FC = () => {
   // Mantém a página de agradecimento sempre clara para coerência com a de vendas
@@ -109,17 +120,72 @@ export const ThankYou: React.FC = () => {
             </div>
           </div>
 
-          {/* Dúvidas / Suporte */}
-          <div className="mt-8 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-slate-700 flex items-center gap-3 text-left">
-            <HelpCircle className="h-5 w-5 text-[#2CA840] shrink-0" />
-            <div>
-              <span className="font-bold text-slate-900">
-                Precisa de suporte imediato ou tem alguma dúvida?
+          {/* Dúvidas / Suporte - Fale Conosco */}
+          <div className="mt-8 p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-xs text-slate-700 text-left">
+            <div className="flex items-center gap-2 mb-3">
+              <Headphones className="h-4 w-4 text-[#2CA840] shrink-0" />
+              <span className="font-bold text-sm text-slate-900">
+                Precisa de ajuda? Fale conosco
               </span>
-              <p className="text-slate-600 mt-0.5">
-                Entre em contato com nossa equipe através do e-mail do sistema ou fale com o
-                administrador da sua conta.
-              </p>
+            </div>
+            <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+              Nossa equipe de suporte e atendimento está à disposição para auxiliá-lo na ativação da
+              conta, dúvidas sobre a nota fiscal ou suporte técnico inicial.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <a
+                href={SYSTEM_CONTACTS.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-emerald-200 hover:border-emerald-400 hover:shadow-sm transition-all group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-[#2CA840] flex items-center justify-center shrink-0">
+                  <MessageCircle className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                    WhatsApp
+                  </div>
+                  <div className="text-xs font-extrabold text-slate-900 truncate group-hover:text-[#2CA840]">
+                    {SYSTEM_CONTACTS.whatsapp}
+                  </div>
+                </div>
+              </a>
+
+              <a
+                href={SYSTEM_CONTACTS.phoneLink}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-emerald-200 hover:border-emerald-400 hover:shadow-sm transition-all group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-[#2CA840] flex items-center justify-center shrink-0">
+                  <Phone className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                    Celular
+                  </div>
+                  <div className="text-xs font-extrabold text-slate-900 truncate group-hover:text-[#2CA840]">
+                    {SYSTEM_CONTACTS.phone}
+                  </div>
+                </div>
+              </a>
+
+              <a
+                href={SYSTEM_CONTACTS.emailLink}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-emerald-200 hover:border-emerald-400 hover:shadow-sm transition-all group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-[#2CA840] flex items-center justify-center shrink-0">
+                  <Mail className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                    E-mail
+                  </div>
+                  <div className="text-xs font-extrabold text-slate-900 truncate group-hover:text-[#2CA840]">
+                    {SYSTEM_CONTACTS.email}
+                  </div>
+                </div>
+              </a>
             </div>
           </div>
 

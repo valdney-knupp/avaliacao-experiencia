@@ -18,7 +18,12 @@ import {
   Users,
   AlertTriangle,
   BadgeCheck,
+  MessageCircle,
+  Phone,
+  Mail,
+  Headphones,
 } from 'lucide-react'
+import { SYSTEM_CONTACTS } from '@/lib/contacts'
 import { Button } from '@/components/ui/button'
 import { AppLogo } from '@/components/AppLogo'
 import {
@@ -112,6 +117,9 @@ export const Sales: React.FC = () => {
             </a>
             <a href="#faq" className="hover:text-emerald-700 transition-colors">
               Dúvidas
+            </a>
+            <a href="#contato" className="hover:text-emerald-700 transition-colors">
+              Contato
             </a>
           </nav>
 
@@ -788,6 +796,98 @@ export const Sales: React.FC = () => {
         </Accordion>
       </section>
 
+      {/* SEÇÃO DE CONTATO / COMERCIAL & SUPORTE */}
+      <section id="contato" className="py-20 bg-slate-100/60 border-t border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-1.5 text-[#2CA840] text-xs font-bold uppercase tracking-wider mb-2">
+              <Headphones className="h-4 w-4" /> Atendimento & Suporte
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950">
+              Fale com a nossa equipe
+            </h2>
+            <p className="mt-3 text-slate-600 text-sm sm:text-base">
+              Precisa de ajuda para escolher o plano, tirar dúvidas contratuais ou solicitar uma
+              demonstração guiada? Estamos à disposição por WhatsApp, ligação ou e-mail.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* WHATSAPP */}
+            <a
+              href={SYSTEM_CONTACTS.whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-lg transition-all group flex flex-col items-center text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#2CA840] border border-emerald-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <MessageCircle className="h-7 w-7" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-2">
+                Conversa Direta
+              </span>
+              <h3 className="text-lg font-bold text-slate-900 mb-1">WhatsApp</h3>
+              <p className="text-xs text-slate-500 mb-3">
+                Atendimento rápido para dúvidas e contratação
+              </p>
+              <span className="text-base font-extrabold text-slate-950 group-hover:text-[#2CA840] transition-colors">
+                WhatsApp: {SYSTEM_CONTACTS.whatsapp}
+              </span>
+              <span className="mt-3 inline-flex items-center text-xs font-semibold text-[#2CA840]">
+                Abrir no WhatsApp{' '}
+                <ArrowRight className="ml-1 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </a>
+
+            {/* CELULAR */}
+            <a
+              href={SYSTEM_CONTACTS.phoneLink}
+              className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-lg transition-all group flex flex-col items-center text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#2CA840] border border-emerald-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Phone className="h-7 w-7" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full mb-2">
+                Ligação Telefônica
+              </span>
+              <h3 className="text-lg font-bold text-slate-900 mb-1">Celular</h3>
+              <p className="text-xs text-slate-500 mb-3">
+                Contato direto por voz em horário comercial
+              </p>
+              <span className="text-base font-extrabold text-slate-950 group-hover:text-[#2CA840] transition-colors">
+                Celular: {SYSTEM_CONTACTS.phone}
+              </span>
+              <span className="mt-3 inline-flex items-center text-xs font-semibold text-slate-700">
+                Ligar agora{' '}
+                <ArrowRight className="ml-1 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </a>
+
+            {/* E-MAIL */}
+            <a
+              href={SYSTEM_CONTACTS.emailLink}
+              className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-lg transition-all group flex flex-col items-center text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#2CA840] border border-emerald-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Mail className="h-7 w-7" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full mb-2">
+                Mensagem Formal
+              </span>
+              <h3 className="text-lg font-bold text-slate-900 mb-1">E-mail</h3>
+              <p className="text-xs text-slate-500 mb-3">Envio de dúvidas, propostas e suporte</p>
+              <span className="text-base font-extrabold text-slate-950 group-hover:text-[#2CA840] transition-colors break-all">
+                E-mail: {SYSTEM_CONTACTS.email}
+              </span>
+              <span className="mt-3 inline-flex items-center text-xs font-semibold text-[#2CA840]">
+                Enviar e-mail{' '}
+                <ArrowRight className="ml-1 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* FINAL CTA BANNER */}
       <section className="py-20 bg-gradient-to-r from-emerald-600 via-[#2CA840] to-emerald-700 text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -840,14 +940,44 @@ export const Sales: React.FC = () => {
             <a href="#faq" className="hover:text-emerald-700 transition-colors">
               FAQ
             </a>
+            <a href="#contato" className="hover:text-emerald-700 transition-colors">
+              Contato
+            </a>
             <Link to="/login" className="hover:text-emerald-700 transition-colors">
               Área do Cliente
             </Link>
           </div>
 
-          <div className="text-slate-500">
-            &copy; {new Date().getFullYear()} Avaliação de Experiência. Todos os direitos
-            reservados.
+          <div className="flex flex-col items-center md:items-end gap-1 text-slate-500">
+            <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 text-slate-600 font-medium">
+              <a
+                href={SYSTEM_CONTACTS.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-[#2CA840] transition-colors inline-flex items-center gap-1"
+              >
+                <MessageCircle className="h-3.5 w-3.5 text-[#2CA840]" /> WhatsApp:{' '}
+                {SYSTEM_CONTACTS.whatsapp}
+              </a>
+              <span>•</span>
+              <a
+                href={SYSTEM_CONTACTS.phoneLink}
+                className="hover:text-[#2CA840] transition-colors inline-flex items-center gap-1"
+              >
+                <Phone className="h-3.5 w-3.5 text-[#2CA840]" /> Celular: {SYSTEM_CONTACTS.phone}
+              </a>
+              <span>•</span>
+              <a
+                href={SYSTEM_CONTACTS.emailLink}
+                className="hover:text-[#2CA840] transition-colors inline-flex items-center gap-1"
+              >
+                <Mail className="h-3.5 w-3.5 text-[#2CA840]" /> E-mail: {SYSTEM_CONTACTS.email}
+              </a>
+            </div>
+            <div>
+              &copy; {new Date().getFullYear()} Avaliação de Experiência. Todos os direitos
+              reservados.
+            </div>
           </div>
         </div>
       </footer>

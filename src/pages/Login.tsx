@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, AlertCircle, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AppLogo } from '@/components/AppLogo'
+import { SYSTEM_CONTACTS } from '@/lib/contacts'
 
 export const Login: React.FC = () => {
   const { signIn } = useAuth()
@@ -148,16 +149,39 @@ export const Login: React.FC = () => {
           </Button>
         </form>
 
-        {/* Link discreto para a página de vendas / contratação */}
-        <div className="mt-6 pt-4 border-t border-white/5 text-center">
-          <button
-            type="button"
-            onClick={() => navigate('/vendas')}
-            className="text-xs text-gray-400 hover:text-[#54D769] transition-colors"
-          >
-            Ainda não tem acesso?{' '}
-            <span className="underline font-medium">Conheça os planos e assine online</span>
-          </button>
+        {/* Link discreto para a página de vendas / contratação e suporte */}
+        <div className="mt-6 pt-4 border-t border-white/5 text-center space-y-2">
+          <div>
+            <button
+              type="button"
+              onClick={() => navigate('/vendas')}
+              className="text-xs text-gray-400 hover:text-[#54D769] transition-colors"
+            >
+              Ainda não tem acesso?{' '}
+              <span className="underline font-medium">Conheça os planos e assine online</span>
+            </button>
+          </div>
+
+          <div className="pt-2 text-[11px] text-gray-500 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+            <span>Dúvidas ou dificuldades no acesso? Suporte:</span>
+            <div className="flex items-center gap-2">
+              <a
+                href={SYSTEM_CONTACTS.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-[#54D769] transition-colors inline-flex items-center gap-1 underline underline-offset-2"
+              >
+                <MessageCircle className="h-3 w-3 text-[#54D769]" /> WhatsApp
+              </a>
+              <span>•</span>
+              <a
+                href={SYSTEM_CONTACTS.emailLink}
+                className="text-gray-400 hover:text-[#54D769] transition-colors inline-flex items-center gap-1 underline underline-offset-2"
+              >
+                <Mail className="h-3 w-3 text-[#54D769]" /> E-mail
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
