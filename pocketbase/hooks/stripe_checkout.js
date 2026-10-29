@@ -250,8 +250,11 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
         const createPayload = {
           line_items: [{ price: priceId, quantity: 1 }],
         }
-        if (afterCompletion) {
-          createPayload.after_completion = afterCompletion
+        if (afterCompletion && afterCompletion.redirect && afterCompletion.redirect.url) {
+          createPayload.after_completion = {
+            type: 'redirect',
+            redirect: { url: afterCompletion.redirect.url },
+          }
         }
 
         const plCreateRes = $connectors.executeAsOwner('STRIPE_CREATE_PAYMENT_LINK', createPayload)
