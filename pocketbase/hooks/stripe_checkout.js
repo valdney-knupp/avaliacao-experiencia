@@ -17,21 +17,31 @@ onBootstrap((e) => {
 
     const currentMonthly = checkSetting('stripe_monthly_payment_link')
     const currentAnnual = checkSetting('stripe_annual_payment_link')
+    const currentAnnualLabel = checkSetting('stripe_annual_price_label')
     const isRealOfficial = (u) =>
       u &&
       (u.startsWith('https://buy.stripe.com/') || u.startsWith('https://pay.stripe.com/')) &&
       !u.includes('test_avaliacao_experiencia')
 
-    if (isRealOfficial(currentMonthly) && isRealOfficial(currentAnnual)) {
+    // Se já estiver com link oficial para 2.899,00 (ou 2899), não precisa reexecutar
+    if (
+      isRealOfficial(currentMonthly) &&
+      isRealOfficial(currentAnnual) &&
+      (currentAnnualLabel === '2.899,00' ||
+        currentAnnualLabel === '2899,00' ||
+        currentAnnualLabel === '2899')
+    ) {
       console.log(
-        '[Stripe Bootstrap] Links oficiais já persistidos:',
+        '[Stripe Bootstrap] Links oficiais já persistidos e atualizados para R$ 2.899:',
         currentMonthly,
         currentAnnual,
       )
       return
     }
 
-    console.log('[Stripe Bootstrap] Verificando e criando produtos/preços/links na conta Stripe...')
+    console.log(
+      '[Stripe Bootstrap] Verificando e criando produtos/preços/links na conta Stripe (alvo anual: R$ 2.899)...',
+    )
     let productId = null
     try {
       const prodList = $connectors.executeAsOwner('STRIPE_LIST_PRODUCTS', {
@@ -96,7 +106,7 @@ onBootstrap((e) => {
         if (pr.unit_amount === 29700 && pr.recurring.interval === 'month') {
           monthlyPriceId = pr.id
         }
-        if (pr.unit_amount === 297000 && pr.recurring.interval === 'year') {
+        if (pr.unit_amount === 289900 && pr.recurring.interval === 'year') {
           annualPriceId = pr.id
         }
       }
@@ -122,13 +132,13 @@ onBootstrap((e) => {
       const cYear = $connectors.executeAsOwner('STRIPE_CREATE_PRICE', {
         product: productId,
         currency: 'brl',
-        unit_amount: 297000,
+        unit_amount: 289900,
         recurring: { interval: 'year' },
         active: true,
       })
       if (cYear && cYear.successful && cYear.data) {
         annualPriceId = cYear.data.id
-        console.log('[Stripe Bootstrap] Preço anual criado:', annualPriceId)
+        console.log('[Stripe Bootstrap] Preço anual criado (289900):', annualPriceId)
       }
     }
 
@@ -200,6 +210,49 @@ onBootstrap((e) => {
       return null
     }
 
+    // Se criarmos um novo link anual para o novo preço de R$ 2.899, desativar payment links antigos de R$ 2.970
+    try {
+      const oldAnnualPriceId = checkSetting('stripe_annual_price_id')
+      if (oldAnnualPriceId && oldAnnualPriceId !== annualPriceId) {
+        for (const l of existingLinks) {
+          if (!l || !l.id || l.active === false) continue
+          let items = l.line_items && Array.isArray(l.line_items.data) ? l.line_items.data : []
+          if (items.length === 0) {
+            try {
+              const liRes = $connectors.executeAsOwner(
+                'STRIPE_GET_PAYMENT_LINKS_PAYMENT_LINK_LINE_ITEMS',
+                {
+                  payment_link: l.id,
+                  limit: 10,
+                },
+              )
+              if (liRes && liRes.successful && liRes.data) {
+                items = Array.isArray(liRes.data.data)
+                  ? liRes.data.data
+                  : Array.isArray(liRes.data)
+                    ? liRes.data
+                    : []
+              }
+            } catch (_) {}
+          }
+          const hasOldPrice = items.some(
+            (it) =>
+              it &&
+              (it.price === oldAnnualPriceId || (it.price && it.price.id === oldAnnualPriceId)),
+          )
+          if (hasOldPrice) {
+            console.log('[Stripe Bootstrap] Desativando payment link antigo de R$ 2.970:', l.id)
+            $connectors.executeAsOwner('STRIPE_UPDATE_PAYMENT_LINK', {
+              payment_link: l.id,
+              active: false,
+            })
+          }
+        }
+      }
+    } catch (deactErr) {
+      console.warn('[Stripe Bootstrap] Aviso ao desativar link antigo de R$ 2.970:', deactErr)
+    }
+
     const mLink = getOrMakeLink(monthlyPriceId)
     const aLink = getOrMakeLink(annualPriceId)
 
@@ -224,6 +277,7 @@ onBootstrap((e) => {
     }
     if (aLink) {
       saveVal('stripe_annual_payment_link', aLink)
+      saveVal('stripe_annual_price_label', '2.899,00')
     }
     if (monthlyPriceId) {
       saveVal('stripe_monthly_price_id', monthlyPriceId)
@@ -249,11 +303,11 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
 
   // 1. Obter valores salvos em settings
   let monthlyPriceLabel = '297,00'
-  let annualPriceLabel = '2.970,00'
+  let annualPriceLabel = '2.899,00'
   let monthlyPaymentLink = 'https://buy.stripe.com/test_avaliacao_experiencia_297'
-  let annualPaymentLink = 'https://buy.stripe.com/test_avaliacao_experiencia_2970_anual'
+  let annualPaymentLink = 'https://buy.stripe.com/test_avaliacao_experiencia_2899_anual'
   let monthlyPriceId = 'price_avaliacao_experiencia_297'
-  let annualPriceId = 'price_avaliacao_experiencia_2970_anual'
+  let annualPriceId = 'price_avaliacao_experiencia_2899_anual'
   let monthlyActive = true
   let annualActive = true
 
@@ -269,7 +323,14 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
     'stripe_monthly_price_label',
     getSetting('stripe_plan_price_label', '297,00'),
   )
-  annualPriceLabel = getSetting('stripe_annual_price_label', '2.970,00')
+  annualPriceLabel = getSetting('stripe_annual_price_label', '2.899,00')
+  if (
+    annualPriceLabel === '2.970,00' ||
+    annualPriceLabel === '2970,00' ||
+    annualPriceLabel === '2970'
+  ) {
+    annualPriceLabel = '2.899,00'
+  }
   monthlyPaymentLink = getSetting(
     'stripe_monthly_payment_link',
     getSetting('stripe_payment_link', monthlyPaymentLink),
@@ -297,7 +358,7 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
   }
 
   const monthlyAmountCents = parseAmountToCents(monthlyPriceLabel, 29700)
-  const annualAmountCents = parseAmountToCents(annualPriceLabel, 297000)
+  const annualAmountCents = parseAmountToCents(annualPriceLabel, 289900)
 
   // 2. Se o Stripe estiver conectado no Conectores, criar ou obter os dois preços e payment links
   let stripeConnected = false
@@ -520,6 +581,42 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
         return null
       }
 
+      // Se tiver mudado o preço anual (ex: de 2970 para 2899), desativar links antigos com o preço de 2970
+      try {
+        const oldAnnualPriceId = getSetting('stripe_annual_price_id', '')
+        if (oldAnnualPriceId && oldAnnualPriceId !== annualPriceId) {
+          for (const l of existingLinks) {
+            if (!l || !l.id || l.active === false) continue
+            let items = l.line_items && Array.isArray(l.line_items.data) ? l.line_items.data : []
+            if (items.length === 0) {
+              try {
+                const liRes = $connectors.executeAsOwner(
+                  'STRIPE_GET_PAYMENT_LINKS_PAYMENT_LINK_LINE_ITEMS',
+                  { payment_link: l.id, limit: 10 },
+                )
+                if (liRes && liRes.successful && liRes.data) {
+                  items = Array.isArray(liRes.data.data) ? liRes.data.data : []
+                }
+              } catch (_) {}
+            }
+            const hasOldPrice = items.some(
+              (it) =>
+                it &&
+                (it.price === oldAnnualPriceId || (it.price && it.price.id === oldAnnualPriceId)),
+            )
+            if (hasOldPrice) {
+              console.log('[Stripe Connect] Desativando payment link antigo de R$ 2.970:', l.id)
+              $connectors.executeAsOwner('STRIPE_UPDATE_PAYMENT_LINK', {
+                payment_link: l.id,
+                active: false,
+              })
+            }
+          }
+        }
+      } catch (deactErr) {
+        console.warn('[Stripe Connect] Aviso ao desativar links antigos:', deactErr)
+      }
+
       const generatedMonthlyLink = findOrCreatePaymentLink(monthlyPriceId)
       const generatedAnnualLink = findOrCreatePaymentLink(annualPriceId)
 
@@ -548,6 +645,7 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
       }
       if (generatedAnnualLink) {
         saveSetting('stripe_annual_payment_link', generatedAnnualLink)
+        saveSetting('stripe_annual_price_label', '2.899,00')
       }
       if (generatedMonthlyPriceId) {
         saveSetting('stripe_monthly_price_id', generatedMonthlyPriceId)
@@ -728,7 +826,7 @@ routerAdd(
           const amountFormatted = unitAmount
             ? 'R$ ' + (unitAmount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
             : isAnnual
-              ? 'R$ 2.970,00'
+              ? 'R$ 2.899,00'
               : 'R$ 297,00'
 
           const createdIso = sub.created
@@ -739,7 +837,7 @@ routerAdd(
             id: sub.id,
             source: 'stripe',
             plan: planName,
-            amount: unitAmount ? unitAmount / 100 : isAnnual ? 2970 : 297,
+            amount: unitAmount ? unitAmount / 100 : isAnnual ? 2899 : 297,
             amount_label: amountFormatted,
             status: sub.status || 'active',
             customer_name:

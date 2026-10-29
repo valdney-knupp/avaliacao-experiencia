@@ -15,7 +15,7 @@ describe('Stripe Checkout Configuration', () => {
     expect(FALLBACK_CHECKOUT_CONFIG.monthly.name).toBe('Plano Mensal')
     expect(FALLBACK_CHECKOUT_CONFIG.monthly.price_label).toBe('297,00')
     expect(FALLBACK_CHECKOUT_CONFIG.annual.name).toBe('Plano Anual')
-    expect(FALLBACK_CHECKOUT_CONFIG.annual.price_label).toBe('2.970,00')
+    expect(FALLBACK_CHECKOUT_CONFIG.annual.price_label).toBe('2.899,00')
     expect(FALLBACK_CHECKOUT_CONFIG.annual.badge).toContain('2 meses grátis')
   })
 

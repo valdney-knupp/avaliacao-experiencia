@@ -49,7 +49,7 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
   )
   const [monthlyActive, setMonthlyActive] = useState(settings.stripe_monthly_active !== 'false')
 
-  const [annualPrice, setAnnualPrice] = useState(settings.stripe_annual_price_label || '2.970,00')
+  const [annualPrice, setAnnualPrice] = useState(settings.stripe_annual_price_label || '2.899,00')
   const [annualLink, setAnnualLink] = useState(settings.stripe_annual_payment_link || '')
   const [annualActive, setAnnualActive] = useState(settings.stripe_annual_active !== 'false')
 
@@ -383,11 +383,11 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
                   <div className="flex items-center gap-1.5">
                     <h3 className="text-sm font-bold text-gray-900">Plano Anual</h3>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
-                      2 meses grátis
+                      Economia de R$ 665
                     </span>
                   </div>
                   <p className="text-[11px] text-gray-500">
-                    Cobrança recorrente anual com desconto
+                    Cobrança recorrente anual com desconto (R$ 2.899/ano)
                   </p>
                 </div>
               </div>
@@ -409,12 +409,12 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
                   <Input
                     value={annualPrice}
                     onChange={(e) => setAnnualPrice(e.target.value)}
-                    placeholder="2.970,00"
+                    placeholder="2.899,00"
                     className="h-10 pl-9 text-xs border-[#E8E8E8]"
                   />
                 </div>
                 <p className="text-[11px] text-gray-400">
-                  Equivalente a 10 meses do plano mensal (R$ 297 × 10 = R$ 2.970).
+                  Economia de R$ 665 vs 12× o plano mensal (12 × R$ 297 = R$ 3.564).
                 </p>
               </div>
 
@@ -437,7 +437,7 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
                 <div className="flex justify-between">
                   <span className="text-gray-500">Price ID no Stripe:</span>
                   <span className="font-mono text-gray-800">
-                    {settings.stripe_annual_price_id || 'price_avaliacao_experiencia_2970_anual'}
+                    {settings.stripe_annual_price_id || 'price_1UW0OhLpoAima4qdRW4Xmqs0'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -559,7 +559,7 @@ export const AdminSalesTracking: React.FC<AdminSalesTrackingProps> = ({ isSuperA
         <div className="rounded-2xl border border-[#E8E8E8] bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span>Plano Anual</span>
-            <span className="text-[11px] font-bold text-emerald-600">2 meses grátis</span>
+            <span className="text-[11px] font-bold text-emerald-600">R$ 2.899/ano</span>
           </div>
           <div className="mt-2 text-2xl font-black text-gray-900">{annualCount}</div>
           <p className="text-[11px] text-gray-400 mt-0.5">Assinaturas anuais</p>

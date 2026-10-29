@@ -49,13 +49,13 @@ export const FALLBACK_CHECKOUT_CONFIG: StripeCheckoutConfig = {
   },
   annual: {
     name: 'Plano Anual',
-    price_id: 'price_1UW08ZLpoAima4qdUvKUlT9X',
-    payment_link: 'https://buy.stripe.com/4gM3cwbfg7xBgP291N3Nm01',
-    price_label: '2.970,00',
-    amount_cents: 297000,
+    price_id: 'price_1UW0OhLpoAima4qdRW4Xmqs0',
+    payment_link: 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02',
+    price_label: '2.899,00',
+    amount_cents: 289900,
     active: true,
     interval: 'year',
-    badge: '2 meses grátis',
+    badge: '2 meses grátis • Economia de R$ 665',
     is_official: true,
   },
 }
@@ -123,11 +123,11 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
             name: data.annual?.name || 'Plano Anual',
             price_id: data.annual?.price_id || FALLBACK_CHECKOUT_CONFIG.annual.price_id,
             payment_link: annualLink || FALLBACK_CHECKOUT_CONFIG.annual.payment_link,
-            price_label: data.annual?.price_label || '2.970,00',
-            amount_cents: data.annual?.amount_cents || 297000,
+            price_label: data.annual?.price_label || '2.899,00',
+            amount_cents: data.annual?.amount_cents || 289900,
             active: data.annual?.active !== false,
             interval: 'year',
-            badge: data.annual?.badge || '2 meses grátis',
+            badge: data.annual?.badge || '2 meses grátis • Economia de R$ 665',
             is_official: annualIsOfficial,
           },
         }
@@ -152,7 +152,7 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
 
     const annualLink = getVal('stripe_annual_payment_link')
     const annualPriceId = getVal('stripe_annual_price_id')
-    const annualLabel = getVal('stripe_annual_price_label') || '2.970,00'
+    const annualLabel = getVal('stripe_annual_price_label') || '2.899,00'
     const annualActive = getVal('stripe_annual_active') !== 'false'
 
     const monthlyIsOfficial = isOfficialStripeLink(monthlyLink || '')
@@ -180,10 +180,10 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
         price_id: annualPriceId || FALLBACK_CHECKOUT_CONFIG.annual.price_id,
         payment_link: annualLink || FALLBACK_CHECKOUT_CONFIG.annual.payment_link,
         price_label: annualLabel,
-        amount_cents: 297000,
+        amount_cents: 289900,
         active: annualActive,
         interval: 'year',
-        badge: '2 meses grátis',
+        badge: '2 meses grátis • Economia de R$ 665',
         is_official: annualIsOfficial,
       },
     }

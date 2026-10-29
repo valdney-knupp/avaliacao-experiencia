@@ -117,8 +117,8 @@ export const Sales: React.FC = () => {
           <strong>Lançamento Especial:</strong> Escolha entre os planos{' '}
           <strong className="text-emerald-950 font-bold">Mensal</strong> (R${' '}
           {config.monthly?.price_label || '297,00'}) e{' '}
-          <strong className="text-emerald-950 font-bold">Anual com 2 meses grátis</strong> (R${' '}
-          {config.annual?.price_label || '2.970,00'}).
+          <strong className="text-emerald-950 font-bold">Anual com economia de R$ 665</strong> (R${' '}
+          {config.annual?.price_label || '2.899,00'}).
         </span>
       </div>
 
@@ -680,9 +680,9 @@ export const Sales: React.FC = () => {
             {config.annual?.active !== false && (
               <div className="rounded-3xl p-1 bg-gradient-to-b from-emerald-400 via-[#54D769] to-[#2CA840] shadow-xl shadow-emerald-500/20 flex flex-col justify-between relative">
                 {/* Badge Destaque */}
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5 whitespace-nowrap">
                   <Sparkles className="h-3.5 w-3.5 text-[#54D769]" />
-                  {config.annual?.badge || '2 meses grátis • Melhor valor'}
+                  {config.annual?.badge || 'Economia de R$ 665 • Melhor valor'}
                 </div>
 
                 <div className="bg-white rounded-[22px] p-8 sm:p-9 text-left flex-1 flex flex-col justify-between">
@@ -695,19 +695,19 @@ export const Sales: React.FC = () => {
                         <h3 className="text-2xl font-black text-slate-950 mt-1">Plano Anual</h3>
                       </div>
                       <div className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold">
-                        12 meses pelo preço de 10
+                        Economia de R$ 665/ano
                       </div>
                     </div>
 
                     <div className="mt-6 flex items-baseline">
                       <span className="text-xs text-slate-500 mr-1.5 font-semibold">R$</span>
                       <span className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight">
-                        {config.annual?.price_label || '2.970,00'}
+                        {config.annual?.price_label || '2.899,00'}
                       </span>
                       <span className="text-slate-500 ml-2 font-medium">/ano</span>
                     </div>
                     <p className="text-xs text-[#2CA840] mt-1 font-semibold">
-                      Equivalente a apenas R$ 247,50/mês (2 meses 100% grátis).
+                      Equivalente a cerca de R$ 241,58/mês (economia de R$ 665 no ano).
                     </p>
 
                     <div className="my-7 border-t border-slate-200" />
@@ -715,7 +715,7 @@ export const Sales: React.FC = () => {
                     <div className="space-y-3 text-sm">
                       {[
                         'Tudo incluído no Plano Mensal',
-                        '2 meses inteiros gratuitos (economia de R$ 594)',
+                        'Economia garantida de R$ 665 vs 12 mensalidades',
                         'Colaboradores e avaliações ilimitadas',
                         'Atendimento e onboarding prioritário',
                         'Garantia de preço congelado por 12 meses',
@@ -794,9 +794,9 @@ export const Sales: React.FC = () => {
             </AccordionTrigger>
             <AccordionContent className="text-sm text-slate-600 leading-relaxed pb-5">
               Ambos dão acesso irrestrito e idêntico a todas as funcionalidades do sistema,
-              colaboradores e obras ilimitadas. A vantagem do Plano Anual é a economia direta: você
-              paga por 10 meses e ganha 2 meses grátis (R${' '}
-              {config.annual?.price_label || '2.970,00'}/ano em vez de R$ 3.564,00).
+              colaboradores e obras ilimitadas. A vantagem do Plano Anual é a economia direta de R$
+              665: você investe R$ {config.annual?.price_label || '2.899,00'}/ano em vez de R$
+              3.564,00 (12× R$ 297).
             </AccordionContent>
           </AccordionItem>
 
@@ -958,8 +958,8 @@ export const Sales: React.FC = () => {
             Pronto para profissionalizar as avaliações de experiência da sua empresa?
           </h2>
           <p className="mt-4 text-emerald-100 text-base max-w-xl mx-auto">
-            Comece hoje mesmo com o plano Mensal ou garanta 2 meses grátis no plano Anual. Proteja
-            sua empresa contra passivos trabalhistas.
+            Comece hoje mesmo com o plano Mensal ou garanta o plano Anual com R$ 665 de economia.
+            Proteja sua empresa contra passivos trabalhistas.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
