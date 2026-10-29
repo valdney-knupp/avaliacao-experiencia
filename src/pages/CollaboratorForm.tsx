@@ -44,7 +44,7 @@ import {
 export const CollaboratorForm: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const isEditing = Boolean(id)
-  const { user, canCreateCollaborator, isAdminAssistant, scopedCostCenterId } = useAuth()
+  const { user, canCreateCollaborator, isAdminAssistant, scopedCostCenterId, clientId } = useAuth()
   const navigate = useNavigate()
 
   const [costCenters, setCostCenters] = useState<any[]>([])

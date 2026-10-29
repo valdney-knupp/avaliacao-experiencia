@@ -45,7 +45,7 @@ import {
 import { formatDateTimeBR, formatDateBR } from '@/lib/dateAndCpfUtils'
 import { AdminPricesAndSales, AdminSalesTracking } from '@/components/AdminPricesAndSales'
 import { AdminAccessRelease } from '@/components/AdminAccessRelease'
-import { DollarSign, TrendingUp, KeyRound } from 'lucide-react'
+import { DollarSign, TrendingUp } from 'lucide-react'
 
 export const Admin: React.FC = () => {
   const { user, canViewAudit, isMasterUser, clientId } = useAuth()

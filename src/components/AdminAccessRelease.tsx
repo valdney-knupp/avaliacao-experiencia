@@ -104,18 +104,6 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
     title: '',
   })
 
-  if (!isMasterUser) {
-    return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">
-        <Shield className="mx-auto h-8 w-8 text-red-500 mb-2" />
-        <p className="font-bold">Acesso Exclusivo ao Administrador Master</p>
-        <p className="text-xs text-red-600 mt-1">
-          Esta tela de Liberação de Acessos é restrita à conta master de sistema.
-        </p>
-      </div>
-    )
-  }
-
   const loadAllClients = async () => {
     setLoading(true)
     setErrorMsg(null)
@@ -130,8 +118,22 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
   }
 
   useEffect(() => {
-    loadAllClients()
-  }, [])
+    if (isMasterUser) {
+      loadAllClients()
+    }
+  }, [isMasterUser])
+
+  if (!isMasterUser) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">
+        <Shield className="mx-auto h-8 w-8 text-red-500 mb-2" />
+        <p className="font-bold">Acesso Exclusivo ao Administrador Master</p>
+        <p className="text-xs text-red-600 mt-1">
+          Esta tela de Liberação de Acessos é restrita à conta master de sistema.
+        </p>
+      </div>
+    )
+  }
 
   const handleOpenCreateModal = () => {
     setEditingClient(null)
