@@ -21,6 +21,7 @@ routerAdd(
     const body = e.requestInfo().body || {}
     const filenames = String(body.filenames || '').trim()
     const reportData = body.report || {}
+    const userClient = user.getString('client') || (body.client ? String(body.client).trim() : null)
     const collaborators = Array.isArray(body.collaborators) ? body.collaborators : []
     const evaluations = Array.isArray(body.evaluations) ? body.evaluations : []
     const adminAuthorized = body.adminAuthorized === true
@@ -74,10 +75,12 @@ routerAdd(
         importRec.set('status', 'executed')
         importRec.set('report', JSON.stringify(reportData))
         importRec.set('executed_at', nowIso())
+        if (userClient) importRec.set('client', userClient)
         $app.save(importRec)
       } else {
         importRec.set('status', 'executed')
         importRec.set('report', JSON.stringify(reportData))
+        if (userClient) importRec.set('client', userClient)
         $app.save(importRec)
       }
 
@@ -154,6 +157,7 @@ routerAdd(
         rec.set('situation', 'Em experiência')
         rec.set('created_by', user.id)
         rec.set('import_reference', importRec.id)
+        if (userClient) rec.set('client', userClient)
         if (c.import_line != null) rec.set('import_line', c.import_line)
 
         $app.save(rec)
@@ -219,6 +223,7 @@ routerAdd(
         evalRec.set('evaluated_at', ev.evaluated_at || nowIso())
         evalRec.set('origin', 'import')
         evalRec.set('import_reference', importRec.id)
+        if (userClient) evalRec.set('client', userClient)
 
         $app.save(evalRec)
         existingEvalMap[dedupeKey] = evalRec.id
@@ -233,6 +238,7 @@ routerAdd(
               ansRec.set('evaluation', evalRec.id)
               ansRec.set('criterion', String(ans.criterion_id))
               ansRec.set('answer', String(ans.answer))
+              if (userClient) ansRec.set('client', userClient)
               $app.save(ansRec)
               insertedAnswersCount++
             } catch (ansErr) {
@@ -250,6 +256,7 @@ routerAdd(
         audit.set('entity_type', 'imports')
         audit.set('entity_id', importRec.id)
         audit.set('action', 'EXECUTE_UNIFIED_IMPORT')
+        if (userClient) audit.set('client', userClient)
         audit.set(
           'summary',
           `Carga definitiva server-side concluída: ${insertedCollabsCount} colaboradores inseridos (${skippedCollabsCount} já existentes), ${insertedEvalsCount} avaliações (${skippedEvalsCount} duplicadas/existentes ignoradas), ${insertedAnswersCount} respostas a partir de: ${filenames}`,

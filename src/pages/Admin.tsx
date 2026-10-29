@@ -44,10 +44,11 @@ import {
 } from '@/components/ui/dialog'
 import { formatDateTimeBR, formatDateBR } from '@/lib/dateAndCpfUtils'
 import { AdminPricesAndSales, AdminSalesTracking } from '@/components/AdminPricesAndSales'
-import { DollarSign, TrendingUp } from 'lucide-react'
+import { AdminAccessRelease } from '@/components/AdminAccessRelease'
+import { DollarSign, TrendingUp, KeyRound } from 'lucide-react'
 
 export const Admin: React.FC = () => {
-  const { user, canViewAudit, isMasterUser } = useAuth()
+  const { user, canViewAudit, isMasterUser, clientId } = useAuth()
   const isSuperAdmin = user?.profile === 'ADMIN'
 
   // Tab active
@@ -193,10 +194,13 @@ export const Admin: React.FC = () => {
     loadAll()
   }, [])
 
-  // Proteção de estado/navegação: se o usuário tentar ativar 'prices' ou 'sales'
+  // Proteção de estado/navegação: se o usuário tentar ativar 'access_release', 'prices' ou 'sales'
   // sem ser o master valdknupp@gmail.com, redireciona para 'users'
   useEffect(() => {
-    if (!isMasterUser && (activeTab === 'prices' || activeTab === 'sales')) {
+    if (
+      !isMasterUser &&
+      (activeTab === 'access_release' || activeTab === 'prices' || activeTab === 'sales')
+    ) {
       setActiveTab('users')
     }
   }, [activeTab, isMasterUser])
@@ -390,6 +394,7 @@ export const Admin: React.FC = () => {
           type: ccForm.type,
           active: ccForm.active,
           email_recipients: ccForm.email_recipients.trim(),
+          client: clientId || null,
         })
         await pb.collection('audit_logs').create({
           user: user?.id,
@@ -432,6 +437,7 @@ export const Admin: React.FC = () => {
         const newSec = await pb.collection('sectors').create({
           name: cleanName,
           active: sectorForm.active,
+          client: clientId || null,
         })
         await pb.collection('audit_logs').create({
           user: user?.id,
@@ -460,6 +466,7 @@ export const Admin: React.FC = () => {
       const newSec = await pb.collection('sectors').create({
         name: cleanName,
         active: true,
+        client: clientId || null,
       })
       await pb.collection('audit_logs').create({
         user: user?.id,
@@ -507,6 +514,7 @@ export const Admin: React.FC = () => {
           category: 'ESCRITORIO',
           sector: sectorId,
           active: true,
+          client: clientId || null,
         })
       }
 
@@ -597,6 +605,7 @@ export const Admin: React.FC = () => {
           sector: targetSector,
           order: nextOrder,
           active: critForm.active,
+          client: clientId || null,
         })
       }
       setCritModalOpen(false)
@@ -714,6 +723,14 @@ export const Admin: React.FC = () => {
           >
             <ListOrdered className="mr-1.5 h-3.5 w-3.5" /> Critérios
           </TabsTrigger>
+          {isMasterUser && (
+            <TabsTrigger
+              value="access_release"
+              className="data-[state=active]:bg-[#54D769] data-[state=active]:text-[#111111] text-xs font-semibold"
+            >
+              <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Liberação de Acessos
+            </TabsTrigger>
+          )}
           {isMasterUser && (
             <TabsTrigger
               value="prices"
@@ -1583,6 +1600,13 @@ export const Admin: React.FC = () => {
             </div>
           )}
         </TabsContent>
+        {/* TAB: ACCESS RELEASE (RESTRITO AO MASTER valdknupp@gmail.com) */}
+        {isMasterUser && (
+          <TabsContent value="access_release" className="space-y-4">
+            <AdminAccessRelease isMasterUser={isMasterUser} />
+          </TabsContent>
+        )}
+
         {/* TAB: PRICES (RESTRITO AO MASTER valdknupp@gmail.com) */}
         {isMasterUser && (
           <TabsContent value="prices" className="space-y-4">

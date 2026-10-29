@@ -34,14 +34,16 @@ routerAdd(
     }
 
     try {
-      // 3. Execução da limpeza em ordem segura de dependência relacional
-      // PocketBase $app.truncateCollection remove todos os registros da coleção de forma rápida e segura.
-      // Ordem:
-      // A. evaluation_answers (respostas de critérios)
-      // B. evaluations (avaliações)
-      // C. collaborators (colaboradores)
-      // D. imports (registros mestre de importação)
-      // E. notifications (notificações operacionais enviadas/pendentes de colaboradores e avaliações)
+      // 3. Execução da limpeza respeitando multi-tenancy:
+      // Se for o master valdknupp@gmail.com sem client especificado, limpa todas as coleções operacionais.
+      // Se for um administrador de cliente, limpa APENAS os dados do cliente dele!
+      const requesterEmail = authRecord.getString('email').trim().toLowerCase()
+      const isMaster = requesterEmail === 'valdknupp@gmail.com'
+      const clientScope = isMaster
+        ? body.client
+          ? String(body.client).trim()
+          : null
+        : authRecord.getString('client') || null
 
       let answersCount = 0
       let evalsCount = 0
@@ -49,44 +51,113 @@ routerAdd(
       let importsCount = 0
       let notifsCount = 0
 
-      try {
-        answersCount = $app.countRecords('evaluation_answers')
-        const answersCol = $app.findCollectionByNameOrId('evaluation_answers')
-        $app.truncateCollection(answersCol)
-      } catch (err) {
-        console.warn('Aviso ao truncar evaluation_answers: ' + err)
-      }
+      if (!clientScope && isMaster) {
+        // Truncar geral do sistema (apenas quando master solicita globalmente)
+        try {
+          answersCount = $app.countRecords('evaluation_answers')
+          $app.truncateCollection($app.findCollectionByNameOrId('evaluation_answers'))
+        } catch (err) {
+          console.warn('Aviso ao truncar evaluation_answers: ' + err)
+        }
 
-      try {
-        evalsCount = $app.countRecords('evaluations')
-        const evalsCol = $app.findCollectionByNameOrId('evaluations')
-        $app.truncateCollection(evalsCol)
-      } catch (err) {
-        console.warn('Aviso ao truncar evaluations: ' + err)
-      }
+        try {
+          evalsCount = $app.countRecords('evaluations')
+          $app.truncateCollection($app.findCollectionByNameOrId('evaluations'))
+        } catch (err) {
+          console.warn('Aviso ao truncar evaluations: ' + err)
+        }
 
-      try {
-        collabsCount = $app.countRecords('collaborators')
-        const collabsCol = $app.findCollectionByNameOrId('collaborators')
-        $app.truncateCollection(collabsCol)
-      } catch (err) {
-        console.warn('Aviso ao truncar collaborators: ' + err)
-      }
+        try {
+          collabsCount = $app.countRecords('collaborators')
+          $app.truncateCollection($app.findCollectionByNameOrId('collaborators'))
+        } catch (err) {
+          console.warn('Aviso ao truncar collaborators: ' + err)
+        }
 
-      try {
-        importsCount = $app.countRecords('imports')
-        const importsCol = $app.findCollectionByNameOrId('imports')
-        $app.truncateCollection(importsCol)
-      } catch (err) {
-        console.warn('Aviso ao truncar imports: ' + err)
-      }
+        try {
+          importsCount = $app.countRecords('imports')
+          $app.truncateCollection($app.findCollectionByNameOrId('imports'))
+        } catch (err) {
+          console.warn('Aviso ao truncar imports: ' + err)
+        }
 
-      try {
-        notifsCount = $app.countRecords('notifications')
-        const notifsCol = $app.findCollectionByNameOrId('notifications')
-        $app.truncateCollection(notifsCol)
-      } catch (err) {
-        console.warn('Aviso ao truncar notifications: ' + err)
+        try {
+          notifsCount = $app.countRecords('notifications')
+          $app.truncateCollection($app.findCollectionByNameOrId('notifications'))
+        } catch (err) {
+          console.warn('Aviso ao truncar notifications: ' + err)
+        }
+      } else if (clientScope) {
+        // Limpar apenas registros vinculados ao client informado
+        try {
+          const answers = $app.findRecordsByFilter(
+            'evaluation_answers',
+            `client = '${clientScope}'`,
+            '',
+            50000,
+            0,
+          )
+          for (const a of answers) {
+            $app.delete(a)
+            answersCount++
+          }
+        } catch (_) {}
+
+        try {
+          const evals = $app.findRecordsByFilter(
+            'evaluations',
+            `client = '${clientScope}'`,
+            '',
+            50000,
+            0,
+          )
+          for (const ev of evals) {
+            $app.delete(ev)
+            evalsCount++
+          }
+        } catch (_) {}
+
+        try {
+          const collabs = $app.findRecordsByFilter(
+            'collaborators',
+            `client = '${clientScope}'`,
+            '',
+            50000,
+            0,
+          )
+          for (const c of collabs) {
+            $app.delete(c)
+            collabsCount++
+          }
+        } catch (_) {}
+
+        try {
+          const imps = $app.findRecordsByFilter(
+            'imports',
+            `client = '${clientScope}'`,
+            '',
+            10000,
+            0,
+          )
+          for (const im of imps) {
+            $app.delete(im)
+            importsCount++
+          }
+        } catch (_) {}
+
+        try {
+          const notifs = $app.findRecordsByFilter(
+            'notifications',
+            `client = '${clientScope}'`,
+            '',
+            20000,
+            0,
+          )
+          for (const n of notifs) {
+            $app.delete(n)
+            notifsCount++
+          }
+        } catch (_) {}
       }
 
       // 4. Auditoria OBRIGATÓRIA: registra a limpeza no audit_log (o audit_log é preservado)

@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-10-29T20:58:39.965Z",
+  "generatedAt": "2026-10-29T21:43:39.564Z",
   "collections": [
     {
       "name": "users",
       "type": "auth",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)",
-        "view": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)",
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client != '' && client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client != '' && client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)))",
         "create": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
-        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client != '' && client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || id = @request.auth.id)))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client != '' && client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -77,6 +77,13 @@
           "type": "date",
           "required": false,
           "system": false
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
       "indexes": [
@@ -88,11 +95,11 @@
       "name": "cost_centers",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -133,19 +140,26 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_cost_centers_name ON cost_centers (name)"]
+      "indexes": ["CREATE INDEX `idx_cost_centers_client_name` ON `cost_centers` (client,name)"]
     },
     {
       "name": "sectors",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -173,19 +187,26 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_sectors_name ON sectors (name)"]
+      "indexes": ["CREATE INDEX `idx_sectors_client_name` ON `sectors` (client,name)"]
     },
     {
       "name": "evaluation_criteria",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client || client = null)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client || client = null)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -239,9 +260,16 @@
           "required": false,
           "system": false,
           "collectionRef": "sectors"
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
-      "indexes": []
+      "indexes": ["CREATE INDEX `idx_criteria_client` ON `evaluation_criteria` (client)"]
     },
     {
       "name": "settings",
@@ -287,11 +315,11 @@
       "name": "imports",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
-        "view": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
-        "create": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
-        "update": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -346,19 +374,26 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
-      "indexes": []
+      "indexes": ["CREATE INDEX `idx_imports_client` ON `imports` (client)"]
     },
     {
       "name": "collaborators",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'ADMIN_ASSISTANT' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER')",
-        "view": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'ADMIN_ASSISTANT' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER')",
-        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'ADMIN_ASSISTANT' && cost_center = @request.auth.cost_center))",
-        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -457,24 +492,32 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
       "indexes": [
         "CREATE INDEX idx_collab_situation ON collaborators (situation)",
         "CREATE INDEX idx_collab_cost_center ON collaborators (cost_center)",
         "CREATE INDEX idx_collab_admission_date ON collaborators (admission_date)",
-        "CREATE INDEX idx_collab_cpf_hash ON collaborators (cpf_hash)"
+        "CREATE INDEX idx_collab_cpf_hash ON collaborators (cpf_hash)",
+        "CREATE INDEX `idx_collab_client` ON `collaborators` (client)"
       ]
     },
     {
       "name": "evaluations",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')",
-        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -562,23 +605,31 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
       "indexes": [
         "CREATE INDEX idx_eval_collaborator ON evaluations (collaborator)",
         "CREATE INDEX idx_eval_stage ON evaluations (stage)",
-        "CREATE INDEX idx_eval_evaluated_at ON evaluations (evaluated_at)"
+        "CREATE INDEX idx_eval_evaluated_at ON evaluations (evaluated_at)",
+        "CREATE INDEX `idx_eval_client` ON `evaluations` (client)"
       ]
     },
     {
       "name": "evaluation_answers",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')",
-        "update": "@request.auth.id != '' && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -615,16 +666,26 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
-      "indexes": ["CREATE INDEX idx_answers_evaluation ON evaluation_answers (evaluation)"]
+      "indexes": [
+        "CREATE INDEX idx_answers_evaluation ON evaluation_answers (evaluation)",
+        "CREATE INDEX `idx_answers_client` ON `evaluation_answers` (client)"
+      ]
     },
     {
       "name": "audit_logs",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
-        "view": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
         "create": "@request.auth.id != ''",
         "update": null,
         "delete": null
@@ -674,19 +735,29 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
-      "indexes": ["CREATE INDEX idx_audit_created ON audit_logs (created DESC)"]
+      "indexes": [
+        "CREATE INDEX idx_audit_created ON audit_logs (created DESC)",
+        "CREATE INDEX `idx_audit_client` ON `audit_logs` (client)"
+      ]
     },
     {
       "name": "notifications",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
         {
@@ -767,11 +838,19 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
         }
       ],
       "indexes": [
         "CREATE INDEX idx_notif_status ON notifications (status)",
-        "CREATE INDEX idx_notif_dedupe ON notifications (dedupe_key)"
+        "CREATE INDEX idx_notif_dedupe ON notifications (dedupe_key)",
+        "CREATE INDEX `idx_notifs_client` ON `notifications` (client)"
       ]
     },
     {
@@ -873,6 +952,65 @@
         "CREATE INDEX idx_sales_status ON sales (status)",
         "CREATE INDEX idx_sales_plan ON sales (plan)"
       ]
+    },
+    {
+      "name": "clients",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || id = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || id = @request.auth.client)",
+        "create": "@request.auth.id != '' && @request.auth.email = 'valdknupp@gmail.com'",
+        "update": "@request.auth.id != '' && @request.auth.email = 'valdknupp@gmail.com'",
+        "delete": "@request.auth.id != '' && @request.auth.email = 'valdknupp@gmail.com'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "plan",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["MENSAL", "ANUAL", "OUTRO"]
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_clients_email ON clients (email)"]
     }
   ]
 }

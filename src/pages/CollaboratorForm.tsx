@@ -253,6 +253,7 @@ export const CollaboratorForm: React.FC = () => {
           entity_id: id,
           action: 'UPDATE_COLLABORATOR',
           summary: `Cadastro atualizado do colaborador ${cleanName} (${cleanRole})`,
+          client: clientId || null,
         })
 
         setShowReviewModal(false)
@@ -275,6 +276,7 @@ export const CollaboratorForm: React.FC = () => {
           deadline_90: deadline90,
           situation: 'Em experiência',
           created_by: user?.id,
+          client: clientId || null,
         })
 
         // Audit log
@@ -284,6 +286,7 @@ export const CollaboratorForm: React.FC = () => {
           entity_id: newRecord.id,
           action: 'CREATE_COLLABORATOR',
           summary: `Novo colaborador incluído: ${cleanName} no centro ${selectedCostCenter?.name}`,
+          client: clientId || null,
         })
 
         // Create initial notification event for new collaborator
@@ -301,6 +304,7 @@ export const CollaboratorForm: React.FC = () => {
                   status: 'Pendente',
                   attempts: 0,
                   dedupe_key: `new_${newRecord.id}_${cleanEm}`,
+                  client: clientId || null,
                 })
               }
             }

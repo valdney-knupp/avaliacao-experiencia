@@ -63,14 +63,16 @@ onRecordAfterCreateSuccess((e) => {
   try {
     const notifsCol = $app.findCollectionByNameOrId('notifications')
 
-    // Determine recipients as requested:
-    // "Ao final das avaliações de 45 e 90 dias enviar e-mail para os usuários: gestão de pessoas; administrador; usuários que realizem avaliações como os já descritos nesse prompt."
-    // Ou seja: todos os usuários ativos ADMIN + todos ativos HR + todos ativos que realizam avaliações (ADMIN, HR, MANAGER_WORKSITE, MANAGER_DEPARTMENT)
-    // Mais os destinatários específicos do centro de custo e configurações gerais (se configurados), deduplicados.
+    // Determine recipients isolados por client:
     const recipientsSet = new Set()
+    const collabClientId = collaborator.getString('client') || evalRecord.getString('client') || ''
 
     try {
-      const activeUsers = $app.findRecordsByFilter('_pb_users_auth_', 'active = true', '', 1000, 0)
+      // Filtrar apenas usuários ativos do MESMO cliente
+      const filterExpr = collabClientId
+        ? `active = true && client = '${collabClientId}'`
+        : 'active = true'
+      const activeUsers = $app.findRecordsByFilter('_pb_users_auth_', filterExpr, '', 1000, 0)
       const allowedProfiles = ['ADMIN', 'HR', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
       for (const u of activeUsers) {
         const p = u.getString('profile')
@@ -175,6 +177,9 @@ onRecordAfterCreateSuccess((e) => {
         notif.set('status', 'Pendente')
         notif.set('attempts', 0)
         notif.set('dedupe_key', dedupeKey)
+        if (collabClientId) {
+          notif.set('client', collabClientId)
+        }
         $app.save(notif)
       } catch (notifErr) {
         console.warn('Falha ou deduplicação ao criar notificação: ' + notifErr)

@@ -32,6 +32,15 @@ routerAdd(
     const sectorId = body.sector ? String(body.sector).trim() : null
     const active = body.active !== false
 
+    // Se a requisição veio do master, ele pode informar explicitamente o clientId alvo.
+    // Se veio de um admin de cliente, o clientId DEVE ser o clientId do usuário logado.
+    const isMaster = authRecord.getString('email').trim().toLowerCase() === 'valdknupp@gmail.com'
+    const targetClientId = isMaster
+      ? body.client
+        ? String(body.client).trim()
+        : null
+      : authRecord.getString('client') || null
+
     // 2. Validações básicas
     if (!cleanEmail || !name) {
       return e.json(400, { error: 'Nome e e-mail são obrigatórios.' })
@@ -136,6 +145,7 @@ routerAdd(
       newRecord.set('cost_center', resolvedCostCenter)
       newRecord.set('sector', resolvedSector)
       newRecord.set('active', active)
+      newRecord.set('client', targetClientId)
 
       $app.save(newRecord)
 
@@ -164,6 +174,7 @@ routerAdd(
         cost_center: newRecord.getString('cost_center'),
         sector: newRecord.getString('sector'),
         active: newRecord.getBool('active'),
+        client: newRecord.getString('client'),
       })
     } catch (createErr) {
       console.error('Erro ao salvar novo usuário: ' + createErr)

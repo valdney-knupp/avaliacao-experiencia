@@ -6,15 +6,24 @@ routerAdd(
     const reqData = e.requestInfo().body || {}
     const cpfHash = reqData.cpf_hash
     const costCenterId = reqData.cost_center
+    const authUser = e.auth
+    const userClient = authUser ? authUser.getString('client') : ''
+    const isMaster =
+      authUser && authUser.getString('email').trim().toLowerCase() === 'valdknupp@gmail.com'
 
     if (!cpfHash) {
       return e.json(400, { error: 'cpf_hash é obrigatório' })
     }
 
     try {
+      let filterExpr = `cpf_hash = '${cpfHash.replace(/'/g, '')}'`
+      if (!isMaster && userClient) {
+        filterExpr += ` && client = '${userClient}'`
+      }
+
       const records = $app.findRecordsByFilter(
         'collaborators',
-        `cpf_hash = '${cpfHash.replace(/'/g, '')}'`,
+        filterExpr,
         '-admission_date',
         10,
         0,

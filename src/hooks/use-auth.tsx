@@ -20,6 +20,7 @@ export interface AppUser {
   active: boolean
   avatar?: string
   last_accessed?: string
+  client?: string
 }
 
 export interface AuthContextType {
@@ -45,6 +46,7 @@ export interface AuthContextType {
   scopedCostCenterId: string | undefined
   scopedSectorId: string | undefined
   isMasterUser: boolean
+  clientId: string | undefined
   refreshUser: () => Promise<void>
 }
 
@@ -65,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       active: rec.active !== false,
       avatar: rec.avatar || undefined,
       last_accessed: rec.last_accessed || undefined,
+      client: rec.client || undefined,
     }
   }
 
@@ -268,6 +271,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isMasterUser =
     user?.profile === 'ADMIN' && (user?.email || '').trim().toLowerCase() === 'valdknupp@gmail.com'
 
+  const clientId = user?.client || undefined
+
   const value = useMemo(
     () => ({
       user,
@@ -292,9 +297,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       scopedCostCenterId,
       scopedSectorId,
       isMasterUser,
+      clientId,
       refreshUser,
     }),
-    [user, loading, isMasterUser],
+    [user, loading, isMasterUser, clientId],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

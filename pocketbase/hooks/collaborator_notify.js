@@ -55,12 +55,15 @@ onRecordAfterCreateSuccess((e) => {
     } catch (_) {}
   }
 
-  // Determine recipients:
-  // "Enviar e-mail de novo cadastro para: usuários adm; usuários de gestão de pessoas; usuários que realizam avaliações, a saber: adm, gestor de obra, gestor de setor, e gestão de pessoas."
+  // Determine recipients isolados por client:
   const recipientsSet = new Set()
+  const collabClientId = collab.getString('client') || ''
 
   try {
-    const activeUsers = $app.findRecordsByFilter('_pb_users_auth_', 'active = true', '', 1000, 0)
+    const filterExpr = collabClientId
+      ? `active = true && client = '${collabClientId}'`
+      : 'active = true'
+    const activeUsers = $app.findRecordsByFilter('_pb_users_auth_', filterExpr, '', 1000, 0)
     const allowedProfiles = ['ADMIN', 'HR', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
     for (const u of activeUsers) {
       const p = u.getString('profile')
@@ -114,6 +117,9 @@ onRecordAfterCreateSuccess((e) => {
         notif.set('status', 'Pendente')
         notif.set('attempts', 0)
         notif.set('dedupe_key', dedupeKey)
+        if (collabClientId) {
+          notif.set('client', collabClientId)
+        }
         $app.save(notif)
       } catch (notifErr) {
         console.warn('Falha ou deduplicação ao criar notificação de colaborador: ' + notifErr)
