@@ -17,6 +17,7 @@ export interface StripeCheckoutConfig {
   price_id: string
   price_label: string
   stripe_connected?: boolean
+  connectors_configured?: boolean
   sync_error?: string | null
   is_official_link?: boolean
   monthly: PlanConfig
@@ -104,6 +105,7 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
             ? `R$ ${data.monthly.price_label}`
             : FALLBACK_CHECKOUT_CONFIG.price_label,
           stripe_connected: Boolean(data.stripe_connected),
+          connectors_configured: Boolean(data.connectors_configured),
           sync_error: data.sync_error || null,
           is_official_link:
             Boolean(data.stripe_connected) || (monthlyIsOfficial && annualIsOfficial),

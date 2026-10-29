@@ -248,7 +248,7 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
               <p className="text-xs text-gray-500 mt-1 max-w-xl">
                 {stripeConnected
                   ? 'A conta Stripe está conectada via Conectores do Skip Cloud. Os preços e payment links são criados e consultados automaticamente em tempo real.'
-                  : 'A conta Stripe ainda não foi vinculada na aba Conectores do painel. Enquanto aguarda a conexão, os links e preços abaixo operam com os valores configurados manualmente e links de teste.'}
+                  : 'A conta Stripe aguarda ativação na aba Conectores do painel Skip Cloud (autorização do conector). Enquanto isso, você pode cadastrar e salvar os payment links oficiais da Stripe manualmente nos campos abaixo ou sincronizar via conector.'}
               </p>
             </div>
           </div>

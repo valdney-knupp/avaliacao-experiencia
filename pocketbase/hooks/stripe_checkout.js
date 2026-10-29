@@ -321,6 +321,7 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
   return e.json(200, {
     stripe_connected: stripeConnected,
     sync_error: syncError,
+    connectors_configured: stripeConnected,
     is_official_link: stripeConnected || (monthlyIsOfficial && annualIsOfficial),
     // Compatibilidade com código legado
     payment_link: monthlyPaymentLink,
