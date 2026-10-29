@@ -1,3 +1,243 @@
+// Executa na inicialização do backend para garantir que produto, preços e payment links existam e estejam salvos
+onBootstrap((e) => {
+  e.next()
+  try {
+    const PRODUCT_NAME = 'Avaliação de Experiência'
+    const PRODUCT_DESC = 'Sistema de gestão de avaliações de experiência de 45 e 90 dias'
+    const REDIRECT_URL = 'https://avaliacao-de-experiencia-copy-c732f.goskip.app/obrigado'
+
+    const checkSetting = (k) => {
+      try {
+        const r = $app.findFirstRecordByData('settings', 'key', k)
+        return r && r.getString('value') ? r.getString('value') : ''
+      } catch (_) {
+        return ''
+      }
+    }
+
+    const currentMonthly = checkSetting('stripe_monthly_payment_link')
+    const currentAnnual = checkSetting('stripe_annual_payment_link')
+    const isRealOfficial = (u) =>
+      u &&
+      (u.startsWith('https://buy.stripe.com/') || u.startsWith('https://pay.stripe.com/')) &&
+      !u.includes('test_avaliacao_experiencia')
+
+    if (isRealOfficial(currentMonthly) && isRealOfficial(currentAnnual)) {
+      console.log(
+        '[Stripe Bootstrap] Links oficiais já persistidos:',
+        currentMonthly,
+        currentAnnual,
+      )
+      return
+    }
+
+    console.log('[Stripe Bootstrap] Verificando e criando produtos/preços/links na conta Stripe...')
+    let productId = null
+    try {
+      const prodList = $connectors.executeAsOwner('STRIPE_LIST_PRODUCTS', {
+        limit: 20,
+        active: true,
+      })
+      if (prodList && prodList.successful) {
+        const items = Array.isArray(prodList.data && prodList.data.data)
+          ? prodList.data.data
+          : Array.isArray(prodList.data)
+            ? prodList.data
+            : []
+        const found = items.find(
+          (p) => p && p.name && p.name.trim().toLowerCase() === PRODUCT_NAME.toLowerCase(),
+        )
+        if (found) {
+          productId = found.id
+          console.log('[Stripe Bootstrap] Produto existente encontrado:', productId)
+        }
+      }
+    } catch (err) {
+      console.warn('[Stripe Bootstrap] Erro ao listar produtos:', err)
+    }
+
+    if (!productId) {
+      const prodCreate = $connectors.executeAsOwner('STRIPE_CREATE_PRODUCT', {
+        name: PRODUCT_NAME,
+        description: PRODUCT_DESC,
+        active: true,
+      })
+      if (prodCreate && prodCreate.successful && prodCreate.data) {
+        productId = prodCreate.data.id
+        console.log('[Stripe Bootstrap] Produto criado:', productId)
+      } else {
+        console.warn('[Stripe Bootstrap] Erro ao criar produto:', prodCreate && prodCreate.error)
+        return
+      }
+    }
+
+    // Preços
+    let monthlyPriceId = null
+    let annualPriceId = null
+    try {
+      const priceList = $connectors.executeAsOwner('STRIPE_LIST_PRICES', {
+        product: productId,
+        type: 'recurring',
+        currency: 'brl',
+        active: true,
+      })
+      const prices =
+        (priceList &&
+          priceList.successful &&
+          (Array.isArray(priceList.data && priceList.data.data)
+            ? priceList.data.data
+            : Array.isArray(priceList.data)
+              ? priceList.data
+              : [])) ||
+        []
+
+      for (const pr of prices) {
+        if (!pr || !pr.recurring) continue
+        if (pr.unit_amount === 29700 && pr.recurring.interval === 'month') {
+          monthlyPriceId = pr.id
+        }
+        if (pr.unit_amount === 297000 && pr.recurring.interval === 'year') {
+          annualPriceId = pr.id
+        }
+      }
+    } catch (err) {
+      console.warn('[Stripe Bootstrap] Erro ao listar preços:', err)
+    }
+
+    if (!monthlyPriceId) {
+      const cMonth = $connectors.executeAsOwner('STRIPE_CREATE_PRICE', {
+        product: productId,
+        currency: 'brl',
+        unit_amount: 29700,
+        recurring: { interval: 'month' },
+        active: true,
+      })
+      if (cMonth && cMonth.successful && cMonth.data) {
+        monthlyPriceId = cMonth.data.id
+        console.log('[Stripe Bootstrap] Preço mensal criado:', monthlyPriceId)
+      }
+    }
+
+    if (!annualPriceId) {
+      const cYear = $connectors.executeAsOwner('STRIPE_CREATE_PRICE', {
+        product: productId,
+        currency: 'brl',
+        unit_amount: 297000,
+        recurring: { interval: 'year' },
+        active: true,
+      })
+      if (cYear && cYear.successful && cYear.data) {
+        annualPriceId = cYear.data.id
+        console.log('[Stripe Bootstrap] Preço anual criado:', annualPriceId)
+      }
+    }
+
+    // Payment links
+    let existingLinks = []
+    try {
+      const plList = $connectors.executeAsOwner('STRIPE_LIST_PAYMENT_LINKS', {
+        limit: 50,
+        active: true,
+      })
+      if (plList && plList.successful && plList.data) {
+        existingLinks = Array.isArray(plList.data.data)
+          ? plList.data.data
+          : Array.isArray(plList.data)
+            ? plList.data
+            : []
+      }
+    } catch (err) {}
+
+    const afterCompletion = {
+      type: 'redirect',
+      redirect: { url: REDIRECT_URL },
+    }
+
+    const getOrMakeLink = (priceId) => {
+      if (!priceId) return null
+      for (const l of existingLinks) {
+        if (!l || !l.id) continue
+        let items = l.line_items && Array.isArray(l.line_items.data) ? l.line_items.data : []
+        if (items.length === 0) {
+          try {
+            const liRes = $connectors.executeAsOwner(
+              'STRIPE_GET_PAYMENT_LINKS_PAYMENT_LINK_LINE_ITEMS',
+              {
+                payment_link: l.id,
+                limit: 10,
+              },
+            )
+            if (liRes && liRes.successful && liRes.data) {
+              items = Array.isArray(liRes.data.data)
+                ? liRes.data.data
+                : Array.isArray(liRes.data)
+                  ? liRes.data
+                  : []
+            }
+          } catch (_) {}
+        }
+        if (
+          items.some((it) => it && (it.price === priceId || (it.price && it.price.id === priceId)))
+        ) {
+          try {
+            $connectors.executeAsOwner('STRIPE_UPDATE_PAYMENT_LINK', {
+              payment_link: l.id,
+              active: true,
+              after_completion: afterCompletion,
+            })
+          } catch (_) {}
+          return l.url
+        }
+      }
+
+      const createRes = $connectors.executeAsOwner('STRIPE_CREATE_PAYMENT_LINK', {
+        line_items: [{ price: priceId, quantity: 1 }],
+        after_completion: afterCompletion,
+      })
+      if (createRes && createRes.successful && createRes.data) {
+        return createRes.data.url
+      }
+      return null
+    }
+
+    const mLink = getOrMakeLink(monthlyPriceId)
+    const aLink = getOrMakeLink(annualPriceId)
+
+    const saveVal = (k, v) => {
+      try {
+        const col = $app.findCollectionByNameOrId('settings')
+        let rec
+        try {
+          rec = $app.findFirstRecordByData('settings', 'key', k)
+        } catch (_) {
+          rec = new Record(col)
+          rec.set('key', k)
+        }
+        rec.set('value', v)
+        $app.save(rec)
+      } catch (_) {}
+    }
+
+    if (mLink) {
+      saveVal('stripe_monthly_payment_link', mLink)
+      saveVal('stripe_payment_link', mLink)
+    }
+    if (aLink) {
+      saveVal('stripe_annual_payment_link', aLink)
+    }
+    if (monthlyPriceId) {
+      saveVal('stripe_monthly_price_id', monthlyPriceId)
+      saveVal('stripe_price_id', monthlyPriceId)
+    }
+    if (annualPriceId) {
+      saveVal('stripe_annual_price_id', annualPriceId)
+    }
+    console.log('[Stripe Bootstrap] Links persistidos com sucesso:', mLink, aLink)
+  } catch (bootErr) {
+    console.warn('[Stripe Bootstrap] Erro capturado:', bootErr)
+  }
+})
+
 // Rota pública para obtenção dos links e configurações dos planos (Mensal e Anual)
 // Cria ou reutiliza no Stripe sob demanda via $connectors.executeAsOwner
 // Sempre que o Stripe estiver conectado no painel Conectores, esta rota cria ou obtém
@@ -180,27 +420,13 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
         []
 
       // Redirecionamento após checkout para a página de pós-compra /obrigado
-      let afterCompletion = undefined
-      try {
-        let baseUrl = ''
-        try {
-          const appUrlSetting = $app.findFirstRecordByData('settings', 'key', 'app_url')
-          if (appUrlSetting && appUrlSetting.getString('value')) {
-            baseUrl = appUrlSetting.getString('value').trim().replace(/\/+$/, '')
-          }
-        } catch (_) {}
-
-        if (!baseUrl) {
-          baseUrl = 'https://app.avaliacaodeexperiencia.com.br'
-        }
-
-        if (baseUrl) {
-          afterCompletion = {
-            type: 'redirect',
-            redirect: { url: baseUrl + '/obrigado' },
-          }
-        }
-      } catch (_) {}
+      // Redirecionamento após checkout para a página de pós-compra /obrigado
+      // Conforme requisito do projeto: https://avaliacao-de-experiencia-copy-c732f.goskip.app/obrigado
+      const redirectUrl = 'https://avaliacao-de-experiencia-copy-c732f.goskip.app/obrigado'
+      const afterCompletion = {
+        type: 'redirect',
+        redirect: { url: redirectUrl },
+      }
 
       const findOrCreatePaymentLink = (priceId) => {
         if (!priceId) return null
@@ -210,7 +436,27 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
 
         for (const l of existingLinks) {
           if (!l || !l.id) continue
-          const items = l.line_items && Array.isArray(l.line_items.data) ? l.line_items.data : []
+          // Verificar itens via l.line_items ou via busca detalhada
+          let items = l.line_items && Array.isArray(l.line_items.data) ? l.line_items.data : []
+          if (items.length === 0) {
+            try {
+              const liRes = $connectors.executeAsOwner(
+                'STRIPE_GET_PAYMENT_LINKS_PAYMENT_LINK_LINE_ITEMS',
+                {
+                  payment_link: l.id,
+                  limit: 10,
+                },
+              )
+              if (liRes && liRes.successful && liRes.data) {
+                items = Array.isArray(liRes.data.data)
+                  ? liRes.data.data
+                  : Array.isArray(liRes.data)
+                    ? liRes.data
+                    : []
+              }
+            } catch (_) {}
+          }
+
           const matchesPrice = items.some(
             (it) => it && (it.price === priceId || (it.price && it.price.id === priceId)),
           )
@@ -225,6 +471,14 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
         }
 
         if (matchedActiveLink && matchedActiveLink.url) {
+          // Assegura que after_completion esteja atualizado para a URL oficial /obrigado
+          try {
+            $connectors.executeAsOwner('STRIPE_UPDATE_PAYMENT_LINK', {
+              payment_link: matchedActiveLink.id,
+              active: true,
+              after_completion: afterCompletion,
+            })
+          } catch (_) {}
           return matchedActiveLink.url
         }
 
@@ -249,17 +503,19 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
 
         const createPayload = {
           line_items: [{ price: priceId, quantity: 1 }],
-        }
-        if (afterCompletion && afterCompletion.redirect && afterCompletion.redirect.url) {
-          createPayload.after_completion = {
-            type: 'redirect',
-            redirect: { url: afterCompletion.redirect.url },
-          }
+          after_completion: afterCompletion,
         }
 
+        console.log('[Stripe Connect] Criando payment link para priceId:', priceId)
         const plCreateRes = $connectors.executeAsOwner('STRIPE_CREATE_PAYMENT_LINK', createPayload)
         if (plCreateRes && plCreateRes.successful && plCreateRes.data) {
+          console.log('[Stripe Connect] Payment link criado com sucesso:', plCreateRes.data.url)
           return plCreateRes.data.url
+        } else {
+          console.warn(
+            '[Stripe Connect] Falha ao criar payment link:',
+            plCreateRes && plCreateRes.error,
+          )
         }
         return null
       }
@@ -368,6 +624,20 @@ routerAdd(
           'Acesso negado: apenas o usuário master tem permissão para sincronizar preços com a Stripe.',
       })
     }
+
+    // Limpar links e preços salvos em settings para forçar re-criação/sincronização completa
+    try {
+      const clearSetting = (k) => {
+        try {
+          const r = $app.findFirstRecordByData('settings', 'key', k)
+          r.set('value', '')
+          $app.save(r)
+        } catch (_) {}
+      }
+      clearSetting('stripe_monthly_payment_link')
+      clearSetting('stripe_annual_payment_link')
+      clearSetting('stripe_payment_link')
+    } catch (_) {}
 
     // Tentar listar produtos no Stripe para testar conexão
     try {

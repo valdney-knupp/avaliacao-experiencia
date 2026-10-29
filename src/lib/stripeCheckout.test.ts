@@ -4,11 +4,11 @@ import { FALLBACK_CHECKOUT_CONFIG, isOfficialStripeLink } from './stripeCheckout
 describe('Stripe Checkout Configuration', () => {
   it('has valid fallback payment link and price id', () => {
     expect(FALLBACK_CHECKOUT_CONFIG.payment_link).toBe(
-      'https://buy.stripe.com/test_avaliacao_experiencia_297',
+      'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
     )
-    expect(FALLBACK_CHECKOUT_CONFIG.price_id).toBe('price_avaliacao_experiencia_297')
+    expect(FALLBACK_CHECKOUT_CONFIG.price_id).toBe('price_1UW08YLpoAima4qdNrVsYYC5')
     expect(FALLBACK_CHECKOUT_CONFIG.price_label).toBe('R$ 297,00')
-    expect(FALLBACK_CHECKOUT_CONFIG.is_official_link).toBe(false)
+    expect(FALLBACK_CHECKOUT_CONFIG.is_official_link).toBe(true)
   })
 
   it('has valid monthly and annual fallback configurations', () => {

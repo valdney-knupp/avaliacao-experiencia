@@ -32,31 +32,31 @@ export const isOfficialStripeLink = (url: string): boolean => {
 }
 
 export const FALLBACK_CHECKOUT_CONFIG: StripeCheckoutConfig = {
-  payment_link: 'https://buy.stripe.com/test_avaliacao_experiencia_297',
-  price_id: 'price_avaliacao_experiencia_297',
+  payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
+  price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
   price_label: 'R$ 297,00',
-  stripe_connected: false,
-  is_official_link: false,
+  stripe_connected: true,
+  is_official_link: true,
   monthly: {
     name: 'Plano Mensal',
-    price_id: 'price_avaliacao_experiencia_297',
-    payment_link: 'https://buy.stripe.com/test_avaliacao_experiencia_297',
+    price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
+    payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
     price_label: '297,00',
     amount_cents: 29700,
     active: true,
     interval: 'month',
-    is_official: false,
+    is_official: true,
   },
   annual: {
     name: 'Plano Anual',
-    price_id: 'price_avaliacao_experiencia_2970_anual',
-    payment_link: 'https://buy.stripe.com/test_avaliacao_experiencia_2970_anual',
+    price_id: 'price_1UW08ZLpoAima4qdUvKUlT9X',
+    payment_link: 'https://buy.stripe.com/4gM3cwbfg7xBgP291N3Nm01',
     price_label: '2.970,00',
     amount_cents: 297000,
     active: true,
     interval: 'year',
     badge: '2 meses grátis',
-    is_official: false,
+    is_official: true,
   },
 }
 
@@ -157,12 +157,13 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
 
     const monthlyIsOfficial = isOfficialStripeLink(monthlyLink || '')
     const annualIsOfficial = isOfficialStripeLink(annualLink || '')
+    const isStripeConnected = monthlyIsOfficial || annualIsOfficial
 
     return {
       payment_link: monthlyLink || FALLBACK_CHECKOUT_CONFIG.payment_link,
       price_id: monthlyPriceId || FALLBACK_CHECKOUT_CONFIG.price_id,
       price_label: `R$ ${monthlyLabel}`,
-      stripe_connected: false,
+      stripe_connected: isStripeConnected,
       is_official_link: monthlyIsOfficial && annualIsOfficial,
       monthly: {
         name: 'Plano Mensal',
