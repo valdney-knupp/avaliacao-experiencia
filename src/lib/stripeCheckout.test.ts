@@ -24,6 +24,7 @@ describe('Stripe Checkout Configuration', () => {
       false,
     )
     expect(isOfficialStripeLink('https://buy.stripe.com/abc123realPaymentLink')).toBe(true)
+    expect(isOfficialStripeLink('https://pay.stripe.com/abc123realPaymentLink')).toBe(true)
     expect(isOfficialStripeLink('https://stripe.com')).toBe(false)
     expect(isOfficialStripeLink('')).toBe(false)
   })

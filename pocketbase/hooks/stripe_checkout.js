@@ -309,8 +309,10 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
   // Identificar se os links atuais são oficiais da Stripe gerados na conta (não placeholder de teste)
   const isRealOfficialStripeUrl = (u) => {
     if (!u || typeof u !== 'string') return false
-    // Um link oficial da Stripe ativo possui formato https://buy.stripe.com/... e não contém 'test_avaliacao'
-    return u.startsWith('https://buy.stripe.com/') && !u.includes('test_avaliacao_experiencia')
+    // Um link oficial da Stripe ativo possui formato https://buy.stripe.com/... ou https://pay.stripe.com/... e não contém 'test_avaliacao'
+    const isStripeDomain =
+      u.startsWith('https://buy.stripe.com/') || u.startsWith('https://pay.stripe.com/')
+    return isStripeDomain && !u.includes('test_avaliacao_experiencia')
   }
 
   const monthlyIsOfficial = isRealOfficialStripeUrl(monthlyPaymentLink)

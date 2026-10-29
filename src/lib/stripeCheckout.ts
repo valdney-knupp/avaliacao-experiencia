@@ -25,7 +25,9 @@ export interface StripeCheckoutConfig {
 
 export const isOfficialStripeLink = (url: string): boolean => {
   if (!url || typeof url !== 'string') return false
-  return url.startsWith('https://buy.stripe.com/') && !url.includes('test_avaliacao_experiencia')
+  const isStripeDomain =
+    url.startsWith('https://buy.stripe.com/') || url.startsWith('https://pay.stripe.com/')
+  return isStripeDomain && !url.includes('test_avaliacao_experiencia')
 }
 
 export const FALLBACK_CHECKOUT_CONFIG: StripeCheckoutConfig = {

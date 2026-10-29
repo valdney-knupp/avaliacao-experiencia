@@ -86,12 +86,18 @@ export const Sales: React.FC = () => {
     // uma mensagem amigável convidando para finalizar a assinatura via WhatsApp oficial.
     const isPlaceholder = !url || url.includes('test_avaliacao_experiencia')
 
-    if (config.stripe_connected && url && url.startsWith('http')) {
+    // Aceita URLs oficiais Stripe: buy.stripe.com ou pay.stripe.com
+    const isOfficialStripeUrl =
+      url &&
+      (url.startsWith('https://buy.stripe.com/') || url.startsWith('https://pay.stripe.com/')) &&
+      !isPlaceholder
+
+    if (config.stripe_connected && url && url.startsWith('http') && !isPlaceholder) {
       window.location.href = url
       return
     }
 
-    if (!isPlaceholder && url && url.startsWith('https://buy.stripe.com/')) {
+    if (isOfficialStripeUrl) {
       window.location.href = url
       return
     }
