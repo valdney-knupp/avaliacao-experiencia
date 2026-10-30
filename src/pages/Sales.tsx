@@ -976,7 +976,7 @@ export const Sales: React.FC = () => {
               href="#precos"
               className="w-full sm:w-auto h-14 px-8 inline-flex items-center justify-center text-base font-extrabold bg-white hover:bg-slate-100 text-slate-950 rounded-xl shadow-lg transition-all"
             >
-              Assinar agora via Stripe
+              Assinar agora!
               <ArrowRight className="ml-2 h-5 w-5 text-emerald-700" />
             </a>
             <Link
