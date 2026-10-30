@@ -39,12 +39,14 @@ import { Switch } from '@/components/ui/switch'
 import { formatDateBR } from '@/lib/dateAndCpfUtils'
 import {
   listClients,
+  listClientEmailLogs,
   createClient,
   updateClient,
   deleteClient,
   runSuspensionCheck,
   type ClientRecord,
   type ClientStatus,
+  type ClientEmailLogRecord,
 } from '@/services/clients'
 import pb from '@/lib/pocketbase/client'
 
@@ -54,6 +56,7 @@ interface AdminAccessReleaseProps {
 
 export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMasterUser }) => {
   const [clients, setClients] = useState<ClientRecord[]>([])
+  const [emailLogs, setEmailLogs] = useState<ClientEmailLogRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null)
@@ -112,8 +115,9 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
     setLoading(true)
     setErrorMsg(null)
     try {
-      const data = await listClients()
-      setClients(data)
+      const [clientData, logsData] = await Promise.all([listClients(), listClientEmailLogs()])
+      setClients(clientData)
+      setEmailLogs(logsData)
     } catch (err: any) {
       setErrorMsg('Falha ao carregar lista de clientes: ' + (err?.message || ''))
     } finally {
@@ -227,18 +231,25 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
     setFeedbackMsg(null)
     try {
       const res = await runSuspensionCheck()
-      if (res.totalSuspended > 0) {
-        setFeedbackMsg(
-          `Verificação concluída: ${res.totalSuspended} cliente(s) suspenso(s) automaticamente por vencimento superior a 1 dia.`,
-        )
+      const noticesCount = res.totalNoticesSent || 0
+      const suspendedCount = res.totalSuspended || 0
+
+      let details = `Checados: ${res.totalChecked} cliente(s).`
+      if (suspendedCount > 0) {
+        details += ` Suspenso(s): ${suspendedCount}.`
       } else {
-        setFeedbackMsg(
-          `Verificação concluída: nenhum cliente com plano vencido há mais de 1 dia encontrado (${res.totalChecked} checados).`,
-        )
+        details += ` Nenhuma suspensão pendente.`
       }
+      if (noticesCount > 0) {
+        details += ` Avisos de vencimento disparados por e-mail: ${noticesCount}.`
+      } else {
+        details += ` Nenhum novo aviso de e-mail necessário no momento.`
+      }
+
+      setFeedbackMsg(`Rotina de vencimentos e avisos executada com sucesso! ${details}`)
       loadAllClients()
     } catch (err: any) {
-      setErrorMsg('Falha ao executar rotina de suspensão: ' + (err?.message || ''))
+      setErrorMsg('Falha ao executar rotina de suspensão/avisos: ' + (err?.message || ''))
     } finally {
       setCheckingSuspension(false)
     }
@@ -467,145 +478,216 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
           <table className="w-full text-left text-xs md:text-sm table-fixed">
             <thead className="bg-[#F9FAFB] text-[11px] md:text-xs font-semibold text-gray-600 uppercase border-b border-[#E8E8E8]">
               <tr>
-                <th className="w-[24%] px-3 py-2.5">Cliente / Empresa</th>
-                <th className="w-[20%] px-2 py-2.5">E-mail (Login)</th>
-                <th className="w-[10%] px-2 py-2.5 text-center">Plano</th>
-                <th className="w-[14%] px-2 py-2.5 text-center">Vencimento</th>
-                <th className="w-[18%] px-1.5 py-2.5 text-center">Situação</th>
-                <th className="w-[14%] px-3 py-2.5 text-right">Ações</th>
+                <th className="w-[22%] px-3 py-2.5">Cliente / Empresa</th>
+                <th className="w-[18%] px-2 py-2.5">E-mail (Login)</th>
+                <th className="w-[9%] px-2 py-2.5 text-center">Plano</th>
+                <th className="w-[12%] px-2 py-2.5 text-center">Vencimento</th>
+                <th className="w-[14%] px-1.5 py-2.5 text-center">Situação</th>
+                <th className="w-[13%] px-2 py-2.5 text-center">Avisos E-mail</th>
+                <th className="w-[12%] px-3 py-2.5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E8E8E8]">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-xs text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-xs text-gray-500">
                     Carregando clientes liberados...
                   </td>
                 </tr>
               ) : filteredClients.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-xs text-gray-500">
+                  <td colSpan={7} className="px-4 py-10 text-center text-xs text-gray-500">
                     Nenhum comprador cadastrado no momento. Clique em "Liberar Novo Acesso" para
                     criar o primeiro cliente.
                   </td>
                 </tr>
               ) : (
-                filteredClients.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50/80">
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
-                          {c.name.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="truncate">
-                          <p className="font-bold text-gray-900 truncate" title={c.name}>
-                            {c.name}
-                          </p>
-                          {c.notes && (
-                            <p className="text-[11px] text-gray-400 truncate" title={c.notes}>
-                              {c.notes}
+                filteredClients.map((c) => {
+                  const clientLogs = emailLogs.filter((l) => l.client === c.id)
+                  const has7d = clientLogs.some(
+                    (l) => l.type === 'expiring_7d' && l.status === 'Enviado',
+                  )
+                  const has3d = clientLogs.some(
+                    (l) => l.type === 'expiring_3d' && l.status === 'Enviado',
+                  )
+                  const has1d = clientLogs.some(
+                    (l) => l.type === 'expiring_1d' && l.status === 'Enviado',
+                  )
+                  const hasSuspended = clientLogs.some(
+                    (l) => l.type === 'suspended_overdue' && l.status === 'Enviado',
+                  )
+                  const hasReactivated = clientLogs.some(
+                    (l) => l.type === 'reactivated_payment' && l.status === 'Enviado',
+                  )
+
+                  return (
+                    <tr key={c.id} className="hover:bg-gray-50/80">
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
+                            {c.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="truncate">
+                            <p className="font-bold text-gray-900 truncate" title={c.name}>
+                              {c.name}
                             </p>
-                          )}
+                            {c.notes && (
+                              <p className="text-[11px] text-gray-400 truncate" title={c.notes}>
+                                {c.notes}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-2 py-2.5 text-xs text-gray-700 truncate" title={c.email}>
-                      {c.email}
-                    </td>
-                    <td className="px-2 py-2.5 text-center">
-                      <span
-                        className={`text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold ${
-                          c.plan === 'ANUAL'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {c.plan}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2.5 text-center text-xs whitespace-nowrap">
-                      {c.paid_until ? (
-                        <div className="flex flex-col items-center">
-                          <span className="font-semibold text-gray-800">
-                            {formatDateBR(c.paid_until)}
-                          </span>
-                          {(() => {
-                            const pIso = c.paid_until.split(' ')[0].split('T')[0]
-                            const nowIso = new Date().toISOString().split('T')[0]
-                            const isPast = pIso < nowIso
+                      </td>
+                      <td className="px-2 py-2.5 text-xs text-gray-700 truncate" title={c.email}>
+                        {c.email}
+                      </td>
+                      <td className="px-2 py-2.5 text-center">
+                        <span
+                          className={`text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold ${
+                            c.plan === 'ANUAL'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {c.plan}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2.5 text-center text-xs whitespace-nowrap">
+                        {c.paid_until ? (
+                          <div className="flex flex-col items-center">
+                            <span className="font-semibold text-gray-800">
+                              {formatDateBR(c.paid_until)}
+                            </span>
+                            {(() => {
+                              const pIso = c.paid_until.split(' ')[0].split('T')[0]
+                              const nowIso = new Date().toISOString().split('T')[0]
+                              const isPast = pIso < nowIso
+                              return (
+                                <span
+                                  className={`text-[10px] font-medium ${
+                                    isPast ? 'text-red-600' : 'text-emerald-700'
+                                  }`}
+                                >
+                                  {isPast ? 'Vencido' : 'Em dia'}
+                                </span>
+                              )
+                            })()}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="px-1.5 py-2.5 text-center">
+                        {(() => {
+                          const effectiveStatus =
+                            c.status || (c.active !== false ? 'active' : 'blocked_manually')
+
+                          if (effectiveStatus === 'active') {
                             return (
-                              <span
-                                className={`text-[10px] font-medium ${
-                                  isPast ? 'text-red-600' : 'text-emerald-700'
-                                }`}
-                              >
-                                {isPast ? 'Vencido' : 'Em dia'}
+                              <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-green-100 text-green-800 whitespace-nowrap">
+                                Ativo
                               </span>
                             )
-                          })()}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </td>
-                    <td className="px-1.5 py-2.5 text-center">
-                      {(() => {
-                        const effectiveStatus =
-                          c.status || (c.active !== false ? 'active' : 'blocked_manually')
-
-                        if (effectiveStatus === 'active') {
+                          }
+                          if (effectiveStatus === 'suspended_overdue') {
+                            return (
+                              <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                                Suspenso (Vencido)
+                              </span>
+                            )
+                          }
                           return (
-                            <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-green-100 text-green-800 whitespace-nowrap">
-                              Ativo
+                            <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-red-100 text-red-800 whitespace-nowrap">
+                              Bloqueado (Manual)
                             </span>
                           )
-                        }
-                        if (effectiveStatus === 'suspended_overdue') {
-                          return (
-                            <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
-                              Suspenso (Vencido)
-                            </span>
-                          )
-                        }
-                        return (
-                          <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-red-100 text-red-800 whitespace-nowrap">
-                            Bloqueado (Manual)
-                          </span>
-                        )
-                      })()}
-                    </td>
-                    <td className="px-3 py-2.5 text-right whitespace-nowrap space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenTeamModal(c)}
-                        title="Gerenciar Equipe do Cliente"
-                        className="h-7 px-2 text-xs text-blue-700 hover:text-blue-900 hover:bg-blue-50"
-                      >
-                        <Users className="h-3.5 w-3.5 mr-1" />
-                        <span className="hidden sm:inline">Equipe</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenEditModal(c)}
-                        title="Editar ou Trocar Senha"
-                        className="h-7 px-1.5 text-xs text-gray-600 hover:text-black"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteClient(c)}
-                        title="Excluir Acesso"
-                        className="h-7 px-1.5 text-xs text-red-600 hover:text-red-800 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                        })()}
+                      </td>
+                      <td className="px-2 py-2.5 text-center">
+                        {clientLogs.length === 0 ? (
+                          <span className="text-[11px] text-gray-400">Nenhum</span>
+                        ) : (
+                          <div
+                            className="flex items-center justify-center gap-1 flex-wrap"
+                            title={`Total de envios: ${clientLogs.length}`}
+                          >
+                            {has7d && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-blue-50 text-blue-700 border border-blue-200"
+                                title="Aviso de 7 dias enviado"
+                              >
+                                7d
+                              </span>
+                            )}
+                            {has3d && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-amber-50 text-amber-700 border border-amber-200"
+                                title="Aviso de 3 dias enviado"
+                              >
+                                3d
+                              </span>
+                            )}
+                            {has1d && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-orange-50 text-orange-700 border border-orange-200"
+                                title="Aviso de 1 dia enviado"
+                              >
+                                1d
+                              </span>
+                            )}
+                            {hasSuspended && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-red-50 text-red-700 border border-red-200"
+                                title="E-mail de suspensão enviado"
+                              >
+                                Susp
+                              </span>
+                            )}
+                            {hasReactivated && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                title="E-mail de reativação enviado"
+                              >
+                                Reat
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenTeamModal(c)}
+                          title="Gerenciar Equipe do Cliente"
+                          className="h-7 px-2 text-xs text-blue-700 hover:text-blue-900 hover:bg-blue-50"
+                        >
+                          <Users className="h-3.5 w-3.5 mr-1" />
+                          <span className="hidden sm:inline">Equipe</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenEditModal(c)}
+                          title="Editar ou Trocar Senha"
+                          className="h-7 px-1.5 text-xs text-gray-600 hover:text-black"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClient(c)}
+                          title="Excluir Acesso"
+                          className="h-7 px-1.5 text-xs text-red-600 hover:text-red-800 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

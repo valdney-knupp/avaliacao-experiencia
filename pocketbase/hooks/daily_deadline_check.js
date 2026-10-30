@@ -683,68 +683,280 @@ routerAdd(
 )
 
 // ------------------------------------------------------------------------------------------------
-// ROTINA DIÁRIA AGENDADA: SUSPENSÃO DE CLIENTES COM PLANO VENCIDO HÁ MAIS DE 1 DIA
+// ROTINA DIÁRIA AGENDADA: SUSPENSÃO E NOTIFICAÇÃO DE VENCIMENTO DE CLIENTES
 // Executa diariamente às 05:00 UTC (02:00 horário de Brasília)
-// Regra: se hoje for estritamente maior que paid_until + 1 dia, suspende o cliente e seus usuários,
-// mantendo todos os dados intactos. O usuário master (valdknupp@gmail.com) nunca é suspenso.
 // ------------------------------------------------------------------------------------------------
 cronAdd('daily_client_suspension_check', '0 5 * * *', () => {
   try {
+    const getClientFrontendUrl = () => {
+      let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
+      try {
+        const envUrl = $os.getenv('SITE_URL')
+        if (envUrl && envUrl.trim()) {
+          appUrl = envUrl.trim()
+        } else {
+          const appUrlSetting = $app.findFirstRecordByData('settings', 'key', 'app_url')
+          const val = appUrlSetting.getString('value')
+          if (val && val.trim()) appUrl = val.trim()
+        }
+      } catch (_) {}
+      if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1)
+      return appUrl
+    }
+
+    const getCheckoutUrlForPlan = (plan) => {
+      let fallback = 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00'
+      try {
+        if (String(plan || '').toUpperCase() === 'ANUAL') {
+          const setting = $app.findFirstRecordByData(
+            'settings',
+            'key',
+            'stripe_annual_payment_link',
+          )
+          const val = setting.getString('value')
+          if (val && val.trim()) return val.trim()
+          return 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02'
+        } else {
+          const setting = $app.findFirstRecordByData(
+            'settings',
+            'key',
+            'stripe_monthly_payment_link',
+          )
+          const val = setting.getString('value')
+          if (val && val.trim()) return val.trim()
+        }
+      } catch (_) {}
+      return fallback
+    }
+
+    const formatIsoDateToBR = (isoStr) => {
+      if (!isoStr) return ''
+      const clean = isoStr.split(' ')[0].split('T')[0]
+      const [y, m, d] = clean.split('-')
+      if (!y || !m || !d) return clean
+      return `${d}/${m}/${y}`
+    }
+
+    const sendRawEmail = (to, subject, textBody, htmlBody) => {
+      const message = new MailerMessage({
+        from: {
+          address: 'valdknupp@gmail.com',
+          name: $app.settings().meta.senderName || 'Avaliação de Experiência',
+        },
+        to: [{ address: to }],
+        subject: subject,
+        text: textBody,
+        html: htmlBody,
+      })
+      $app.newMailClient().send(message)
+    }
+
+    const recordClientEmailLogAndAudit = (
+      client,
+      type,
+      recipient,
+      subject,
+      paidUntilIso,
+      plan,
+      dedupeKey,
+      status,
+      errorMsg,
+    ) => {
+      try {
+        const logsCol = $app.findCollectionByNameOrId('client_email_logs')
+        const logRec = new Record(logsCol)
+        logRec.set('client', client.id)
+        logRec.set('recipient', recipient)
+        logRec.set('type', type)
+        logRec.set('subject', subject)
+        logRec.set('paid_until', paidUntilIso)
+        logRec.set('plan', plan)
+        logRec.set('dedupe_key', dedupeKey)
+        logRec.set('status', status)
+        if (errorMsg) logRec.set('error_message', String(errorMsg).slice(0, 500))
+        logRec.set('sent_at', new DateTime())
+        $app.save(logRec)
+      } catch (_) {}
+
+      try {
+        const auditCol = $app.findCollectionByNameOrId('audit_logs')
+        const audit = new Record(auditCol)
+        audit.set('entity_type', 'clients')
+        audit.set('entity_id', client.id)
+        audit.set('action', 'CLIENT_EMAIL_NOTIFICATION')
+        audit.set(
+          'summary',
+          `E-mail de notificação (${type}) enviado para ${recipient}. Assunto: "${subject}". Status: ${status}. Vencimento: ${paidUntilIso}.`,
+        )
+        $app.save(audit)
+      } catch (_) {}
+    }
+
+    const parseNotifiedMilestones = (client) => {
+      try {
+        const raw = client.getString('notified_milestones')
+        if (!raw || raw === 'null' || raw === '""') return {}
+        const parsed = JSON.parse(raw)
+        return typeof parsed === 'object' && parsed !== null ? parsed : {}
+      } catch (_) {
+        return {}
+      }
+    }
+
+    const saveNotifiedMilestones = (client, milestonesObj) => {
+      try {
+        client.set('notified_milestones', JSON.stringify(milestonesObj))
+        $app.save(client)
+      } catch (_) {}
+    }
+
     const now = new Date()
     const nowIso = now.toISOString().split('T')[0]
     const [nY, nM, nD] = nowIso.split('-').map(Number)
     const todayUtc = Date.UTC(nY, nM - 1, nD)
 
-    // Buscar clientes que estejam com status active ou active = true
-    const clients = $app.findRecordsByFilter(
-      'clients',
-      "status = 'active' || (active = true && status != 'blocked_manually')",
-      '',
-      1000,
-      0,
-    )
-
-    let totalChecked = clients.length
+    const clients = $app.findRecordsByFilter('clients', "status != 'blocked_manually'", '', 1000, 0)
+    let totalChecked = 0
     let totalSuspended = 0
+    let totalNoticesSent = 0
 
     for (let i = 0; i < clients.length; i++) {
       const client = clients[i]
       const clientEmail = client.getString('email').trim().toLowerCase()
-
-      // Master nunca é afetado
-      if (clientEmail === 'valdknupp@gmail.com') {
-        continue
-      }
+      if (clientEmail === 'valdknupp@gmail.com') continue
 
       const paidUntilRaw = client.getString('paid_until')
-      if (!paidUntilRaw) {
-        // Se nunca teve paid_until registrado (ex: legado criado sem data), não suspende automaticamente
-        continue
-      }
+      if (!paidUntilRaw) continue
 
       const paidUntilIso = paidUntilRaw.split(' ')[0].split('T')[0]
       const [pY, pM, pD] = paidUntilIso.split('-').map(Number)
-      if (isNaN(pY) || isNaN(pM) || isNaN(pD)) {
-        continue
+      if (isNaN(pY) || isNaN(pM) || isNaN(pD)) continue
+
+      totalChecked++
+      const paidUntilUtc = Date.UTC(pY, pM - 1, pD)
+      const diffDaysFromDue = Math.round((todayUtc - paidUntilUtc) / (1000 * 60 * 60 * 24))
+      const daysUntilDue = Math.round((paidUntilUtc - todayUtc) / (1000 * 60 * 60 * 24))
+
+      const currentStatus =
+        client.getString('status') || (client.getBool('active') ? 'active' : 'suspended_overdue')
+      const milestones = parseNotifiedMilestones(client)
+      let milestonesChanged = false
+
+      // 1. Avisos prévios de vencimento (7, 3 ou 1 dia antes)
+      if (currentStatus === 'active') {
+        const milestoneKey =
+          daysUntilDue === 7
+            ? 'expiring_7d'
+            : daysUntilDue === 3
+              ? 'expiring_3d'
+              : daysUntilDue === 1
+                ? 'expiring_1d'
+                : null
+
+        if (milestoneKey) {
+          const dedupeKey = `${client.id}:${milestoneKey}:${paidUntilIso}`
+          const alreadyNotified = !!milestones[milestoneKey + '_' + paidUntilIso]
+
+          if (!alreadyNotified) {
+            const clientName = client.getString('name') || 'Cliente'
+            const plan = client.getString('plan') || 'MENSAL'
+            const planLabel = plan === 'ANUAL' ? 'Anual' : plan === 'MENSAL' ? 'Mensal' : plan
+            const paidUntilBR = formatIsoDateToBR(paidUntilIso)
+            const checkoutUrl = getCheckoutUrlForPlan(plan)
+            const appUrl = getClientFrontendUrl()
+            const dayWord = daysUntilDue === 1 ? '1 dia' : `${daysUntilDue} dias`
+            const subject = `Aviso de Vencimento: Seu plano ${planLabel} vence em ${dayWord} (${paidUntilBR})`
+
+            const textBody = [
+              `Olá, ${clientName}!`,
+              '',
+              `Este é um lembrete de que o seu plano ${planLabel} do sistema Avaliação de Experiência vencerá em ${dayWord}, na data ${paidUntilBR}.`,
+              '',
+              `Para manter o acesso da sua equipe ativo e sem interrupções, você pode renovar sua assinatura através do link oficial de pagamento:`,
+              checkoutUrl,
+              '',
+              `Caso precise de suporte:`,
+              `WhatsApp: (82) 99106-9350`,
+              `E-mail: valdknupp@gmail.com`,
+              '',
+              `Acesse o sistema: ${appUrl}`,
+            ].join('\n')
+
+            const htmlBody = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E8E8E8; border-radius: 8px; background-color: #FFFFFF;">
+                <div style="background-color: #111111; padding: 18px 20px; border-radius: 6px; text-align: center; margin-bottom: 24px;">
+                  <h2 style="color: #54D769; margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">Avaliação de Experiência</h2>
+                  <p style="color: #FFFFFF; margin: 6px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Aviso de Vencimento do Plano</p>
+                </div>
+                <div style="color: #333333; line-height: 1.6; font-size: 15px; margin-bottom: 24px;">
+                  <p>Olá, <strong>${clientName}</strong>!</p>
+                  <p>Este é um aviso amigável de que a assinatura do seu plano <strong>${planLabel}</strong> no sistema <strong>Avaliação de Experiência</strong> vencerá em <strong>${dayWord}</strong> (em <strong>${paidUntilBR}</strong>).</p>
+                  <div style="background-color: #F8F9FA; border-left: 4px solid #54D769; padding: 14px 16px; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 0; font-size: 14px; color: #111111;">
+                      <strong>Data de Vencimento:</strong> ${paidUntilBR}<br>
+                      <strong>Plano Atual:</strong> ${planLabel}<br>
+                      <strong>E-mail Cadastrado:</strong> ${clientEmail}
+                    </p>
+                  </div>
+                  <p>Para garantir a continuidade das avaliações e o acesso de todos os gestores da sua equipe sem interrupções, clique no botão abaixo para renovar sua assinatura com segurança:</p>
+                </div>
+                <div style="text-align: center; margin: 28px 0;">
+                  <a href="${checkoutUrl}" style="background-color: #54D769; color: #111111; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 200px;">
+                    Renovar Plano Agora
+                  </a>
+                </div>
+                <div style="margin-top: 24px; padding: 16px; background-color: #F9FAFB; border-radius: 6px; font-size: 13px; color: #555555; line-height: 1.5;">
+                  <strong>Dúvidas ou suporte?</strong><br>
+                  WhatsApp: <strong>(82) 99106-9350</strong><br>
+                  E-mail: <a href="mailto:valdknupp@gmail.com" style="color: #111111; text-decoration: underline;">valdknupp@gmail.com</a>
+                </div>
+                <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #E8E8E8; font-size: 12px; color: #777777; text-align: center; line-height: 1.5;">
+                  Este é um e-mail automático gerado pelo sistema Avaliação de Experiência.<br>
+                  Acesso ao sistema: <a href="${appUrl}" style="color: #111111; text-decoration: underline;">${appUrl}</a>
+                </div>
+              </div>
+            `
+
+            try {
+              sendRawEmail(clientEmail, subject, textBody, htmlBody)
+              recordClientEmailLogAndAudit(
+                client,
+                milestoneKey,
+                clientEmail,
+                subject,
+                paidUntilIso,
+                plan,
+                dedupeKey,
+                'Enviado',
+                null,
+              )
+              milestones[milestoneKey + '_' + paidUntilIso] = new Date().toISOString()
+              milestonesChanged = true
+              totalNoticesSent++
+            } catch (err) {
+              recordClientEmailLogAndAudit(
+                client,
+                milestoneKey,
+                clientEmail,
+                subject,
+                paidUntilIso,
+                plan,
+                dedupeKey,
+                'Falha',
+                err,
+              )
+            }
+          }
+        }
       }
 
-      const paidUntilUtc = Date.UTC(pY, pM - 1, pD)
-      // Diferença em dias completos entre hoje e o paid_until:
-      // Se paid_until foi 2026-10-20 e hoje é 2026-10-21 -> diffDays = 1 (1 dia vencido)
-      // A regra pede suspensão 1 dia depois do vencimento (ou seja, quando diffDays > 1)
-      const diffDays = Math.round((todayUtc - paidUntilUtc) / (1000 * 60 * 60 * 24))
-
-      if (diffDays > 1) {
-        console.log(
-          `[daily_client_suspension_check] Suspendendo cliente ${client.getString('name')} (${clientEmail}): vencido há ${diffDays} dias (vencimento: ${paidUntilIso})`,
-        )
-
+      // 2. Suspensão por vencimento (diffDaysFromDue > 1)
+      if (diffDaysFromDue > 1 && currentStatus !== 'suspended_overdue') {
         client.set('active', false)
         client.set('status', 'suspended_overdue')
         $app.save(client)
         totalSuspended++
 
-        // Suspender logins dos usuários vinculados a este cliente (exceto conta master)
         try {
           const clientUsers = $app.findRecordsByFilter(
             '_pb_users_auth_',
@@ -760,14 +972,8 @@ cronAdd('daily_client_suspension_check', '0 5 * * *', () => {
               $app.save(usr)
             }
           }
-        } catch (uErr) {
-          console.warn(
-            '[daily_client_suspension_check] Erro ao inativar usuários do cliente:',
-            uErr,
-          )
-        }
+        } catch (_) {}
 
-        // Auditoria
         try {
           const auditCol = $app.findCollectionByNameOrId('audit_logs')
           const audit = new Record(auditCol)
@@ -776,22 +982,119 @@ cronAdd('daily_client_suspension_check', '0 5 * * *', () => {
           audit.set('action', 'CLIENT_AUTO_SUSPENDED')
           audit.set(
             'summary',
-            `Acesso do cliente ${client.getString('name')} (${clientEmail}) foi SUSPENSO automaticamente por vencimento do plano (vencido há ${diffDays} dias, em ${paidUntilIso}).`,
+            `Acesso do cliente ${client.getString('name')} (${clientEmail}) foi SUSPENSO automaticamente por vencimento do plano (vencido há ${diffDaysFromDue} dias, em ${paidUntilIso}).`,
           )
           $app.save(audit)
         } catch (_) {}
+
+        const suspensionDedupeKey = `${client.id}:suspended_overdue:${paidUntilIso}`
+        const suspensionAlreadySent = !!milestones['suspended_' + paidUntilIso]
+
+        if (!suspensionAlreadySent) {
+          const clientName = client.getString('name') || 'Cliente'
+          const plan = client.getString('plan') || 'MENSAL'
+          const planLabel = plan === 'ANUAL' ? 'Anual' : plan === 'MENSAL' ? 'Mensal' : plan
+          const paidUntilBR = formatIsoDateToBR(paidUntilIso)
+          const checkoutUrl = getCheckoutUrlForPlan(plan)
+          const appUrl = getClientFrontendUrl()
+          const subject = `Acesso Suspenso por Vencimento: Regularize seu plano ${planLabel}`
+
+          const textBody = [
+            `Olá, ${clientName}!`,
+            '',
+            `Informamos que o acesso da sua conta no sistema Avaliação de Experiência foi temporariamente suspenso devido ao vencimento do plano ${planLabel} (vencido em ${paidUntilBR}, há ${diffDaysFromDue} dia(s)).`,
+            '',
+            `Fique tranquilo: TODOS OS SEUS DADOS, colaboradores, avaliações e relatórios ESTÃO PRESERVADOS com total segurança.`,
+            '',
+            `Para reativar o acesso imediatamente, renove sua assinatura pelo link de pagamento:`,
+            checkoutUrl,
+            '',
+            `Ou entre em contato diretamente para regularização:`,
+            `WhatsApp: (82) 99106-9350`,
+            `E-mail: valdknupp@gmail.com`,
+            '',
+            `Acesse o sistema: ${appUrl}`,
+          ].join('\n')
+
+          const htmlBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E8E8E8; border-radius: 8px; background-color: #FFFFFF;">
+              <div style="background-color: #111111; padding: 18px 20px; border-radius: 6px; text-align: center; margin-bottom: 24px;">
+                <h2 style="color: #FFB020; margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">Avaliação de Experiência</h2>
+                <p style="color: #FFFFFF; margin: 6px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Acesso Suspenso por Vencimento</p>
+              </div>
+              <div style="color: #333333; line-height: 1.6; font-size: 15px; margin-bottom: 24px;">
+                <p>Olá, <strong>${clientName}</strong>!</p>
+                <p>Informamos que o acesso da sua conta e da sua equipe ao sistema <strong>Avaliação de Experiência</strong> foi temporariamente suspenso devido ao vencimento do plano <strong>${planLabel}</strong> ocorrido em <strong>${paidUntilBR}</strong>.</p>
+                <div style="background-color: #FFF8E6; border-left: 4px solid #FFB020; padding: 14px 16px; margin: 20px 0; border-radius: 4px;">
+                  <p style="margin: 0; font-size: 14px; color: #8A5B00;">
+                    <strong>Seus dados estão 100% preservados!</strong><br>
+                    Nenhum colaborador, avaliação ou histórico foi excluído. Assim que o pagamento for confirmado, o acesso é reativado na hora.
+                  </p>
+                </div>
+                <p>Você pode regularizar o pagamento agora mesmo pelo link abaixo ou pelos canais de atendimento:</p>
+              </div>
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="${checkoutUrl}" style="background-color: #54D769; color: #111111; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 200px;">
+                  Regularizar / Renovar Acesso
+                </a>
+              </div>
+              <div style="margin-top: 24px; padding: 16px; background-color: #F9FAFB; border-radius: 6px; font-size: 13px; color: #333333; line-height: 1.6;">
+                <strong>Canais de Contato para Regularização:</strong><br>
+                WhatsApp: <strong>(82) 99106-9350</strong><br>
+                E-mail: <a href="mailto:valdknupp@gmail.com" style="color: #111111; text-decoration: underline;">valdknupp@gmail.com</a>
+              </div>
+              <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #E8E8E8; font-size: 12px; color: #777777; text-align: center; line-height: 1.5;">
+                Este é um e-mail automático gerado pelo sistema Avaliação de Experiência.<br>
+                Acesso ao sistema: <a href="${appUrl}" style="color: #111111; text-decoration: underline;">${appUrl}</a>
+              </div>
+            </div>
+          `
+
+          try {
+            sendRawEmail(clientEmail, subject, textBody, htmlBody)
+            recordClientEmailLogAndAudit(
+              client,
+              'suspended_overdue',
+              clientEmail,
+              subject,
+              paidUntilIso,
+              plan,
+              suspensionDedupeKey,
+              'Enviado',
+              null,
+            )
+            milestones['suspended_' + paidUntilIso] = new Date().toISOString()
+            milestonesChanged = true
+          } catch (err) {
+            recordClientEmailLogAndAudit(
+              client,
+              'suspended_overdue',
+              clientEmail,
+              subject,
+              paidUntilIso,
+              plan,
+              suspensionDedupeKey,
+              'Falha',
+              err,
+            )
+          }
+        }
+      }
+
+      if (milestonesChanged) {
+        saveNotifiedMilestones(client, milestones)
       }
     }
 
     console.log(
-      `[daily_client_suspension_check] Concluído em ${nowIso}: ${totalChecked} clientes verificados, ${totalSuspended} suspensos por vencimento.`,
+      `[daily_client_suspension_check] Concluído: ${totalChecked} checados, ${totalSuspended} suspensos, ${totalNoticesSent} avisos de e-mail enviados.`,
     )
   } catch (cronErr) {
     console.error('[daily_client_suspension_check] Erro durante a rotina:', cronErr)
   }
 })
 
-// Rota administrativa para o master testar ou forçar a verificação de suspensão imediata
+// Rota administrativa para o master testar ou forçar a verificação de suspensão e envio de avisos
 // POST /backend/v1/admin/run-suspension-check
 routerAdd(
   'POST',
@@ -808,6 +1111,128 @@ routerAdd(
     }
 
     try {
+      const getClientFrontendUrl = () => {
+        let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
+        try {
+          const envUrl = $os.getenv('SITE_URL')
+          if (envUrl && envUrl.trim()) {
+            appUrl = envUrl.trim()
+          } else {
+            const appUrlSetting = $app.findFirstRecordByData('settings', 'key', 'app_url')
+            const val = appUrlSetting.getString('value')
+            if (val && val.trim()) appUrl = val.trim()
+          }
+        } catch (_) {}
+        if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1)
+        return appUrl
+      }
+
+      const getCheckoutUrlForPlan = (plan) => {
+        let fallback = 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00'
+        try {
+          if (String(plan || '').toUpperCase() === 'ANUAL') {
+            const setting = $app.findFirstRecordByData(
+              'settings',
+              'key',
+              'stripe_annual_payment_link',
+            )
+            const val = setting.getString('value')
+            if (val && val.trim()) return val.trim()
+            return 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02'
+          } else {
+            const setting = $app.findFirstRecordByData(
+              'settings',
+              'key',
+              'stripe_monthly_payment_link',
+            )
+            const val = setting.getString('value')
+            if (val && val.trim()) return val.trim()
+          }
+        } catch (_) {}
+        return fallback
+      }
+
+      const formatIsoDateToBR = (isoStr) => {
+        if (!isoStr) return ''
+        const clean = isoStr.split(' ')[0].split('T')[0]
+        const [y, m, d] = clean.split('-')
+        if (!y || !m || !d) return clean
+        return `${d}/${m}/${y}`
+      }
+
+      const sendRawEmail = (to, subject, textBody, htmlBody) => {
+        const message = new MailerMessage({
+          from: {
+            address: 'valdknupp@gmail.com',
+            name: $app.settings().meta.senderName || 'Avaliação de Experiência',
+          },
+          to: [{ address: to }],
+          subject: subject,
+          text: textBody,
+          html: htmlBody,
+        })
+        $app.newMailClient().send(message)
+      }
+
+      const recordClientEmailLogAndAudit = (
+        client,
+        type,
+        recipient,
+        subject,
+        paidUntilIso,
+        plan,
+        dedupeKey,
+        status,
+        errorMsg,
+      ) => {
+        try {
+          const logsCol = $app.findCollectionByNameOrId('client_email_logs')
+          const logRec = new Record(logsCol)
+          logRec.set('client', client.id)
+          logRec.set('recipient', recipient)
+          logRec.set('type', type)
+          logRec.set('subject', subject)
+          logRec.set('paid_until', paidUntilIso)
+          logRec.set('plan', plan)
+          logRec.set('dedupe_key', dedupeKey)
+          logRec.set('status', status)
+          if (errorMsg) logRec.set('error_message', String(errorMsg).slice(0, 500))
+          logRec.set('sent_at', new DateTime())
+          $app.save(logRec)
+        } catch (_) {}
+
+        try {
+          const auditCol = $app.findCollectionByNameOrId('audit_logs')
+          const audit = new Record(auditCol)
+          audit.set('entity_type', 'clients')
+          audit.set('entity_id', client.id)
+          audit.set('action', 'CLIENT_EMAIL_NOTIFICATION')
+          audit.set(
+            'summary',
+            `E-mail de notificação (${type}) enviado para ${recipient}. Assunto: "${subject}". Status: ${status}. Vencimento: ${paidUntilIso}.`,
+          )
+          $app.save(audit)
+        } catch (_) {}
+      }
+
+      const parseNotifiedMilestones = (client) => {
+        try {
+          const raw = client.getString('notified_milestones')
+          if (!raw || raw === 'null' || raw === '""') return {}
+          const parsed = JSON.parse(raw)
+          return typeof parsed === 'object' && parsed !== null ? parsed : {}
+        } catch (_) {
+          return {}
+        }
+      }
+
+      const saveNotifiedMilestones = (client, milestonesObj) => {
+        try {
+          client.set('notified_milestones', JSON.stringify(milestonesObj))
+          $app.save(client)
+        } catch (_) {}
+      }
+
       const now = new Date()
       const nowIso = now.toISOString().split('T')[0]
       const [nY, nM, nD] = nowIso.split('-').map(Number)
@@ -815,15 +1240,17 @@ routerAdd(
 
       const clients = $app.findRecordsByFilter(
         'clients',
-        "status = 'active' || (active = true && status != 'blocked_manually')",
+        "status != 'blocked_manually'",
         '',
         1000,
         0,
       )
 
-      let totalChecked = clients.length
+      let totalChecked = 0
       let totalSuspended = 0
+      let totalNoticesSent = 0
       const suspendedList = []
+      const noticesList = []
 
       for (let i = 0; i < clients.length; i++) {
         const client = clients[i]
@@ -837,10 +1264,133 @@ routerAdd(
         const [pY, pM, pD] = paidUntilIso.split('-').map(Number)
         if (isNaN(pY) || isNaN(pM) || isNaN(pD)) continue
 
+        totalChecked++
         const paidUntilUtc = Date.UTC(pY, pM - 1, pD)
-        const diffDays = Math.round((todayUtc - paidUntilUtc) / (1000 * 60 * 60 * 24))
+        const diffDaysFromDue = Math.round((todayUtc - paidUntilUtc) / (1000 * 60 * 60 * 24))
+        const daysUntilDue = Math.round((paidUntilUtc - todayUtc) / (1000 * 60 * 60 * 24))
 
-        if (diffDays > 1) {
+        const currentStatus =
+          client.getString('status') || (client.getBool('active') ? 'active' : 'suspended_overdue')
+        const milestones = parseNotifiedMilestones(client)
+        let milestonesChanged = false
+
+        // 1. Avisos prévios de vencimento (7, 3 ou 1 dia antes)
+        if (currentStatus === 'active') {
+          const milestoneKey =
+            daysUntilDue === 7
+              ? 'expiring_7d'
+              : daysUntilDue === 3
+                ? 'expiring_3d'
+                : daysUntilDue === 1
+                  ? 'expiring_1d'
+                  : null
+
+          if (milestoneKey) {
+            const dedupeKey = `${client.id}:${milestoneKey}:${paidUntilIso}`
+            const alreadyNotified = !!milestones[milestoneKey + '_' + paidUntilIso]
+
+            if (!alreadyNotified) {
+              const clientName = client.getString('name') || 'Cliente'
+              const plan = client.getString('plan') || 'MENSAL'
+              const planLabel = plan === 'ANUAL' ? 'Anual' : plan === 'MENSAL' ? 'Mensal' : plan
+              const paidUntilBR = formatIsoDateToBR(paidUntilIso)
+              const checkoutUrl = getCheckoutUrlForPlan(plan)
+              const appUrl = getClientFrontendUrl()
+              const dayWord = daysUntilDue === 1 ? '1 dia' : `${daysUntilDue} dias`
+              const subject = `Aviso de Vencimento: Seu plano ${planLabel} vence em ${dayWord} (${paidUntilBR})`
+
+              const textBody = [
+                `Olá, ${clientName}!`,
+                '',
+                `Este é um lembrete de que o seu plano ${planLabel} do sistema Avaliação de Experiência vencerá em ${dayWord}, na data ${paidUntilBR}.`,
+                '',
+                `Para manter o acesso da sua equipe ativo e sem interrupções, você pode renovar sua assinatura através do link oficial de pagamento:`,
+                checkoutUrl,
+                '',
+                `Caso precise de suporte:`,
+                `WhatsApp: (82) 99106-9350`,
+                `E-mail: valdknupp@gmail.com`,
+                '',
+                `Acesse o sistema: ${appUrl}`,
+              ].join('\n')
+
+              const htmlBody = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E8E8E8; border-radius: 8px; background-color: #FFFFFF;">
+                  <div style="background-color: #111111; padding: 18px 20px; border-radius: 6px; text-align: center; margin-bottom: 24px;">
+                    <h2 style="color: #54D769; margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">Avaliação de Experiência</h2>
+                    <p style="color: #FFFFFF; margin: 6px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Aviso de Vencimento do Plano</p>
+                  </div>
+                  <div style="color: #333333; line-height: 1.6; font-size: 15px; margin-bottom: 24px;">
+                    <p>Olá, <strong>${clientName}</strong>!</p>
+                    <p>Este é um aviso amigável de que a assinatura do seu plano <strong>${planLabel}</strong> no sistema <strong>Avaliação de Experiência</strong> vencerá em <strong>${dayWord}</strong> (em <strong>${paidUntilBR}</strong>).</p>
+                    <div style="background-color: #F8F9FA; border-left: 4px solid #54D769; padding: 14px 16px; margin: 20px 0; border-radius: 4px;">
+                      <p style="margin: 0; font-size: 14px; color: #111111;">
+                        <strong>Data de Vencimento:</strong> ${paidUntilBR}<br>
+                        <strong>Plano Atual:</strong> ${planLabel}<br>
+                        <strong>E-mail Cadastrado:</strong> ${clientEmail}
+                      </p>
+                    </div>
+                    <p>Para garantir a continuidade das avaliações e o acesso de todos os gestores da sua equipe sem interrupções, clique no botão abaixo para renovar sua assinatura com segurança:</p>
+                  </div>
+                  <div style="text-align: center; margin: 28px 0;">
+                    <a href="${checkoutUrl}" style="background-color: #54D769; color: #111111; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 200px;">
+                      Renovar Plano Agora
+                    </a>
+                  </div>
+                  <div style="margin-top: 24px; padding: 16px; background-color: #F9FAFB; border-radius: 6px; font-size: 13px; color: #555555; line-height: 1.5;">
+                    <strong>Dúvidas ou suporte?</strong><br>
+                    WhatsApp: <strong>(82) 99106-9350</strong><br>
+                    E-mail: <a href="mailto:valdknupp@gmail.com" style="color: #111111; text-decoration: underline;">valdknupp@gmail.com</a>
+                  </div>
+                  <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #E8E8E8; font-size: 12px; color: #777777; text-align: center; line-height: 1.5;">
+                    Este é um e-mail automático gerado pelo sistema Avaliação de Experiência.<br>
+                    Acesso ao sistema: <a href="${appUrl}" style="color: #111111; text-decoration: underline;">${appUrl}</a>
+                  </div>
+                </div>
+              `
+
+              try {
+                sendRawEmail(clientEmail, subject, textBody, htmlBody)
+                recordClientEmailLogAndAudit(
+                  client,
+                  milestoneKey,
+                  clientEmail,
+                  subject,
+                  paidUntilIso,
+                  plan,
+                  dedupeKey,
+                  'Enviado',
+                  null,
+                )
+                milestones[milestoneKey + '_' + paidUntilIso] = new Date().toISOString()
+                milestonesChanged = true
+                totalNoticesSent++
+                noticesList.push({
+                  client: client.getString('name'),
+                  email: clientEmail,
+                  type: milestoneKey,
+                  daysRemaining: daysUntilDue,
+                  paid_until: paidUntilIso,
+                })
+              } catch (err) {
+                recordClientEmailLogAndAudit(
+                  client,
+                  milestoneKey,
+                  clientEmail,
+                  subject,
+                  paidUntilIso,
+                  plan,
+                  dedupeKey,
+                  'Falha',
+                  err,
+                )
+              }
+            }
+          }
+        }
+
+        // 2. Suspensão por vencimento (diffDaysFromDue > 1)
+        if (diffDaysFromDue > 1 && currentStatus !== 'suspended_overdue') {
           client.set('active', false)
           client.set('status', 'suspended_overdue')
           $app.save(client)
@@ -863,13 +1413,123 @@ routerAdd(
             }
           } catch (_) {}
 
+          try {
+            const auditCol = $app.findCollectionByNameOrId('audit_logs')
+            const audit = new Record(auditCol)
+            audit.set('entity_type', 'clients')
+            audit.set('entity_id', client.id)
+            audit.set('action', 'CLIENT_AUTO_SUSPENDED')
+            audit.set(
+              'summary',
+              `Acesso do cliente ${client.getString('name')} (${clientEmail}) foi SUSPENSO automaticamente por vencimento do plano (vencido há ${diffDaysFromDue} dias, em ${paidUntilIso}).`,
+            )
+            $app.save(audit)
+          } catch (_) {}
+
           suspendedList.push({
             id: client.id,
             name: client.getString('name'),
             email: clientEmail,
             paid_until: paidUntilIso,
-            days_overdue: diffDays,
+            days_overdue: diffDaysFromDue,
           })
+
+          const suspensionDedupeKey = `${client.id}:suspended_overdue:${paidUntilIso}`
+          const suspensionAlreadySent = !!milestones['suspended_' + paidUntilIso]
+
+          if (!suspensionAlreadySent) {
+            const clientName = client.getString('name') || 'Cliente'
+            const plan = client.getString('plan') || 'MENSAL'
+            const planLabel = plan === 'ANUAL' ? 'Anual' : plan === 'MENSAL' ? 'Mensal' : plan
+            const paidUntilBR = formatIsoDateToBR(paidUntilIso)
+            const checkoutUrl = getCheckoutUrlForPlan(plan)
+            const appUrl = getClientFrontendUrl()
+            const subject = `Acesso Suspenso por Vencimento: Regularize seu plano ${planLabel}`
+
+            const textBody = [
+              `Olá, ${clientName}!`,
+              '',
+              `Informamos que o acesso da sua conta no sistema Avaliação de Experiência foi temporariamente suspenso devido ao vencimento do plano ${planLabel} (vencido em ${paidUntilBR}, há ${diffDaysFromDue} dia(s)).`,
+              '',
+              `Fique tranquilo: TODOS OS SEUS DADOS, colaboradores, avaliações e relatórios ESTÃO PRESERVADOS com total segurança.`,
+              '',
+              `Para reativar o acesso imediatamente, renove sua assinatura pelo link de pagamento:`,
+              checkoutUrl,
+              '',
+              `Ou entre em contato diretamente para regularização:`,
+              `WhatsApp: (82) 99106-9350`,
+              `E-mail: valdknupp@gmail.com`,
+              '',
+              `Acesse o sistema: ${appUrl}`,
+            ].join('\n')
+
+            const htmlBody = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E8E8E8; border-radius: 8px; background-color: #FFFFFF;">
+                <div style="background-color: #111111; padding: 18px 20px; border-radius: 6px; text-align: center; margin-bottom: 24px;">
+                  <h2 style="color: #FFB020; margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">Avaliação de Experiência</h2>
+                  <p style="color: #FFFFFF; margin: 6px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Acesso Suspenso por Vencimento</p>
+                </div>
+                <div style="color: #333333; line-height: 1.6; font-size: 15px; margin-bottom: 24px;">
+                  <p>Olá, <strong>${clientName}</strong>!</p>
+                  <p>Informamos que o acesso da sua conta e da sua equipe ao sistema <strong>Avaliação de Experiência</strong> foi temporariamente suspenso devido ao vencimento do plano <strong>${planLabel}</strong> ocorrido em <strong>${paidUntilBR}</strong>.</p>
+                  <div style="background-color: #FFF8E6; border-left: 4px solid #FFB020; padding: 14px 16px; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 0; font-size: 14px; color: #8A5B00;">
+                      <strong>Seus dados estão 100% preservados!</strong><br>
+                      Nenhum colaborador, avaliação ou histórico foi excluído. Assim que o pagamento for confirmado, o acesso é reativado na hora.
+                    </p>
+                  </div>
+                  <p>Você pode regularizar o pagamento agora mesmo pelo link abaixo ou pelos canais de atendimento:</p>
+                </div>
+                <div style="text-align: center; margin: 28px 0;">
+                  <a href="${checkoutUrl}" style="background-color: #54D769; color: #111111; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 200px;">
+                    Regularizar / Renovar Acesso
+                  </a>
+                </div>
+                <div style="margin-top: 24px; padding: 16px; background-color: #F9FAFB; border-radius: 6px; font-size: 13px; color: #333333; line-height: 1.6;">
+                  <strong>Canais de Contato para Regularização:</strong><br>
+                  WhatsApp: <strong>(82) 99106-9350</strong><br>
+                  E-mail: <a href="mailto:valdknupp@gmail.com" style="color: #111111; text-decoration: underline;">valdknupp@gmail.com</a>
+                </div>
+                <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #E8E8E8; font-size: 12px; color: #777777; text-align: center; line-height: 1.5;">
+                  Este é um e-mail automático gerado pelo sistema Avaliação de Experiência.<br>
+                  Acesso ao sistema: <a href="${appUrl}" style="color: #111111; text-decoration: underline;">${appUrl}</a>
+                </div>
+              </div>
+            `
+
+            try {
+              sendRawEmail(clientEmail, subject, textBody, htmlBody)
+              recordClientEmailLogAndAudit(
+                client,
+                'suspended_overdue',
+                clientEmail,
+                subject,
+                paidUntilIso,
+                plan,
+                suspensionDedupeKey,
+                'Enviado',
+                null,
+              )
+              milestones['suspended_' + paidUntilIso] = new Date().toISOString()
+              milestonesChanged = true
+            } catch (err) {
+              recordClientEmailLogAndAudit(
+                client,
+                'suspended_overdue',
+                clientEmail,
+                subject,
+                paidUntilIso,
+                plan,
+                suspensionDedupeKey,
+                'Falha',
+                err,
+              )
+            }
+          }
+        }
+
+        if (milestonesChanged) {
+          saveNotifiedMilestones(client, milestones)
         }
       }
 
@@ -877,7 +1537,9 @@ routerAdd(
         success: true,
         totalChecked: totalChecked,
         totalSuspended: totalSuspended,
+        totalNoticesSent: totalNoticesSent,
         suspendedList: suspendedList,
+        noticesList: noticesList,
       })
     } catch (err) {
       return e.json(500, { error: 'Erro ao executar verificação: ' + String(err) })

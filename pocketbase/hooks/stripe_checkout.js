@@ -1085,6 +1085,9 @@ routerAdd('POST', '/backend/v1/stripe/webhook', (e) => {
         const now = new Date()
         let baseDate = now
         const currentPaidUntilStr = matchedClient.getString('paid_until')
+        const previousStatus =
+          matchedClient.getString('status') ||
+          (matchedClient.getBool('active') ? 'active' : 'suspended_overdue')
 
         if (currentPaidUntilStr) {
           const currentPaidDate = new Date(
@@ -1103,6 +1106,130 @@ routerAdd('POST', '/backend/v1/stripe/webhook', (e) => {
         matchedClient.set('plan', planName)
         matchedClient.set('paid_until', newPaidUntilIso)
         $app.save(matchedClient)
+
+        // Se o cliente estava suspenso (ou inativo por vencimento), enviar e-mail de reativação / boas-vindas de volta
+        if (previousStatus === 'suspended_overdue' || previousStatus === 'blocked_manually') {
+          try {
+            const clientName = matchedClient.getString('name') || 'Cliente'
+            const newPaidUntilBR = (() => {
+              const [y, m, d] = newPaidUntilIso.split('-')
+              return y && m && d ? `${d}/${m}/${y}` : newPaidUntilIso
+            })()
+
+            let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
+            try {
+              const envUrl = $os.getenv('SITE_URL')
+              if (envUrl && envUrl.trim()) {
+                appUrl = envUrl.trim()
+              } else {
+                const appUrlSetting = $app.findFirstRecordByData('settings', 'key', 'app_url')
+                const val = appUrlSetting.getString('value')
+                if (val && val.trim()) appUrl = val.trim()
+              }
+            } catch (_) {}
+            if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1)
+
+            const planLabel = planName === 'ANUAL' ? 'Anual' : 'Mensal'
+            const reactivateSubject = `Acesso Reativado com Sucesso! Bem-vindo de volta ao Avaliação de Experiência`
+
+            const reactivateText = [
+              `Olá, ${clientName}!`,
+              '',
+              `Confirmamos o recebimento do seu pagamento (${planLabel}). O acesso da sua equipe ao sistema Avaliação de Experiência foi REATIVADO com sucesso!`,
+              '',
+              `Novo vencimento do seu plano: ${newPaidUntilBR}.`,
+              `Todos os seus colaboradores, avaliações e relatórios já estão totalmente disponíveis para continuidade.`,
+              '',
+              `Acesse o sistema: ${appUrl}`,
+              '',
+              `Se precisar de qualquer apoio, estamos à disposição:`,
+              `WhatsApp: (82) 99106-9350 | E-mail: valdknupp@gmail.com`,
+              '',
+              `Atenciosamente,`,
+              `Equipe Avaliação de Experiência`,
+            ].join('\n')
+
+            const reactivateHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E8E8E8; border-radius: 8px; background-color: #FFFFFF;">
+                <div style="background-color: #111111; padding: 18px 20px; border-radius: 6px; text-align: center; margin-bottom: 24px;">
+                  <h2 style="color: #54D769; margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">Avaliação de Experiência</h2>
+                  <p style="color: #FFFFFF; margin: 6px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Acesso Reativado com Sucesso</p>
+                </div>
+                <div style="color: #333333; line-height: 1.6; font-size: 15px; margin-bottom: 24px;">
+                  <p>Olá, <strong>${clientName}</strong>!</p>
+                  <p>É um prazer ter você de volta! Confirmamos o pagamento do seu plano <strong>${planLabel}</strong> e o acesso da sua conta e da sua equipe ao sistema <strong>Avaliação de Experiência</strong> foi <strong>reativado imediatamente</strong>.</p>
+                  <div style="background-color: #ECFDF5; border-left: 4px solid #54D769; padding: 14px 16px; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 0; font-size: 14px; color: #065F46;">
+                      <strong>Novo Vencimento do Plano:</strong> ${newPaidUntilBR}<br>
+                      <strong>Plano Confirmado:</strong> ${planLabel}<br>
+                      <strong>Situação:</strong> Ativo / Liberado
+                    </p>
+                  </div>
+                  <p>Todos os seus dados históricos, colaboradores e formulários de avaliação estão disponíveis sem nenhuma perda.</p>
+                </div>
+                <div style="text-align: center; margin: 28px 0;">
+                  <a href="${appUrl}" style="background-color: #54D769; color: #111111; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 200px;">
+                    Acessar o Sistema Agora
+                  </a>
+                </div>
+                <div style="margin-top: 24px; padding: 16px; background-color: #F9FAFB; border-radius: 6px; font-size: 13px; color: #555555; line-height: 1.5;">
+                  <strong>Canais de Suporte:</strong><br>
+                  WhatsApp: <strong>(82) 99106-9350</strong><br>
+                  E-mail: <a href="mailto:valdknupp@gmail.com" style="color: #111111; text-decoration: underline;">valdknupp@gmail.com</a>
+                </div>
+                <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #E8E8E8; font-size: 12px; color: #777777; text-align: center; line-height: 1.5;">
+                  Este é um e-mail automático gerado pelo sistema Avaliação de Experiência.<br>
+                  <a href="${appUrl}" style="color: #111111; text-decoration: underline;">${appUrl}</a>
+                </div>
+              </div>
+            `
+
+            const message = new MailerMessage({
+              from: {
+                address: 'valdknupp@gmail.com',
+                name: $app.settings().meta.senderName || 'Avaliação de Experiência',
+              },
+              to: [{ address: customerEmail }],
+              subject: reactivateSubject,
+              text: reactivateText,
+              html: reactivateHtml,
+            })
+            $app.newMailClient().send(message)
+
+            // Registro em client_email_logs e audit_logs
+            try {
+              const logsCol = $app.findCollectionByNameOrId('client_email_logs')
+              const logRec = new Record(logsCol)
+              logRec.set('client', matchedClient.id)
+              logRec.set('recipient', customerEmail)
+              logRec.set('type', 'reactivated_payment')
+              logRec.set('subject', reactivateSubject)
+              logRec.set('paid_until', newPaidUntilIso)
+              logRec.set('plan', planName)
+              logRec.set('dedupe_key', `${matchedClient.id}:reactivated:${eventId || Date.now()}`)
+              logRec.set('status', 'Enviado')
+              logRec.set('sent_at', new DateTime())
+              $app.save(logRec)
+            } catch (_) {}
+
+            try {
+              const auditCol = $app.findCollectionByNameOrId('audit_logs')
+              const audit = new Record(auditCol)
+              audit.set('entity_type', 'clients')
+              audit.set('entity_id', matchedClient.id)
+              audit.set('action', 'CLIENT_EMAIL_NOTIFICATION')
+              audit.set(
+                'summary',
+                `E-mail de reativação de plano enviado para ${customerEmail} após pagamento confirmado. Novo vencimento: ${newPaidUntilIso}.`,
+              )
+              $app.save(audit)
+            } catch (_) {}
+
+            console.log(`[Stripe Webhook] E-mail de reativação enviado para ${customerEmail}`)
+          } catch (reactivateErr) {
+            console.warn('[Stripe Webhook] Erro ao enviar e-mail de reativação:', reactivateErr)
+          }
+        }
 
         // 1.2 Ativar o usuário comprador principal e todos os usuários vinculados a este cliente
         try {

@@ -2,6 +2,22 @@ import pb from '@/lib/pocketbase/client'
 
 export type ClientStatus = 'active' | 'suspended_overdue' | 'blocked_manually'
 
+export interface ClientEmailLogRecord {
+  id: string
+  client: string
+  recipient: string
+  type: 'expiring_7d' | 'expiring_3d' | 'expiring_1d' | 'suspended_overdue' | 'reactivated_payment'
+  subject: string
+  paid_until?: string
+  plan?: string
+  dedupe_key: string
+  status: 'Enviado' | 'Falha'
+  error_message?: string
+  sent_at?: string
+  created: string
+  updated?: string
+}
+
 export interface ClientRecord {
   id: string
   name: string
@@ -11,6 +27,7 @@ export interface ClientRecord {
   status?: ClientStatus
   paid_until?: string
   notes?: string
+  notified_milestones?: Record<string, string> | string
   created: string
   updated?: string
 }
@@ -40,6 +57,7 @@ export async function runSuspensionCheck(): Promise<{
   success: boolean
   totalChecked: number
   totalSuspended: number
+  totalNoticesSent?: number
   suspendedList: Array<{
     id: string
     name: string
@@ -47,11 +65,31 @@ export async function runSuspensionCheck(): Promise<{
     paid_until: string
     days_overdue: number
   }>
+  noticesList?: Array<{
+    client: string
+    email: string
+    type: string
+    daysRemaining: number
+    paid_until: string
+  }>
 }> {
   const res = await pb.send('/backend/v1/admin/run-suspension-check', {
     method: 'POST',
   })
   return res
+}
+
+export async function listClientEmailLogs(): Promise<ClientEmailLogRecord[]> {
+  try {
+    const list = await pb.collection('client_email_logs').getFullList<ClientEmailLogRecord>({
+      sort: '-created',
+      requestKey: null,
+    })
+    return list
+  } catch (err) {
+    console.warn('Falha ao listar logs de e-mail de clientes:', err)
+    return []
+  }
 }
 
 export async function listClients(): Promise<ClientRecord[]> {

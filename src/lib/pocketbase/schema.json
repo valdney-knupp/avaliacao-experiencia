@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T12:19:02.433Z",
+  "generatedAt": "2026-10-30T12:44:25.427Z",
   "collections": [
     {
       "name": "users",
@@ -1021,12 +1021,119 @@
           "required": false,
           "system": false,
           "selectValues": ["active", "suspended_overdue", "blocked_manually"]
+        },
+        {
+          "name": "notified_milestones",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_clients_email ON clients (email)",
         "CREATE INDEX `idx_clients_paid_until` ON `clients` (paid_until)",
         "CREATE INDEX `idx_clients_status` ON `clients` (status)"
+      ]
+    },
+    {
+      "name": "client_email_logs",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.email = 'valdknupp@gmail.com'",
+        "view": "@request.auth.id != '' && @request.auth.email = 'valdknupp@gmail.com'",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "client",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "clients"
+        },
+        {
+          "name": "recipient",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "expiring_7d",
+            "expiring_3d",
+            "expiring_1d",
+            "suspended_overdue",
+            "reactivated_payment"
+          ]
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "paid_until",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "plan",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dedupe_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Enviado", "Falha"]
+        },
+        {
+          "name": "error_message",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sent_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_client_email_logs_dedupe ON client_email_logs (dedupe_key)",
+        "CREATE INDEX idx_client_email_logs_client ON client_email_logs (client)",
+        "CREATE INDEX idx_client_email_logs_type ON client_email_logs (type)"
       ]
     }
   ]
