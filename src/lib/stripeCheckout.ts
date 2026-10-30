@@ -236,6 +236,25 @@ export async function getSalesList(): Promise<{ stripe_connected: boolean; sales
 }
 
 /**
+ * Adiciona prefilled_email aos Payment Links do Stripe quando disponível
+ */
+export function buildCheckoutUrl(
+  baseUrl: string,
+  params?: { email?: string; name?: string },
+): string {
+  if (!baseUrl) return ''
+  try {
+    const url = new URL(baseUrl)
+    if (params?.email && params.email.trim()) {
+      url.searchParams.set('prefilled_email', params.email.trim().toLowerCase())
+    }
+    return url.toString()
+  } catch {
+    return baseUrl
+  }
+}
+
+/**
  * Sincroniza / regenera produtos, preços e payment links no Stripe
  */
 export async function syncStripeBilling(): Promise<{ success: boolean; message: string }> {

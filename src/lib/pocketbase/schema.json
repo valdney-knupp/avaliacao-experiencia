@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29T21:43:39.564Z",
+  "generatedAt": "2026-10-30T12:19:02.433Z",
   "collections": [
     {
       "name": "users",
@@ -1008,9 +1008,26 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "paid_until",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["active", "suspended_overdue", "blocked_manually"]
         }
       ],
-      "indexes": ["CREATE INDEX idx_clients_email ON clients (email)"]
+      "indexes": [
+        "CREATE INDEX idx_clients_email ON clients (email)",
+        "CREATE INDEX `idx_clients_paid_until` ON `clients` (paid_until)",
+        "CREATE INDEX `idx_clients_status` ON `clients` (status)"
+      ]
     }
   ]
 }

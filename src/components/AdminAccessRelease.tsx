@@ -42,7 +42,9 @@ import {
   createClient,
   updateClient,
   deleteClient,
+  runSuspensionCheck,
   type ClientRecord,
+  type ClientStatus,
 } from '@/services/clients'
 import pb from '@/lib/pocketbase/client'
 
@@ -63,12 +65,14 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
+  const [checkingSuspension, setCheckingSuspension] = useState(false)
   const [clientForm, setClientForm] = useState({
     name: '',
     email: '',
     password: '',
     plan: 'MENSAL' as 'MENSAL' | 'ANUAL' | 'OUTRO',
-    active: true,
+    status: 'active' as ClientStatus,
+    paid_until: '',
     notes: '',
   })
 
@@ -137,12 +141,15 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
 
   const handleOpenCreateModal = () => {
     setEditingClient(null)
+    const defDate = new Date()
+    defDate.setDate(defDate.getDate() + 30)
     setClientForm({
       name: '',
       email: '',
       password: 'Skip@' + Math.floor(100000 + Math.random() * 900000),
       plan: 'MENSAL',
-      active: true,
+      status: 'active',
+      paid_until: defDate.toISOString().split('T')[0],
       notes: '',
     })
     setShowPassword(false)
@@ -151,12 +158,15 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
 
   const handleOpenEditModal = (c: ClientRecord) => {
     setEditingClient(c)
+    const effectiveStatus: ClientStatus =
+      c.status || (c.active !== false ? 'active' : 'blocked_manually')
     setClientForm({
       name: c.name,
       email: c.email,
       password: '',
       plan: c.plan,
-      active: c.active !== false,
+      status: effectiveStatus,
+      paid_until: c.paid_until ? c.paid_until.split(' ')[0].split('T')[0] : '',
       notes: c.notes || '',
     })
     setShowPassword(false)
@@ -174,7 +184,9 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
           name: clientForm.name.trim(),
           plan: clientForm.plan,
           notes: clientForm.notes.trim(),
-          active: clientForm.active,
+          status: clientForm.status,
+          paid_until: clientForm.paid_until || undefined,
+          active: clientForm.status === 'active',
           password: clientForm.password.trim() ? clientForm.password : undefined,
         })
         setFeedbackMsg(`Acesso do cliente "${clientForm.name}" atualizado com sucesso!`)
@@ -190,7 +202,9 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
           password: clientForm.password,
           plan: clientForm.plan,
           notes: clientForm.notes.trim(),
-          active: clientForm.active,
+          status: clientForm.status,
+          paid_until: clientForm.paid_until || undefined,
+          active: clientForm.status === 'active',
         })
         setFeedbackMsg(
           `Acesso liberado com sucesso para ${clientForm.name}! O comprador já pode logar.`,
@@ -204,6 +218,29 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
       setErrorMsg('Erro: ' + msg)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleRunSuspensionCheck = async () => {
+    setCheckingSuspension(true)
+    setErrorMsg(null)
+    setFeedbackMsg(null)
+    try {
+      const res = await runSuspensionCheck()
+      if (res.totalSuspended > 0) {
+        setFeedbackMsg(
+          `Verificação concluída: ${res.totalSuspended} cliente(s) suspenso(s) automaticamente por vencimento superior a 1 dia.`,
+        )
+      } else {
+        setFeedbackMsg(
+          `Verificação concluída: nenhum cliente com plano vencido há mais de 1 dia encontrado (${res.totalChecked} checados).`,
+        )
+      }
+      loadAllClients()
+    } catch (err: any) {
+      setErrorMsg('Falha ao executar rotina de suspensão: ' + (err?.message || ''))
+    } finally {
+      setCheckingSuspension(false)
     }
   }
 
@@ -381,7 +418,20 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
             ambiente 100% isolado no backend.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRunSuspensionCheck}
+            disabled={checkingSuspension}
+            title="Executa a verificação de clientes com paid_until vencido há mais de 1 dia"
+            className="text-xs border-[#E8E8E8] text-amber-700 hover:bg-amber-50"
+          >
+            <RefreshCw
+              className={`mr-1.5 h-3.5 w-3.5 ${checkingSuspension ? 'animate-spin' : ''}`}
+            />{' '}
+            Checar Vencidos
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -417,11 +467,11 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
           <table className="w-full text-left text-xs md:text-sm table-fixed">
             <thead className="bg-[#F9FAFB] text-[11px] md:text-xs font-semibold text-gray-600 uppercase border-b border-[#E8E8E8]">
               <tr>
-                <th className="w-[28%] px-3 py-2.5">Cliente / Empresa</th>
-                <th className="w-[24%] px-2 py-2.5">E-mail (Login)</th>
-                <th className="w-[12%] px-2 py-2.5 text-center">Plano</th>
-                <th className="w-[12%] px-2 py-2.5 text-center">Liberação</th>
-                <th className="w-[10%] px-1.5 py-2.5 text-center">Status</th>
+                <th className="w-[24%] px-3 py-2.5">Cliente / Empresa</th>
+                <th className="w-[20%] px-2 py-2.5">E-mail (Login)</th>
+                <th className="w-[10%] px-2 py-2.5 text-center">Plano</th>
+                <th className="w-[14%] px-2 py-2.5 text-center">Vencimento</th>
+                <th className="w-[18%] px-1.5 py-2.5 text-center">Situação</th>
                 <th className="w-[14%] px-3 py-2.5 text-right">Ações</th>
               </tr>
             </thead>
@@ -473,19 +523,56 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
                         {c.plan}
                       </span>
                     </td>
-                    <td className="px-2 py-2.5 text-center text-xs text-gray-500 whitespace-nowrap">
-                      {formatDateBR(c.created)}
+                    <td className="px-2 py-2.5 text-center text-xs whitespace-nowrap">
+                      {c.paid_until ? (
+                        <div className="flex flex-col items-center">
+                          <span className="font-semibold text-gray-800">
+                            {formatDateBR(c.paid_until)}
+                          </span>
+                          {(() => {
+                            const pIso = c.paid_until.split(' ')[0].split('T')[0]
+                            const nowIso = new Date().toISOString().split('T')[0]
+                            const isPast = pIso < nowIso
+                            return (
+                              <span
+                                className={`text-[10px] font-medium ${
+                                  isPast ? 'text-red-600' : 'text-emerald-700'
+                                }`}
+                              >
+                                {isPast ? 'Vencido' : 'Em dia'}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
                     </td>
                     <td className="px-1.5 py-2.5 text-center">
-                      <span
-                        className={`text-[10px] md:text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${
-                          c.active !== false
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
-                      >
-                        {c.active !== false ? 'Ativo' : 'Bloqueado'}
-                      </span>
+                      {(() => {
+                        const effectiveStatus =
+                          c.status || (c.active !== false ? 'active' : 'blocked_manually')
+
+                        if (effectiveStatus === 'active') {
+                          return (
+                            <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-green-100 text-green-800 whitespace-nowrap">
+                              Ativo
+                            </span>
+                          )
+                        }
+                        if (effectiveStatus === 'suspended_overdue') {
+                          return (
+                            <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                              Suspenso (Vencido)
+                            </span>
+                          )
+                        }
+                        return (
+                          <span className="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold bg-red-100 text-red-800 whitespace-nowrap">
+                            Bloqueado (Manual)
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap space-x-1">
                       <Button
@@ -598,7 +685,16 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
                 <Label className="text-xs font-semibold text-gray-700">Plano</Label>
                 <Select
                   value={clientForm.plan}
-                  onValueChange={(val: any) => setClientForm({ ...clientForm, plan: val })}
+                  onValueChange={(val: any) => {
+                    const days = val === 'ANUAL' ? 365 : 30
+                    const d = new Date()
+                    d.setDate(d.getDate() + days)
+                    setClientForm({
+                      ...clientForm,
+                      plan: val,
+                      paid_until: clientForm.paid_until || d.toISOString().split('T')[0],
+                    })
+                  }}
                 >
                   <SelectTrigger className="mt-1 text-xs">
                     <SelectValue />
@@ -612,17 +708,38 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
               </div>
 
               <div>
-                <Label className="text-xs font-semibold text-gray-700">Situação</Label>
-                <div className="flex items-center gap-2 mt-2.5">
-                  <Switch
-                    checked={clientForm.active}
-                    onCheckedChange={(chk) => setClientForm({ ...clientForm, active: chk })}
-                  />
-                  <span className="text-xs font-semibold text-gray-800">
-                    {clientForm.active ? 'Ativo (Liberado)' : 'Bloqueado'}
-                  </span>
-                </div>
+                <Label className="text-xs font-semibold text-gray-700">
+                  Data de Vencimento (paid_until)
+                </Label>
+                <Input
+                  type="date"
+                  value={clientForm.paid_until}
+                  onChange={(e) => setClientForm({ ...clientForm, paid_until: e.target.value })}
+                  className="mt-1 text-xs"
+                />
               </div>
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-gray-700">Situação do Acesso</Label>
+              <Select
+                value={clientForm.status}
+                onValueChange={(val: ClientStatus) => setClientForm({ ...clientForm, status: val })}
+              >
+                <SelectTrigger className="mt-1 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Ativo (Liberado)</SelectItem>
+                  <SelectItem value="suspended_overdue">Suspenso por Vencimento</SelectItem>
+                  <SelectItem value="blocked_manually">Bloqueado Manualmente</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-gray-500 mt-1">
+                O master pode bloquear ou desbloquear manualmente a qualquer momento independente do
+                vencimento. Se suspenso por vencimento ou bloqueado, o comprador verá os contatos
+                para regularização.
+              </p>
             </div>
 
             <div>

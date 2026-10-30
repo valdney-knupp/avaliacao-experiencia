@@ -268,6 +268,67 @@ export const AdminPricesAndSales: React.FC<AdminPricesAndSalesProps> = ({
             </Button>
           </div>
         </div>
+
+        {/* GUIA DE CONFIGURAÇÃO DO WEBHOOK STRIPE */}
+        <div className="mt-4 pt-4 border-t border-[#E8E8E8] rounded-xl bg-slate-50 p-4 border border-slate-200">
+          <div className="flex items-start gap-2.5">
+            <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="space-y-2 text-xs">
+              <h4 className="font-bold text-gray-900 text-sm">
+                Configuração Obrigatória do Webhook Stripe (Liberação Automática)
+              </h4>
+              <p className="text-gray-600 leading-relaxed">
+                Para que o acesso seja liberado e renovado imediatamente quando o cliente pagar,
+                configure o webhook no painel da sua conta Stripe:
+              </p>
+              <ol className="list-decimal list-inside space-y-1 text-gray-700 font-medium pl-1">
+                <li>
+                  Acesse{' '}
+                  <strong>
+                    Stripe Dashboard &gt; Desenvolvedores (Developers) &gt; Webhooks &gt; Adicionar
+                    endpoint
+                  </strong>
+                  .
+                </li>
+                <li>
+                  Cole o Endpoint URL:{' '}
+                  <code className="px-2 py-0.5 rounded bg-white border border-gray-300 font-mono text-[11px] text-emerald-700 font-bold select-all">
+                    https://avaliacaodeexperiencia.goskip.app/backend/v1/stripe/webhook
+                  </code>
+                </li>
+                <li>
+                  Selecione os eventos para escutar:{' '}
+                  <span className="font-mono text-gray-800 bg-white px-1 py-0.5 rounded border border-gray-200">
+                    checkout.session.completed
+                  </span>
+                  ,{' '}
+                  <span className="font-mono text-gray-800 bg-white px-1 py-0.5 rounded border border-gray-200">
+                    invoice.paid
+                  </span>
+                  , e opcionalmente{' '}
+                  <span className="font-mono text-gray-800 bg-white px-1 py-0.5 rounded border border-gray-200">
+                    customer.subscription.deleted
+                  </span>
+                  .
+                </li>
+                <li>
+                  Copie o <strong>Segredo de assinatura (Signing secret)</strong> gerado (inicia com{' '}
+                  <code className="font-mono">whsec_...</code>) e guarde no segredo{' '}
+                  <code className="font-mono font-bold">STRIPE_WEBHOOK_SECRET</code> do backend.
+                </li>
+              </ol>
+              <div className="p-2.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                <span>
+                  <strong>Regra de Negócio Ativa:</strong> Quando o e-mail do pagamento existir em{' '}
+                  <strong>clients</strong>, o acesso é reativado na hora e a data de vencimento é
+                  somada (+30 dias no Mensal, +365 dias no Anual). Se vencer há mais de 1 dia sem
+                  renovação, o acesso é suspenso automaticamente pela rotina diária.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* GESTÃO DOS PLANOS: MENSAL E ANUAL */}

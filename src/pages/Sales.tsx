@@ -36,10 +36,14 @@ import {
   getStripeCheckoutConfig,
   FALLBACK_CHECKOUT_CONFIG,
   StripeCheckoutConfig,
+  buildCheckoutUrl,
 } from '@/lib/stripeCheckout'
+import { useSearchParams } from 'react-router-dom'
 
 export const Sales: React.FC = () => {
   const [config, setConfig] = useState<StripeCheckoutConfig>(FALLBACK_CHECKOUT_CONFIG)
+  const [searchParams] = useSearchParams()
+  const customerEmailParam = searchParams.get('email') || searchParams.get('prefilled_email') || ''
   const [loadingCheckout, setLoadingCheckout] = useState(true)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
@@ -79,7 +83,12 @@ export const Sales: React.FC = () => {
   const handleCheckout = (plan: 'monthly' | 'annual') => {
     setCheckoutError(null)
     const planConfig = plan === 'monthly' ? config.monthly : config.annual
-    const url = planConfig?.payment_link
+    let url = planConfig?.payment_link
+
+    // Anexa prefilled_email caso o link tenha sido aberto para um cliente específico
+    if (url && customerEmailParam) {
+      url = buildCheckoutUrl(url, { email: customerEmailParam })
+    }
 
     // Se o link for um placeholder de teste e o Stripe ainda não estiver conectado,
     // não jogamos o visitante em uma URL falsa que falhará. Em vez disso, mostramos

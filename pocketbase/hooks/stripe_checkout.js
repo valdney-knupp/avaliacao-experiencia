@@ -203,6 +203,8 @@ onBootstrap((e) => {
       const createRes = $connectors.executeAsOwner('STRIPE_CREATE_PAYMENT_LINK', {
         line_items: [{ price: priceId, quantity: 1 }],
         after_completion: afterCompletion,
+        customer_creation: 'always',
+        billing_address_collection: 'auto',
       })
       if (createRes && createRes.successful && createRes.data) {
         return createRes.data.url
@@ -565,6 +567,8 @@ routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
         const createPayload = {
           line_items: [{ price: priceId, quantity: 1 }],
           after_completion: afterCompletion,
+          customer_creation: 'always',
+          billing_address_collection: 'auto',
         }
 
         console.log('[Stripe Connect] Criando payment link para priceId:', priceId)
@@ -893,3 +897,344 @@ routerAdd(
   },
   $apis.requireAuth(),
 )
+
+// ------------------------------------------------------------------------------------------------
+// WEBHOOK STRIPE: /backend/v1/stripe/webhook
+// Ciclo: pagamento recebido -> ativa acesso -> define/estende paid_until -> registra venda na tabela sales
+// ------------------------------------------------------------------------------------------------
+routerAdd('POST', '/backend/v1/stripe/webhook', (e) => {
+  // Helper inline para formatação de data ISO YYYY-MM-DD
+  const formatDateOnlyIso = (d) => {
+    const year = d.getUTCFullYear()
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(d.getUTCDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  let rawBody = ''
+  let event = null
+
+  try {
+    // Leitura do payload bruto
+    const req = e.requestInfo()
+    if (req && req.body && typeof req.body === 'object') {
+      event = req.body
+      rawBody = JSON.stringify(req.body)
+    } else if (req && req.body) {
+      rawBody = String(req.body)
+      event = JSON.parse(rawBody)
+    }
+  } catch (parseErr) {
+    console.warn('[Stripe Webhook] Erro ao analisar corpo da requisição:', parseErr)
+    return e.json(400, { error: 'Invalid payload' })
+  }
+
+  if (!event || !event.type) {
+    return e.json(400, { error: 'Missing event or event.type' })
+  }
+
+  // Validação opcional da assinatura Stripe Webhook se STRIPE_WEBHOOK_SECRET estiver configurado
+  const webhookSecret = $os.getenv('STRIPE_WEBHOOK_SECRET') || ''
+  const sigHeader = e.request.header.get('stripe-signature') || ''
+
+  if (webhookSecret) {
+    if (!sigHeader) {
+      console.warn('[Stripe Webhook] Cabeçalho stripe-signature ausente com segredo configurado.')
+      return e.json(400, { error: 'Missing stripe-signature header' })
+    }
+
+    try {
+      // Formato do cabeçalho Stripe: t=1492774577,v1=5257a869e7ecebeda32affa62cd493...
+      const parts = sigHeader.split(',')
+      let timestamp = ''
+      const signatures = []
+      for (let i = 0; i < parts.length; i++) {
+        const item = parts[i].trim()
+        if (item.startsWith('t=')) {
+          timestamp = item.slice(2)
+        } else if (item.startsWith('v1=')) {
+          signatures.push(item.slice(3))
+        }
+      }
+
+      if (!timestamp || signatures.length === 0) {
+        return e.json(400, { error: 'Invalid stripe-signature format' })
+      }
+
+      // Previne ataques de repetição (tolerância de 10 minutos)
+      const nowSec = Math.floor(Date.now() / 1000)
+      const tSec = parseInt(timestamp, 10)
+      if (isNaN(tSec) || Math.abs(nowSec - tSec) > 600) {
+        console.warn(
+          '[Stripe Webhook] Timestamp da assinatura fora da janela de tolerância:',
+          timestamp,
+        )
+        return e.json(400, { error: 'Signature timestamp out of tolerance' })
+      }
+
+      // Validação HMAC-SHA256
+      const signedPayload = `${timestamp}.${rawBody}`
+      const expectedSig = $security.hs256(signedPayload, webhookSecret)
+      const matched = signatures.some((s) => s === expectedSig)
+      if (!matched) {
+        console.warn('[Stripe Webhook] Assinatura do webhook inválida.')
+        return e.json(400, { error: 'Webhook signature verification failed' })
+      }
+    } catch (sigErr) {
+      console.warn('[Stripe Webhook] Erro na verificação da assinatura:', sigErr)
+      return e.json(400, { error: 'Signature verification error: ' + String(sigErr) })
+    }
+  }
+
+  const eventType = event.type
+  const eventId = event.id || ''
+  const eventData = event.data && event.data.object ? event.data.object : {}
+
+  console.log(`[Stripe Webhook] Recebido evento: ${eventType} (ID: ${eventId})`)
+
+  try {
+    // 1. Processar confirmação de pagamento
+    if (eventType === 'checkout.session.completed' || eventType === 'invoice.paid') {
+      let customerEmail = ''
+      let customerName = ''
+      let amountPaid = 0
+      let planInterval = 'month'
+      let stripeSubscriptionId = ''
+      let stripeCustomerId = ''
+
+      if (eventType === 'checkout.session.completed') {
+        // Obter e-mail
+        customerEmail =
+          (eventData.customer_details && eventData.customer_details.email) ||
+          eventData.customer_email ||
+          (eventData.metadata && eventData.metadata.customer_email) ||
+          ''
+        customerName =
+          (eventData.customer_details && eventData.customer_details.name) ||
+          (eventData.metadata && eventData.metadata.customer_name) ||
+          'Cliente Stripe'
+
+        amountPaid = (eventData.amount_total || eventData.amount_subtotal || 0) / 100
+        stripeSubscriptionId = eventData.subscription || ''
+        stripeCustomerId = eventData.customer || ''
+
+        // Identificar se anual ou mensal por amount ou metadata
+        if (amountPaid >= 1000 || (eventData.metadata && eventData.metadata.plan === 'ANUAL')) {
+          planInterval = 'year'
+        }
+      } else if (eventType === 'invoice.paid') {
+        customerEmail =
+          eventData.customer_email ||
+          (eventData.customer_details && eventData.customer_details.email) ||
+          ''
+        customerName =
+          eventData.customer_name ||
+          (eventData.customer_details && eventData.customer_details.name) ||
+          'Cliente Stripe'
+
+        amountPaid = (eventData.amount_paid || 0) / 100
+        stripeSubscriptionId = eventData.subscription || ''
+        stripeCustomerId = eventData.customer || ''
+
+        // Verificar interval nas linhas da fatura se presente
+        if (
+          eventData.lines &&
+          Array.isArray(eventData.lines.data) &&
+          eventData.lines.data.length > 0
+        ) {
+          const firstLine = eventData.lines.data[0]
+          if (firstLine.price && firstLine.price.recurring) {
+            planInterval = firstLine.price.recurring.interval || planInterval
+          }
+        }
+        if (amountPaid >= 1000) {
+          planInterval = 'year'
+        }
+      }
+
+      customerEmail = String(customerEmail || '')
+        .trim()
+        .toLowerCase()
+      customerName = String(customerName || '').trim()
+      const isAnnual = planInterval === 'year' || amountPaid >= 1000
+      const planName = isAnnual ? 'ANUAL' : 'MENSAL'
+      const daysToAdd = isAnnual ? 365 : 30
+
+      const amountFormatted = amountPaid
+        ? 'R$ ' + amountPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+        : isAnnual
+          ? 'R$ 2.899,00'
+          : 'R$ 297,00'
+
+      let matchedClient = null
+      let isClientLinked = false
+
+      if (customerEmail) {
+        try {
+          matchedClient = $app.findFirstRecordByData('clients', 'email', customerEmail)
+        } catch (_) {}
+      }
+
+      // Se encontrou cliente cadastrado com este e-mail
+      if (matchedClient) {
+        isClientLinked = true
+        console.log(
+          `[Stripe Webhook] Pagamento vinculado ao cliente: ${matchedClient.getString('name')} (${customerEmail})`,
+        )
+
+        // 1.1 Calcular paid_until: hoje + dias, somando ao saldo se já possuir data futura
+        const now = new Date()
+        let baseDate = now
+        const currentPaidUntilStr = matchedClient.getString('paid_until')
+
+        if (currentPaidUntilStr) {
+          const currentPaidDate = new Date(
+            currentPaidUntilStr.split(' ')[0].split('T')[0] + 'T23:59:59Z',
+          )
+          if (!isNaN(currentPaidDate.getTime()) && currentPaidDate.getTime() > now.getTime()) {
+            baseDate = currentPaidDate
+          }
+        }
+
+        const newPaidUntil = new Date(baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
+        const newPaidUntilIso = formatDateOnlyIso(newPaidUntil)
+
+        matchedClient.set('active', true)
+        matchedClient.set('status', 'active')
+        matchedClient.set('plan', planName)
+        matchedClient.set('paid_until', newPaidUntilIso)
+        $app.save(matchedClient)
+
+        // 1.2 Ativar o usuário comprador principal e todos os usuários vinculados a este cliente
+        try {
+          const clientUsers = $app.findRecordsByFilter(
+            '_pb_users_auth_',
+            `client = '${matchedClient.id}'`,
+            '',
+            500,
+            0,
+          )
+          for (let u = 0; u < clientUsers.length; u++) {
+            const usr = clientUsers[u]
+            usr.set('active', true)
+            $app.save(usr)
+          }
+        } catch (uErr) {
+          console.warn('[Stripe Webhook] Erro ao ativar usuários do cliente:', uErr)
+        }
+
+        // 1.3 Se houver usuário pelo próprio e-mail sem campo client setado, vincular e ativar
+        try {
+          const userByEmail = $app.findAuthRecordByEmail('_pb_users_auth_', customerEmail)
+          if (
+            userByEmail &&
+            userByEmail.getString('email').toLowerCase() !== 'valdknupp@gmail.com'
+          ) {
+            userByEmail.set('active', true)
+            if (!userByEmail.getString('client')) {
+              userByEmail.set('client', matchedClient.id)
+            }
+            $app.save(userByEmail)
+          }
+        } catch (_) {}
+
+        // Auditoria
+        try {
+          const auditCol = $app.findCollectionByNameOrId('audit_logs')
+          const audit = new Record(auditCol)
+          audit.set('entity_type', 'clients')
+          audit.set('entity_id', matchedClient.id)
+          audit.set('action', 'PAYMENT_RECEIVED')
+          audit.set(
+            'summary',
+            `Pagamento Stripe confirmado (${planName} - ${amountFormatted}). Acesso ATIVADO até ${newPaidUntilIso}. Cliente: ${matchedClient.getString('name')} (${customerEmail}). Evento: ${eventId}`,
+          )
+          $app.save(audit)
+        } catch (_) {}
+      } else {
+        console.log(
+          `[Stripe Webhook] Pagamento recebido para e-mail NÃO cadastrado em clients: ${customerEmail || '(sem email)'}`,
+        )
+      }
+
+      // 1.4 Registrar venda na coleção 'sales' (usada pela aba Acompanhamento de Vendas)
+      try {
+        const salesCol = $app.findCollectionByNameOrId('sales')
+        let saleRecord = null
+        if (eventId) {
+          try {
+            saleRecord = $app.findFirstRecordByData('sales', 'stripe_event_id', eventId)
+          } catch (_) {}
+        }
+
+        if (!saleRecord) {
+          saleRecord = new Record(salesCol)
+          saleRecord.set('stripe_event_id', eventId)
+        }
+
+        saleRecord.set('plan', planName)
+        saleRecord.set('amount', amountPaid || (isAnnual ? 2899 : 297))
+        saleRecord.set('amount_label', amountFormatted)
+        saleRecord.set('status', 'succeeded')
+        saleRecord.set(
+          'customer_name',
+          matchedClient
+            ? matchedClient.getString('name')
+            : customerName || 'Cliente sem cadastro prévio',
+        )
+        saleRecord.set('customer_email', customerEmail || '-')
+        saleRecord.set('payment_method', 'Stripe Checkout')
+        saleRecord.set('stripe_subscription_id', stripeSubscriptionId)
+        saleRecord.set('stripe_customer_id', stripeCustomerId)
+        saleRecord.set(
+          'metadata',
+          JSON.stringify({
+            linked_client_id: matchedClient ? matchedClient.id : null,
+            linked_client_name: matchedClient ? matchedClient.getString('name') : null,
+            is_client_linked: isClientLinked,
+            note: isClientLinked ? 'Cliente vinculado e liberado' : 'Sem cliente vinculado',
+            event_type: eventType,
+          }),
+        )
+        $app.save(saleRecord)
+      } catch (salesErr) {
+        console.warn('[Stripe Webhook] Erro ao registrar na coleção sales:', salesErr)
+      }
+
+      return e.json(200, {
+        received: true,
+        event_type: eventType,
+        client_linked: isClientLinked,
+        customer_email: customerEmail,
+      })
+    }
+
+    // 2. Eventos de cancelamento ou exclusão de assinatura (customer.subscription.deleted / customer.subscription.updated)
+    if (eventType === 'customer.subscription.deleted') {
+      const subId = eventData.id || ''
+      const customerId = eventData.customer || ''
+      console.log(`[Stripe Webhook] Assinatura cancelada no Stripe: ${subId}`)
+
+      // Registrar auditoria ou atualizar status de venda se desejado
+      try {
+        const auditCol = $app.findCollectionByNameOrId('audit_logs')
+        const audit = new Record(auditCol)
+        audit.set('entity_type', 'stripe_subscription')
+        audit.set('entity_id', subId)
+        audit.set('action', 'SUBSCRIPTION_DELETED')
+        audit.set(
+          'summary',
+          `Assinatura Stripe ${subId} (cliente ${customerId}) foi cancelada. O cliente continuará ativo até o término do paid_until.`,
+        )
+        $app.save(audit)
+      } catch (_) {}
+
+      return e.json(200, { received: true, event_type: eventType })
+    }
+
+    // Outros eventos Stripe retornam 200 normalmente
+    return e.json(200, { received: true, ignored: true })
+  } catch (handlerErr) {
+    console.error('[Stripe Webhook] Erro durante o processamento do evento:', handlerErr)
+    return e.json(500, { error: 'Internal handler error: ' + String(handlerErr) })
+  }
+})

@@ -6,10 +6,46 @@ onRecordAuthWithPasswordRequest((e) => {
     const user = e.record
     if (!user) return
 
-    // Check if user is active
-    const isActive = user.getBool('active')
-    if (!isActive) {
-      throw new BadRequestError('Usuário inativo. Contate o administrador.')
+    // Check if user is active or suspended
+    const userEmail = user.getString('email').trim().toLowerCase()
+    const isMaster = userEmail === 'valdknupp@gmail.com'
+
+    // Master is never blocked or suspended
+    if (!isMaster) {
+      const clientId = user.getString('client')
+      if (clientId) {
+        try {
+          const clientRec = $app.findRecordById('clients', clientId)
+          const clientStatus = clientRec.getString('status')
+          const clientActive = clientRec.getBool('active')
+
+          if (
+            clientStatus === 'suspended_overdue' ||
+            (!clientActive && clientStatus === 'suspended_overdue')
+          ) {
+            throw new BadRequestError(
+              'Acesso suspenso — regularize seu pagamento para reativar o acesso. Contato: WhatsApp (82) 99106-9350 ou valdknupp@gmail.com',
+            )
+          }
+
+          if (!clientActive || clientStatus === 'blocked_manually') {
+            throw new BadRequestError(
+              'Acesso bloqueado pelo administrador. Contate o suporte: WhatsApp (82) 99106-9350 ou valdknupp@gmail.com',
+            )
+          }
+        } catch (cErr) {
+          // If error is BadRequestError, rethrow it
+          if (cErr && cErr.status === 400) throw cErr
+          if (cErr && String(cErr).includes('suspenso')) throw cErr
+        }
+      }
+
+      const isActive = user.getBool('active')
+      if (!isActive) {
+        throw new BadRequestError(
+          'Usuário inativo. Contate o suporte: WhatsApp (82) 99106-9350 ou valdknupp@gmail.com',
+        )
+      }
     }
 
     user.set('last_accessed', new DateTime())

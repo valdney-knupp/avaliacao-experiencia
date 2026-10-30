@@ -27,6 +27,8 @@ routerAdd(
       .toUpperCase()
     const notes = String(body.notes || '').trim()
     const active = body.active !== false
+    const paidUntil = body.paid_until ? String(body.paid_until).trim() : null
+    const explicitStatus = body.status ? String(body.status).trim() : null
 
     if (!clientName || !cleanEmail) {
       return e.json(400, { error: 'Nome do cliente/empresa e e-mail são obrigatórios.' })
@@ -62,6 +64,17 @@ routerAdd(
       clientRec.set('plan', ['MENSAL', 'ANUAL', 'OUTRO'].includes(plan) ? plan : 'MENSAL')
       clientRec.set('active', active)
       clientRec.set('notes', notes)
+      if (paidUntil) {
+        clientRec.set('paid_until', paidUntil)
+      } else {
+        // Se ativo e sem data informada, define vencimento padrão pelo plano
+        const now = new Date()
+        const daysToAdd = plan === 'ANUAL' ? 365 : 30
+        now.setDate(now.getDate() + daysToAdd)
+        clientRec.set('paid_until', now.toISOString().split('T')[0])
+      }
+      const initialStatus = explicitStatus || (active ? 'active' : 'blocked_manually')
+      clientRec.set('status', initialStatus)
       $app.save(clientRec)
 
       // 2. Criar usuário administrador para o comprador vinculado a este client
@@ -205,6 +218,8 @@ routerAdd(
         email: clientRec.getString('email'),
         plan: clientRec.getString('plan'),
         active: clientRec.getBool('active'),
+        status: clientRec.getString('status'),
+        paid_until: clientRec.getString('paid_until'),
         notes: clientRec.getString('notes'),
         created: clientRec.getString('created'),
         buyer_user_id: userRec.id,
@@ -251,12 +266,31 @@ routerAdd(
     const plan = body.plan ? String(body.plan).trim().toUpperCase() : null
     const notes = body.notes !== undefined ? String(body.notes).trim() : null
     const active = body.active !== undefined ? body.active === true : null
+    const paidUntil =
+      body.paid_until !== undefined ? (body.paid_until ? String(body.paid_until).trim() : '') : null
+    const explicitStatus = body.status ? String(body.status).trim() : null
     const newPassword = body.password ? String(body.password) : null
 
     if (clientName) clientRec.set('name', clientName)
     if (plan && ['MENSAL', 'ANUAL', 'OUTRO'].includes(plan)) clientRec.set('plan', plan)
     if (notes !== null) clientRec.set('notes', notes)
-    if (active !== null) clientRec.set('active', active)
+    if (paidUntil !== null) clientRec.set('paid_until', paidUntil || null)
+
+    if (explicitStatus) {
+      clientRec.set('status', explicitStatus)
+      if (explicitStatus === 'active') {
+        clientRec.set('active', true)
+      } else {
+        clientRec.set('active', false)
+      }
+    } else if (active !== null) {
+      clientRec.set('active', active)
+      if (active) {
+        clientRec.set('status', 'active')
+      } else {
+        clientRec.set('status', 'blocked_manually')
+      }
+    }
 
     try {
       $app.save(clientRec)
@@ -311,6 +345,8 @@ routerAdd(
         email: clientRec.getString('email'),
         plan: clientRec.getString('plan'),
         active: clientRec.getBool('active'),
+        status: clientRec.getString('status'),
+        paid_until: clientRec.getString('paid_until'),
         notes: clientRec.getString('notes'),
         updated: clientRec.getString('updated'),
       })

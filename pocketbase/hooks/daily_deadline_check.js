@@ -681,3 +681,207 @@ routerAdd(
   },
   $apis.requireAuth(),
 )
+
+// ------------------------------------------------------------------------------------------------
+// ROTINA DIÁRIA AGENDADA: SUSPENSÃO DE CLIENTES COM PLANO VENCIDO HÁ MAIS DE 1 DIA
+// Executa diariamente às 05:00 UTC (02:00 horário de Brasília)
+// Regra: se hoje for estritamente maior que paid_until + 1 dia, suspende o cliente e seus usuários,
+// mantendo todos os dados intactos. O usuário master (valdknupp@gmail.com) nunca é suspenso.
+// ------------------------------------------------------------------------------------------------
+cronAdd('daily_client_suspension_check', '0 5 * * *', () => {
+  try {
+    const now = new Date()
+    const nowIso = now.toISOString().split('T')[0]
+    const [nY, nM, nD] = nowIso.split('-').map(Number)
+    const todayUtc = Date.UTC(nY, nM - 1, nD)
+
+    // Buscar clientes que estejam com status active ou active = true
+    const clients = $app.findRecordsByFilter(
+      'clients',
+      "status = 'active' || (active = true && status != 'blocked_manually')",
+      '',
+      1000,
+      0,
+    )
+
+    let totalChecked = clients.length
+    let totalSuspended = 0
+
+    for (let i = 0; i < clients.length; i++) {
+      const client = clients[i]
+      const clientEmail = client.getString('email').trim().toLowerCase()
+
+      // Master nunca é afetado
+      if (clientEmail === 'valdknupp@gmail.com') {
+        continue
+      }
+
+      const paidUntilRaw = client.getString('paid_until')
+      if (!paidUntilRaw) {
+        // Se nunca teve paid_until registrado (ex: legado criado sem data), não suspende automaticamente
+        continue
+      }
+
+      const paidUntilIso = paidUntilRaw.split(' ')[0].split('T')[0]
+      const [pY, pM, pD] = paidUntilIso.split('-').map(Number)
+      if (isNaN(pY) || isNaN(pM) || isNaN(pD)) {
+        continue
+      }
+
+      const paidUntilUtc = Date.UTC(pY, pM - 1, pD)
+      // Diferença em dias completos entre hoje e o paid_until:
+      // Se paid_until foi 2026-10-20 e hoje é 2026-10-21 -> diffDays = 1 (1 dia vencido)
+      // A regra pede suspensão 1 dia depois do vencimento (ou seja, quando diffDays > 1)
+      const diffDays = Math.round((todayUtc - paidUntilUtc) / (1000 * 60 * 60 * 24))
+
+      if (diffDays > 1) {
+        console.log(
+          `[daily_client_suspension_check] Suspendendo cliente ${client.getString('name')} (${clientEmail}): vencido há ${diffDays} dias (vencimento: ${paidUntilIso})`,
+        )
+
+        client.set('active', false)
+        client.set('status', 'suspended_overdue')
+        $app.save(client)
+        totalSuspended++
+
+        // Suspender logins dos usuários vinculados a este cliente (exceto conta master)
+        try {
+          const clientUsers = $app.findRecordsByFilter(
+            '_pb_users_auth_',
+            `client = '${client.id}'`,
+            '',
+            500,
+            0,
+          )
+          for (let u = 0; u < clientUsers.length; u++) {
+            const usr = clientUsers[u]
+            if (usr.getString('email').toLowerCase() !== 'valdknupp@gmail.com') {
+              usr.set('active', false)
+              $app.save(usr)
+            }
+          }
+        } catch (uErr) {
+          console.warn(
+            '[daily_client_suspension_check] Erro ao inativar usuários do cliente:',
+            uErr,
+          )
+        }
+
+        // Auditoria
+        try {
+          const auditCol = $app.findCollectionByNameOrId('audit_logs')
+          const audit = new Record(auditCol)
+          audit.set('entity_type', 'clients')
+          audit.set('entity_id', client.id)
+          audit.set('action', 'CLIENT_AUTO_SUSPENDED')
+          audit.set(
+            'summary',
+            `Acesso do cliente ${client.getString('name')} (${clientEmail}) foi SUSPENSO automaticamente por vencimento do plano (vencido há ${diffDays} dias, em ${paidUntilIso}).`,
+          )
+          $app.save(audit)
+        } catch (_) {}
+      }
+    }
+
+    console.log(
+      `[daily_client_suspension_check] Concluído em ${nowIso}: ${totalChecked} clientes verificados, ${totalSuspended} suspensos por vencimento.`,
+    )
+  } catch (cronErr) {
+    console.error('[daily_client_suspension_check] Erro durante a rotina:', cronErr)
+  }
+})
+
+// Rota administrativa para o master testar ou forçar a verificação de suspensão imediata
+// POST /backend/v1/admin/run-suspension-check
+routerAdd(
+  'POST',
+  '/backend/v1/admin/run-suspension-check',
+  (e) => {
+    const authRecord = e.auth
+    if (!authRecord) {
+      return e.json(401, { error: 'Autenticação necessária.' })
+    }
+    const email = authRecord.getString('email').trim().toLowerCase()
+    const profile = authRecord.getString('profile')
+    if (profile !== 'ADMIN' || email !== 'valdknupp@gmail.com') {
+      return e.json(403, { error: 'Acesso restrito ao administrador master.' })
+    }
+
+    try {
+      const now = new Date()
+      const nowIso = now.toISOString().split('T')[0]
+      const [nY, nM, nD] = nowIso.split('-').map(Number)
+      const todayUtc = Date.UTC(nY, nM - 1, nD)
+
+      const clients = $app.findRecordsByFilter(
+        'clients',
+        "status = 'active' || (active = true && status != 'blocked_manually')",
+        '',
+        1000,
+        0,
+      )
+
+      let totalChecked = clients.length
+      let totalSuspended = 0
+      const suspendedList = []
+
+      for (let i = 0; i < clients.length; i++) {
+        const client = clients[i]
+        const clientEmail = client.getString('email').trim().toLowerCase()
+        if (clientEmail === 'valdknupp@gmail.com') continue
+
+        const paidUntilRaw = client.getString('paid_until')
+        if (!paidUntilRaw) continue
+
+        const paidUntilIso = paidUntilRaw.split(' ')[0].split('T')[0]
+        const [pY, pM, pD] = paidUntilIso.split('-').map(Number)
+        if (isNaN(pY) || isNaN(pM) || isNaN(pD)) continue
+
+        const paidUntilUtc = Date.UTC(pY, pM - 1, pD)
+        const diffDays = Math.round((todayUtc - paidUntilUtc) / (1000 * 60 * 60 * 24))
+
+        if (diffDays > 1) {
+          client.set('active', false)
+          client.set('status', 'suspended_overdue')
+          $app.save(client)
+          totalSuspended++
+
+          try {
+            const clientUsers = $app.findRecordsByFilter(
+              '_pb_users_auth_',
+              `client = '${client.id}'`,
+              '',
+              500,
+              0,
+            )
+            for (let u = 0; u < clientUsers.length; u++) {
+              const usr = clientUsers[u]
+              if (usr.getString('email').toLowerCase() !== 'valdknupp@gmail.com') {
+                usr.set('active', false)
+                $app.save(usr)
+              }
+            }
+          } catch (_) {}
+
+          suspendedList.push({
+            id: client.id,
+            name: client.getString('name'),
+            email: clientEmail,
+            paid_until: paidUntilIso,
+            days_overdue: diffDays,
+          })
+        }
+      }
+
+      return e.json(200, {
+        success: true,
+        totalChecked: totalChecked,
+        totalSuspended: totalSuspended,
+        suspendedList: suspendedList,
+      })
+    } catch (err) {
+      return e.json(500, { error: 'Erro ao executar verificação: ' + String(err) })
+    }
+  },
+  $apis.requireAuth(),
+)

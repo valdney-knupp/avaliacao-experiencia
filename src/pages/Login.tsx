@@ -83,9 +83,48 @@ export const Login: React.FC = () => {
         </div>
 
         {errorMessage && (
-          <div className="mb-6 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <span>{errorMessage}</span>
+          <div
+            className={`mb-6 rounded-lg border p-4 text-sm ${
+              errorMessage.toLowerCase().includes('suspenso')
+                ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+                : 'border-red-500/30 bg-red-500/10 text-red-300'
+            }`}
+          >
+            <div className="flex items-start gap-2.5">
+              <AlertCircle
+                className={`h-5 w-5 shrink-0 mt-0.5 ${
+                  errorMessage.toLowerCase().includes('suspenso')
+                    ? 'text-amber-400'
+                    : 'text-red-400'
+                }`}
+              />
+              <div className="space-y-2">
+                <p className="font-semibold leading-snug">{errorMessage}</p>
+                {errorMessage.toLowerCase().includes('suspenso') && (
+                  <div className="pt-2 border-t border-amber-500/20 text-xs text-amber-100 flex flex-col gap-1">
+                    <p className="text-gray-300">
+                      Assim que o pagamento for confirmado, seu acesso é liberado automaticamente.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                      <a
+                        href={SYSTEM_CONTACTS.whatsappLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-[#54D769] hover:underline"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp: (82) 99106-9350
+                      </a>
+                      <a
+                        href={SYSTEM_CONTACTS.emailLink}
+                        className="inline-flex items-center gap-1 font-semibold text-[#54D769] hover:underline"
+                      >
+                        <Mail className="h-3.5 w-3.5" /> valdknupp@gmail.com
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
