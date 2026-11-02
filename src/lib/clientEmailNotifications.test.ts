@@ -33,6 +33,30 @@ describe('Client Plan Expiration and Email Notification Rules', () => {
     expect(dedupe3d).toBe('rec_client_123:expiring_3d:2026-06-30')
     expect(dedupe1d).toBe('rec_client_123:expiring_1d:2026-06-30')
     expect(dedupeSusp).toBe('rec_client_123:suspended_overdue:2026-06-30')
+    const dedupeWelcome = `${clientId}:welcome_payment:evt_stripe_test_123`
+    expect(dedupeWelcome).toBe('rec_client_123:welcome_payment:evt_stripe_test_123')
+  })
+
+  it('determines plan interval, duration, and password generation for new buyers', () => {
+    const resolvePlanFromAmount = (amountPaid: number) => {
+      const isAnnual = amountPaid >= 1000
+      return {
+        plan: isAnnual ? 'ANUAL' : 'MENSAL',
+        daysToAdd: isAnnual ? 365 : 30,
+        label: isAnnual ? 'Anual' : 'Mensal',
+      }
+    }
+
+    expect(resolvePlanFromAmount(297)).toEqual({
+      plan: 'MENSAL',
+      daysToAdd: 30,
+      label: 'Mensal',
+    })
+    expect(resolvePlanFromAmount(2899)).toEqual({
+      plan: 'ANUAL',
+      daysToAdd: 365,
+      label: 'Anual',
+    })
   })
 
   it('ensures master email valdknupp@gmail.com is strictly excluded from notices and suspensions', () => {

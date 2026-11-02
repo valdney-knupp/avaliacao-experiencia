@@ -6,7 +6,13 @@ export interface ClientEmailLogRecord {
   id: string
   client: string
   recipient: string
-  type: 'expiring_7d' | 'expiring_3d' | 'expiring_1d' | 'suspended_overdue' | 'reactivated_payment'
+  type:
+    | 'expiring_7d'
+    | 'expiring_3d'
+    | 'expiring_1d'
+    | 'suspended_overdue'
+    | 'reactivated_payment'
+    | 'welcome_payment'
   subject: string
   paid_until?: string
   plan?: string

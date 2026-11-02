@@ -1277,9 +1277,461 @@ routerAdd('POST', '/backend/v1/stripe/webhook', (e) => {
           )
           $app.save(audit)
         } catch (_) {}
+      } else if (customerEmail && customerEmail !== 'valdknupp@gmail.com') {
+        // 1.5 Se o e-mail pagador NÃO corresponde a nenhum cliente cadastrado:
+        // CRIAR automaticamente o acesso do cliente com esse e-mail, senha inicial gerada forte,
+        // plano correspondente ao pago, validade inicial, critérios padrão e enviar e-mail de boas-vindas com manual PDF!
+        try {
+          console.log(
+            `[Stripe Webhook] Criando cliente e usuário automaticamente para novo comprador: ${customerEmail} (Plano: ${planName})`,
+          )
+
+          const cleanClientName =
+            customerName && customerName !== 'Cliente Stripe'
+              ? customerName
+              : customerEmail.split('@')[0]
+
+          const now = new Date()
+          const newPaidUntil = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
+          const newPaidUntilIso = formatDateOnlyIso(newPaidUntil)
+
+          // 1.5.1 Criar registro na coleção 'clients'
+          const clientsCol = $app.findCollectionByNameOrId('clients')
+          const clientRec = new Record(clientsCol)
+          clientRec.set('name', cleanClientName)
+          clientRec.set('email', customerEmail)
+          clientRec.set('plan', planName)
+          clientRec.set('active', true)
+          clientRec.set('status', 'active')
+          clientRec.set('paid_until', newPaidUntilIso)
+          clientRec.set(
+            'notes',
+            `Acesso criado automaticamente via Stripe Checkout (${planName} - ${amountFormatted}). Evento: ${eventId || 'stripe'}`,
+          )
+          $app.save(clientRec)
+          matchedClient = clientRec
+          isClientLinked = true
+
+          // 1.5.2 Gerar senha inicial forte aleatória (10 caracteres alfanuméricos com maiúscula e número)
+          const randomSuffix = $security.randomStringWithAlphabet(
+            6,
+            'abcdefghjkmnpqrstuvwxyz23456789',
+          )
+          const initialPassword = 'Exp@' + randomSuffix
+
+          // 1.5.3 Criar ou atualizar usuário comprador vinculado a este cliente
+          let buyerUser = null
+          try {
+            buyerUser = $app.findAuthRecordByEmail('_pb_users_auth_', customerEmail)
+          } catch (_) {}
+
+          const usersCol = $app.findCollectionByNameOrId('_pb_users_auth_')
+          if (!buyerUser) {
+            buyerUser = new Record(usersCol)
+            buyerUser.setEmail(customerEmail)
+          }
+          buyerUser.setPassword(initialPassword)
+          buyerUser.setVerified(true)
+          buyerUser.set('name', cleanClientName)
+          buyerUser.set('profile', 'ADMIN') // Administrador do tenant do comprador
+          buyerUser.set('client', clientRec.id)
+          buyerUser.set('active', true)
+          $app.save(buyerUser)
+
+          // 1.5.4 Inicializar critérios de avaliação padrão para este novo cliente
+          try {
+            const criteriaCol = $app.findCollectionByNameOrId('evaluation_criteria')
+            const allDefaultCriteria = [
+              {
+                order: 1,
+                name: 'Disciplina e cumprimento de regras',
+                description:
+                  'Pontualidade, respeito às normas de segurança, postura e conduta ética no ambiente de trabalho.',
+                category: 'OBRAS',
+              },
+              {
+                order: 2,
+                name: 'Qualidade e produtividade',
+                description:
+                  'Rendimento, precisão na execução das tarefas, atenção aos detalhes e entrega nos prazos estipulados.',
+                category: 'OBRAS',
+              },
+              {
+                order: 3,
+                name: 'Relacionamento interpessoal e trabalho em equipe',
+                description:
+                  'Comunicação respeitosa, colaboração com colegas e liderança, disposição para cooperar.',
+                category: 'OBRAS',
+              },
+              {
+                order: 4,
+                name: 'Assiduidade',
+                description:
+                  'Frequência regular, ausência de faltas injustificadas e cumprimento da jornada contratual.',
+                category: 'OBRAS',
+              },
+              {
+                order: 1,
+                name: 'ENTREGA DE RESULTADOS E QUALIDADE DO TRABALHO',
+                description:
+                  'Capacidade de cumprir prazos, atingir metas com precisão e entregar resultados com excelência e qualidade técnica.',
+                category: 'ESCRITORIO',
+              },
+              {
+                order: 2,
+                name: 'CAPACIDADE TÉCNICA E CONHECIMENTO',
+                description:
+                  'Domínio das rotinas, processos, ferramentas e conhecimentos técnicos exigidos para a função desempenhada.',
+                category: 'ESCRITORIO',
+              },
+              {
+                order: 3,
+                name: 'PROATIVIDADE',
+                description:
+                  'Iniciativa para antecipar necessidades, propor soluções e atuar de forma autônoma e preventiva.',
+                category: 'ESCRITORIO',
+              },
+              {
+                order: 4,
+                name: 'DINAMISMO',
+                description:
+                  'Agilidade na resolução de demandas, adaptabilidade a mudanças de prioridade e ritmo de trabalho produtivo.',
+                category: 'ESCRITORIO',
+              },
+              {
+                order: 5,
+                name: 'SOLUÇÃO DE PROBLEMAS',
+                description:
+                  'Habilidade de identificar causas, analisar cenários críticos e propor alternativas eficazes e seguras.',
+                category: 'ESCRITORIO',
+              },
+              {
+                order: 6,
+                name: 'RELACIONAMENTO INTERPESSOAL E TRABALHO EM EQUIPE',
+                description:
+                  'Comunicação clara e respeitosa, colaboração mútua, escuta ativa e facilidade de integração em equipe.',
+                category: 'ESCRITORIO',
+              },
+              {
+                order: 7,
+                name: 'POSTURA PROFISSIONAL E DISCIPLINA',
+                description:
+                  'Ética profissional, responsabilidade com normas, pontualidade, discrição e respeito às diretrizes da empresa.',
+                category: 'ESCRITORIO',
+              },
+              {
+                order: 8,
+                name: 'ASSIDUIDADE',
+                description:
+                  'Frequência regular, ausência de faltas injustificadas e estrito cumprimento da jornada contratual de trabalho.',
+                category: 'ESCRITORIO',
+              },
+            ]
+
+            for (let cIdx = 0; cIdx < allDefaultCriteria.length; cIdx++) {
+              const cItem = allDefaultCriteria[cIdx]
+              const critRec = new Record(criteriaCol)
+              critRec.set('name', cItem.name)
+              critRec.set('description', cItem.description)
+              critRec.set('order', cItem.order)
+              critRec.set('category', cItem.category)
+              critRec.set('sector', null)
+              critRec.set('client', clientRec.id)
+              critRec.set('active', true)
+              $app.save(critRec)
+            }
+          } catch (critErr) {
+            console.warn('[Stripe Webhook] Aviso ao copiar critérios para novo cliente:', critErr)
+          }
+
+          // 1.5.5 Auditoria de criação automática
+          try {
+            const auditCol = $app.findCollectionByNameOrId('audit_logs')
+            const audit = new Record(auditCol)
+            audit.set('entity_type', 'clients')
+            audit.set('entity_id', clientRec.id)
+            audit.set('action', 'AUTO_CREATE_CLIENT_PAYMENT')
+            audit.set(
+              'summary',
+              `Acesso de cliente criado automaticamente via Stripe para ${cleanClientName} (${customerEmail}). Plano: ${planName}. Vencimento: ${newPaidUntilIso}. Evento: ${eventId}`,
+            )
+            $app.save(audit)
+          } catch (_) {}
+
+          // 1.5.6 Enviar E-MAIL DE BOAS-VINDAS com USUÁRIO, SENHA INICIAL, AVISO DE ATIVO/LIBERADO e ANEXO DO MANUAL EM PDF
+          const welcomeDedupeKey = `${clientRec.id}:welcome_payment:${eventId || customerEmail}`
+          let alreadySentWelcome = false
+          try {
+            const existLog = $app.findFirstRecordByData(
+              'client_email_logs',
+              'dedupe_key',
+              welcomeDedupeKey,
+            )
+            if (existLog) alreadySentWelcome = true
+          } catch (_) {}
+
+          if (!alreadySentWelcome) {
+            let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
+            try {
+              const envUrl = $os.getenv('SITE_URL')
+              if (envUrl && envUrl.trim()) {
+                appUrl = envUrl.trim()
+              } else {
+                const appUrlSetting = $app.findFirstRecordByData('settings', 'key', 'app_url')
+                const val = appUrlSetting.getString('value')
+                if (val && val.trim()) appUrl = val.trim()
+              }
+            } catch (_) {}
+            if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1)
+
+            const planLabel = planName === 'ANUAL' ? 'Anual' : 'Mensal'
+            const newPaidUntilBR = (() => {
+              const [y, m, d] = newPaidUntilIso.split('-')
+              return y && m && d ? `${d}/${m}/${y}` : newPaidUntilIso
+            })()
+
+            const welcomeSubject = `Bem-vindo(a)! Seu acesso ao Avaliação de Experiência está ATIVO e LIBERADO`
+
+            const welcomeText = [
+              `Olá, ${cleanClientName}!`,
+              '',
+              `Seja muito bem-vindo(a) ao sistema Avaliação de Experiência!`,
+              `Confirmamos com sucesso o seu pagamento do plano ${planLabel}.`,
+              '',
+              `O SEU SISTEMA JÁ ESTÁ 100% ATIVO E LIBERADO PARA USO IMEDIATO!`,
+              '',
+              `DADOS DE ACESSO AO SISTEMA:`,
+              `Link de Acesso: ${appUrl}`,
+              `Usuário (Login): ${customerEmail}`,
+              `Senha Inicial: ${initialPassword}`,
+              `Vencimento do Plano: ${newPaidUntilBR}`,
+              '',
+              `ORIENTAÇÃO IMPORTANTE:`,
+              `Por segurança, recomendamos que você altere sua senha no primeiro acesso através do menu de perfil ou na tela inicial.`,
+              '',
+              `MANUAL DO USUÁRIO EM ANEXO:`,
+              `Em anexo a este e-mail enviamos o Manual Completo do Usuário em formato PDF, com instruções passo a passo para cadastrar colaboradores, configurar centros de custo e realizar as avaliações de 45 e 90 dias.`,
+              '',
+              `Você também pode baixar o manual e consultar o sistema a qualquer momento pelo endereço:`,
+              `${appUrl}`,
+              '',
+              `Se precisar de qualquer apoio ou tiver dúvidas:`,
+              `WhatsApp: (82) 99106-9350`,
+              `E-mail: valdknupp@gmail.com`,
+              '',
+              `Atenciosamente,`,
+              `Equipe Avaliação de Experiência`,
+            ].join('\n')
+
+            const welcomeHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E8E8E8; border-radius: 8px; background-color: #FFFFFF;">
+                <div style="background-color: #111111; padding: 22px 20px; border-radius: 6px; text-align: center; margin-bottom: 24px;">
+                  <h2 style="color: #54D769; margin: 0; font-size: 22px; font-weight: bold; letter-spacing: 0.5px;">Avaliação de Experiência</h2>
+                  <p style="color: #FFFFFF; margin: 6px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Acesso Liberado com Sucesso</p>
+                </div>
+                <div style="color: #333333; line-height: 1.6; font-size: 15px; margin-bottom: 24px;">
+                  <p>Olá, <strong>${cleanClientName}</strong>!</p>
+                  <p>Seja muito bem-vindo(a)! Confirmamos com sucesso o pagamento do seu plano <strong>${planLabel}</strong>.</p>
+                  
+                  <div style="background-color: #ECFDF5; border: 2px solid #54D769; padding: 16px 18px; margin: 20px 0; border-radius: 6px; text-align: center;">
+                    <p style="margin: 0; font-size: 16px; font-weight: bold; color: #065F46;">
+                      O SEU SISTEMA JÁ ESTÁ ATIVO E TOTALMENTE LIBERADO PARA USO!
+                    </p>
+                  </div>
+
+                  <p>Abaixo estão suas credenciais de acesso individuais para começar a utilizar imediatamente:</p>
+                  
+                  <div style="background-color: #F8F9FA; border-left: 4px solid #111111; padding: 16px; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #111111;">
+                      <strong>Link do Sistema:</strong> <a href="${appUrl}" style="color: #111111; font-weight: bold;">${appUrl}</a>
+                    </p>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #111111;">
+                      <strong>Usuário (Login):</strong> <span style="font-family: monospace; font-size: 15px; color: #0F172A; background-color: #E2E8F0; padding: 2px 6px; border-radius: 3px;">${customerEmail}</span>
+                    </p>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #111111;">
+                      <strong>Senha Inicial:</strong> <span style="font-family: monospace; font-size: 15px; font-weight: bold; color: #0F172A; background-color: #FEF08A; padding: 2px 8px; border-radius: 3px;">${initialPassword}</span>
+                    </p>
+                    <p style="margin: 0; font-size: 13px; color: #555555;">
+                      <strong>Plano Contratado:</strong> ${planLabel} | <strong>Validade Inicial:</strong> ${newPaidUntilBR}
+                    </p>
+                  </div>
+
+                  <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 12px 14px; margin: 16px 0; border-radius: 4px; font-size: 13px; color: #92400E;">
+                    <strong>Segurança:</strong> Por gentileza, altere sua senha no primeiro acesso através das configurações do seu perfil.
+                  </div>
+
+                  <div style="background-color: #F1F5F9; border-left: 4px solid #3B82F6; padding: 14px 16px; margin: 20px 0; border-radius: 4px; font-size: 14px; color: #1E293B;">
+                    <strong>Manual do Usuário em Anexo:</strong><br>
+                    Anexamos a este e-mail o <strong>Manual Completo em PDF</strong> (manual-usuario.pdf). Ele orienta todo o funcionamento do sistema: cadastro de colaboradores, prazos de 45 e 90 dias, alertas automáticos e relatórios.
+                  </div>
+                </div>
+
+                <div style="text-align: center; margin: 28px 0;">
+                  <a href="${appUrl}" style="background-color: #54D769; color: #111111; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 220px;">
+                    Entrar no Sistema Agora
+                  </a>
+                </div>
+
+                <div style="margin-top: 24px; padding: 16px; background-color: #F9FAFB; border-radius: 6px; font-size: 13px; color: #555555; line-height: 1.5;">
+                  <strong>Canais de Atendimento e Suporte:</strong><br>
+                  WhatsApp: <strong>(82) 99106-9350</strong><br>
+                  E-mail: <a href="mailto:valdknupp@gmail.com" style="color: #111111; text-decoration: underline;">valdknupp@gmail.com</a>
+                </div>
+
+                <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #E8E8E8; font-size: 12px; color: #777777; text-align: center; line-height: 1.5;">
+                  Este é um e-mail de confirmação gerado pelo sistema Avaliação de Experiência.<br>
+                  <a href="${appUrl}" style="color: #111111; text-decoration: underline;">${appUrl}</a>
+                </div>
+              </div>
+            `
+
+            // Anexar o Manual do Usuário em PDF
+            let manualReader = null
+            let fsInstance = null
+            try {
+              // 1. Tentar ler da coleção system_assets
+              try {
+                const assetRec = $app.findFirstRecordByData(
+                  'system_assets',
+                  'key',
+                  'manual-usuario.pdf',
+                )
+                if (assetRec && assetRec.getString('file')) {
+                  const fileKey = assetRec.getString('file')
+                  fsInstance = $app.newFilesystem()
+                  // Tentar getReader ou fileReader
+                  if (typeof fsInstance.getReader === 'function') {
+                    manualReader = fsInstance.getReader(assetRec.baseFilesPath() + '/' + fileKey)
+                  } else if (typeof fsInstance.fileReader === 'function') {
+                    manualReader = fsInstance.fileReader(assetRec.baseFilesPath() + '/' + fileKey)
+                  }
+                }
+              } catch (_) {}
+
+              // 2. Se não encontrou em system_assets, tentar caminhos locais
+              if (!manualReader) {
+                const candidatePaths = [
+                  'pb_hooks/assets/manual-usuario.pdf',
+                  'public/manual-usuario.pdf',
+                  'pb_public/manual-usuario.pdf',
+                ]
+                for (let cp = 0; cp < candidatePaths.length; cp++) {
+                  try {
+                    const lf = $filesystem.fileFromPath(candidatePaths[cp])
+                    if (lf && lf.reader && typeof lf.reader.open === 'function') {
+                      manualReader = lf.reader.open()
+                      break
+                    }
+                  } catch (_) {}
+                }
+              }
+            } catch (attFindErr) {
+              console.warn('[Stripe Webhook] Aviso ao localizar anexo do manual:', attFindErr)
+            }
+
+            try {
+              const message = new MailerMessage({
+                from: {
+                  address: 'valdknupp@gmail.com',
+                  name: $app.settings().meta.senderName || 'Avaliação de Experiência',
+                },
+                to: [{ address: customerEmail }],
+                subject: welcomeSubject,
+                text: welcomeText,
+                html: welcomeHtml,
+                attachments: {},
+              })
+
+              if (manualReader) {
+                message.attachments['manual-do-usuario-avaliacao-de-experiencia.pdf'] = manualReader
+                console.log(
+                  '[Stripe Webhook] Manual do usuário em PDF anexado com sucesso ao e-mail de boas-vindas.',
+                )
+              } else {
+                console.warn(
+                  '[Stripe Webhook] Aviso: leitor do PDF do manual não obtido; e-mail de boas-vindas será enviado sem o anexo binário.',
+                )
+              }
+
+              $app.newMailClient().send(message)
+              console.log(
+                `[Stripe Webhook] E-mail de boas-vindas enviado com sucesso para ${customerEmail}`,
+              )
+
+              // Registrar em client_email_logs
+              try {
+                const logsCol = $app.findCollectionByNameOrId('client_email_logs')
+                const logRec = new Record(logsCol)
+                logRec.set('client', clientRec.id)
+                logRec.set('recipient', customerEmail)
+                logRec.set('type', 'welcome_payment')
+                logRec.set('subject', welcomeSubject)
+                logRec.set('paid_until', newPaidUntilIso)
+                logRec.set('plan', planName)
+                logRec.set('dedupe_key', welcomeDedupeKey)
+                logRec.set('status', 'Enviado')
+                logRec.set('sent_at', new DateTime())
+                $app.save(logRec)
+              } catch (logErr) {
+                console.warn('[Stripe Webhook] Aviso ao registrar log de boas-vindas:', logErr)
+              }
+
+              // Registrar na auditoria
+              try {
+                const auditCol = $app.findCollectionByNameOrId('audit_logs')
+                const audit = new Record(auditCol)
+                audit.set('entity_type', 'clients')
+                audit.set('entity_id', clientRec.id)
+                audit.set('action', 'CLIENT_EMAIL_NOTIFICATION')
+                audit.set(
+                  'summary',
+                  `E-mail de boas-vindas pós-compra (welcome_payment) enviado para ${customerEmail} com manual em PDF e credenciais iniciais.`,
+                )
+                $app.save(audit)
+              } catch (_) {}
+            } catch (sendMailErr) {
+              console.error('[Stripe Webhook] Erro ao enviar e-mail de boas-vindas:', sendMailErr)
+              try {
+                const logsCol = $app.findCollectionByNameOrId('client_email_logs')
+                const logRec = new Record(logsCol)
+                logRec.set('client', clientRec.id)
+                logRec.set('recipient', customerEmail)
+                logRec.set('type', 'welcome_payment')
+                logRec.set('subject', welcomeSubject)
+                logRec.set('paid_until', newPaidUntilIso)
+                logRec.set('plan', planName)
+                logRec.set('dedupe_key', welcomeDedupeKey)
+                logRec.set('status', 'Falha')
+                logRec.set('error_message', String(sendMailErr).slice(0, 500))
+                logRec.set('sent_at', new DateTime())
+                $app.save(logRec)
+              } catch (_) {}
+            } finally {
+              if (manualReader && typeof manualReader.close === 'function') {
+                try {
+                  manualReader.close()
+                } catch (_) {}
+              }
+              if (fsInstance && typeof fsInstance.close === 'function') {
+                try {
+                  fsInstance.close()
+                } catch (_) {}
+              }
+            }
+          } else {
+            console.log(
+              `[Stripe Webhook] E-mail de boas-vindas já enviado anteriormente para ${welcomeDedupeKey}`,
+            )
+          }
+        } catch (autoCreateErr) {
+          console.error(
+            '[Stripe Webhook] Erro crítico ao criar cliente/acesso pós-compra:',
+            autoCreateErr,
+          )
+        }
       } else {
         console.log(
-          `[Stripe Webhook] Pagamento recebido para e-mail NÃO cadastrado em clients: ${customerEmail || '(sem email)'}`,
+          `[Stripe Webhook] Pagamento recebido para e-mail master ou inválido: ${customerEmail || '(sem email)'}`,
         )
       }
 

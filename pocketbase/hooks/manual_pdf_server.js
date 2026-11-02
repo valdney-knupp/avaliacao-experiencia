@@ -37,8 +37,15 @@ routerAdd('GET', '/manual-usuario.pdf', (e) => {
       } catch (_) {}
     }
 
-    // 3. Fallback: redirecionar para a URL do frontend
-    return e.redirect(302, '/manual-usuario.pdf')
+    // 3. Fallback: Se existir o asset na coleção system_assets mesmo sem arquivo físico, ou gerar dinamicamente
+    // Redirecionar para a rota do frontend ou URL base
+    let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
+    try {
+      const envUrl = $os.getenv('SITE_URL')
+      if (envUrl && envUrl.trim()) appUrl = envUrl.trim()
+    } catch (_) {}
+    if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1)
+    return e.redirect(302, `${appUrl}/manual-usuario.pdf`)
   } catch (err) {
     return e.json(500, { error: 'Erro ao servir o manual do usuário: ' + String(err) })
   }

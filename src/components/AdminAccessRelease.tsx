@@ -652,6 +652,16 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
                                 Reat
                               </span>
                             )}
+                            {clientLogs.some(
+                              (l) => l.type === 'welcome_payment' && l.status === 'Enviado',
+                            ) && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-teal-50 text-teal-700 border border-teal-200"
+                                title="E-mail de boas-vindas pós-compra com manual enviado"
+                              >
+                                Boas-vindas
+                              </span>
+                            )}
                           </div>
                         )}
                       </td>
