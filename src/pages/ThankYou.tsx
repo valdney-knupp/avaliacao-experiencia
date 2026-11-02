@@ -10,12 +10,18 @@ import {
   Phone,
   Mail,
   Headphones,
+  FileDown,
+  BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AppLogo } from '@/components/AppLogo'
 import { SYSTEM_CONTACTS } from '@/lib/contacts'
+import { downloadManualPdf, syncManualAssetToBackend } from '@/lib/manualService'
 
 export const ThankYou: React.FC = () => {
+  useEffect(() => {
+    syncManualAssetToBackend().catch(() => {})
+  }, [])
   // Mantém a página de agradecimento sempre clara para coerência com a de vendas
   useEffect(() => {
     const root = document.documentElement
@@ -67,8 +73,44 @@ export const ThankYou: React.FC = () => {
 
           <div className="my-8 border-t border-slate-200" />
 
+          {/* Caixa de Destaque para Download do Manual do Usuário */}
+          <div className="text-left rounded-2xl border-2 border-emerald-400 bg-emerald-50/70 p-5 sm:p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-[#2CA840]" />
+                  <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">
+                    Manual do Usuário em PDF Liberado
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed max-w-xl">
+                  Acesse o passo a passo oficial com a ordem correta dos cadastros (Centros de Custo
+                  → Setores → Critérios por Setor → Colaboradores → Avaliações de 45 e 90 dias) e os
+                  5 modelos de planilhas para importação.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto shrink-0">
+                <Button
+                  onClick={downloadManualPdf}
+                  className="gap-2 bg-[#54D769] hover:bg-[#43c457] text-white font-bold text-xs sm:text-sm h-11 px-5 shadow-sm"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Baixar Manual (PDF)
+                </Button>
+                <a
+                  href="/manual-usuario.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center text-xs text-slate-600 hover:text-slate-900 underline underline-offset-4 px-2 py-1 text-center"
+                >
+                  Abrir no navegador
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* Orientações Próximos Passos */}
-          <div className="text-left space-y-4">
+          <div className="text-left space-y-4 mt-6">
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#2CA840] flex items-center gap-2">
               <Clock className="h-4 w-4" /> Próximos Passos para Acesso
             </h2>
@@ -109,11 +151,12 @@ export const ThankYou: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    Ativação & Instruções por E-mail
+                    E-mail de Boas-Vindas com Manual Anexo
                   </h3>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    Você receberá um e-mail com as credenciais iniciais e orientações de primeiro
-                    acesso. Verifique também a caixa de spam ou lixo eletrônico.
+                    Você receberá um e-mail com seu usuário, senha inicial gerada e o{' '}
+                    <strong>Manual do Usuário em PDF anexado</strong>. O sistema já está ativo e
+                    liberado para uso imediato.
                   </p>
                 </div>
               </div>

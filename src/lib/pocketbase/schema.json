@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T13:33:51.694Z",
+  "generatedAt": "2026-11-02T18:18:09.045Z",
   "collections": [
     {
       "name": "users",
@@ -1135,6 +1135,52 @@
         "CREATE INDEX idx_client_email_logs_client ON client_email_logs (client)",
         "CREATE INDEX idx_client_email_logs_type ON client_email_logs (type)"
       ]
+    },
+    {
+      "name": "system_assets",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "file",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_system_assets_key ON system_assets (key)"]
     }
   ]
 }

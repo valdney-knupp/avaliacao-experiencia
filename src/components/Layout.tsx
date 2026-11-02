@@ -17,8 +17,10 @@ import {
   Bell,
   Sun,
   Moon,
+  BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { downloadManualPdf, syncManualAssetToBackend } from '@/lib/manualService'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +44,10 @@ export const Layout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    syncManualAssetToBackend().catch(() => {})
+  }, [])
 
   // Profile friendly names
   const profileLabelMap: Record<string, string> = {
@@ -342,6 +348,20 @@ export const Layout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Botão de Download do Manual do Usuário (PDF) */}
+            <button
+              onClick={downloadManualPdf}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 text-xs font-semibold transition-all shadow-xs"
+              title="Baixar Manual do Usuário Completo em PDF"
+              aria-label="Baixar Manual do Usuário em PDF"
+            >
+              <BookOpen className="h-4 w-4 text-[#2CA840] dark:text-[#54D769]" />
+              <span className="hidden md:inline">Manual do Usuário</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-white/70 dark:bg-black/40 px-1 py-0.2 rounded border border-emerald-500/20 text-emerald-800 dark:text-emerald-200">
+                PDF
+              </span>
+            </button>
+
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
@@ -440,7 +460,17 @@ export const Layout: React.FC = () => {
 
         {/* Global Footer */}
         <footer className="mt-auto border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#141815] px-6 py-4 text-xs text-slate-500 dark:text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Sistema de Avaliação de Experiência</span>
+          <div className="flex items-center gap-3">
+            <span>Sistema de Avaliação de Experiência</span>
+            <span className="text-slate-300 dark:text-white/20">•</span>
+            <button
+              onClick={downloadManualPdf}
+              className="hover:text-[#2CA840] dark:hover:text-[#54D769] underline underline-offset-2 flex items-center gap-1 cursor-pointer font-medium"
+            >
+              <BookOpen className="h-3 w-3" />
+              Manual do Usuário (PDF)
+            </button>
+          </div>
           <span className="text-slate-400 dark:text-slate-500">v1.2.0 • Gestão de Pessoas</span>
         </footer>
       </div>

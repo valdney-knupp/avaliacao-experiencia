@@ -10,8 +10,10 @@ import {
   UserX,
   Filter,
   ArrowUpRight,
+  BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { downloadManualPdf } from '@/lib/manualService'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -439,11 +441,24 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#111111]">Visão geral</h1>
-        <p className="text-sm text-gray-600 mt-0.5">
-          Acompanhe os ciclos e aja antes dos vencimentos.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#111111]">Visão geral</h1>
+          <p className="text-sm text-gray-600 mt-0.5">
+            Acompanhe os ciclos e aja antes dos vencimentos.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={downloadManualPdf}
+            variant="outline"
+            className="gap-2 border-emerald-500/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold text-xs sm:text-sm h-10 px-4"
+            title="Baixar Manual do Usuário Completo em PDF"
+          >
+            <BookOpen className="h-4 w-4 text-[#2CA840] dark:text-[#54D769]" />
+            Manual do Usuário (PDF)
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-[#E8E8E8] bg-white p-5 shadow-xs space-y-4">
