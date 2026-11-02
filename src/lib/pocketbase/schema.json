@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T18:18:09.045Z",
+  "generatedAt": "2026-11-02T18:31:00.840Z",
   "collections": [
     {
       "name": "users",
@@ -1069,7 +1069,8 @@
             "expiring_3d",
             "expiring_1d",
             "suspended_overdue",
-            "reactivated_payment"
+            "reactivated_payment",
+            "welcome_payment"
           ]
         },
         {
