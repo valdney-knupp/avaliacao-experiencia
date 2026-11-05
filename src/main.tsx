@@ -52,6 +52,10 @@ if (typeof window !== 'undefined' && typeof Node !== 'undefined') {
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './main.css'
+import { initGoogleAds } from '@/lib/googleAds'
+
+// Inicializa a tag global do Google Ads (gtag.js) em todas as páginas públicas/carregadas do app
+initGoogleAds()
 
 // Tratamento global para falhas de carregamento de chunks dinâmicos (deploy / atualização de versão)
 if (typeof window !== 'undefined') {

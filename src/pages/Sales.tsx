@@ -39,6 +39,7 @@ import {
   buildCheckoutUrl,
 } from '@/lib/stripeCheckout'
 import { useSearchParams } from 'react-router-dom'
+import { initGoogleAds } from '@/lib/googleAds'
 
 export const Sales: React.FC = () => {
   const [config, setConfig] = useState<StripeCheckoutConfig>(FALLBACK_CHECKOUT_CONFIG)
@@ -46,6 +47,11 @@ export const Sales: React.FC = () => {
   const customerEmailParam = searchParams.get('email') || searchParams.get('prefilled_email') || ''
   const [loadingCheckout, setLoadingCheckout] = useState(true)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+
+  // Garante que a tag global do Google Ads esteja sempre ativa na página de vendas
+  useEffect(() => {
+    initGoogleAds()
+  }, [])
 
   // Garante que a página de vendas pública se apresente sempre em tema claro
   useEffect(() => {

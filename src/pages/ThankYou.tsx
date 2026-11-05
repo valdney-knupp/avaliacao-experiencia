@@ -18,7 +18,14 @@ import { AppLogo } from '@/components/AppLogo'
 import { SYSTEM_CONTACTS } from '@/lib/contacts'
 import { downloadManualPdf, syncManualAssetToBackend } from '@/lib/manualService'
 
+import { trackPurchaseConversion } from '@/lib/googleAds'
+
 export const ThankYou: React.FC = () => {
+  // Dispara o evento oficial de conversão de compra no Google Ads uma única vez ao montar
+  useEffect(() => {
+    trackPurchaseConversion()
+  }, [])
+
   useEffect(() => {
     syncManualAssetToBackend().catch(() => {})
   }, [])
