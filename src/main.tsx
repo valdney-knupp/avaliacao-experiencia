@@ -53,6 +53,19 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './main.css'
 import { initGoogleAds } from '@/lib/googleAds'
+import brandIconUrl from '@/assets/image-31fa7.png'
+
+// Favicon: usa o símbolo oficial da marca (PNG enviado pelo usuário); o SVG em index.html segue como fallback
+if (typeof document !== 'undefined') {
+  let iconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"][type="image/png"]')
+  if (!iconLink) {
+    iconLink = document.createElement('link')
+    iconLink.rel = 'icon'
+    iconLink.type = 'image/png'
+    document.head.appendChild(iconLink)
+  }
+  iconLink.href = brandIconUrl
+}
 
 // Inicializa a tag global do Google Ads (gtag.js) em todas as páginas públicas/carregadas do app
 initGoogleAds()
