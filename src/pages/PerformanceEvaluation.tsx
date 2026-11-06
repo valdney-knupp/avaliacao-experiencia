@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import {
   Plus,
-  ClipboardList,
-  Filter,
   Loader2,
   FileText,
-  AlertCircle,
-  Pencil,
+  Filter,
   Eye,
+  Pencil,
+  AlertCircle,
+  ClipboardList,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,7 +25,6 @@ import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
 import { PERF_FORMS, type PerfFormSchema } from '@/lib/perfForms'
 import {
-  periodLabel,
   parseSchema,
   collectQuestions,
   validateRequiredAnswers,
@@ -52,6 +51,12 @@ interface PerfEvaluationRow {
   }
 }
 
+interface CollaboratorOption {
+  id: string
+  name: string
+  role?: string
+}
+
 const statusVariant = (s: PerfEvaluationRow['status']) =>
   s === 'Concluida' ? 'default' : 'secondary'
 
@@ -66,14 +71,67 @@ export const PerformanceEvaluation: React.FC = () => {
   const [formFilter, setFormFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [periodFilter, setPeriodFilter] = useState('')
+  const [collaborators, setCollaborators] = useState<CollaboratorOption[]>([])
+
+  // ---------- carregamento dos colaboradores do tenant ----------
+  useEffect(() => {
+    let alive = true
+    const filter = user?.client ? pb.filter('client = {:c}', { c: user.client }) : ''
+    pb.collection('collaborators')
+      .getList(1, 500, { sort: 'name', filter })
+      .then((res) => {
+        if (!alive) return
+        setCollaborators(
+          res.items.map((i: any) => ({
+            id: i.id,
+            name: i.name || 'Sem nome',
+            role: i.role || '',
+          })),
+        )
+      })
+      .catch(() => {
+        if (alive) setCollaborators([])
+      })
+    return () => {
+      alive = false
+    }
+  }, [user?.client])
+
+  // ---------- listagem de avaliações ----------
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const list = await pb.collection('perf_evaluations').getList(1, 200, {
+        sort: '-created',
+        expand: 'collaborator,form_version',
+      })
+      setRows(list.items as unknown as PerfEvaluationRow[])
+    } catch {
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (searchParams.get('edit')) return
+    load()
+  }, [load, searchParams])
 
   // ---------- criação de rascunho ----------
   const createDraft = useCallback(
     async (formKey: string, schema: PerfFormSchema) => {
-      if (!user) return
+      if (!user) {
+        toast({
+          title: 'Sessão não identificada',
+          description: 'Faça login novamente para iniciar.',
+          variant: 'destructive',
+        })
+        return
+      }
       setStarting(true)
       try {
-        // localiza ou cria a versão publicada do modelo para o tenant
+        // Localiza a versão publicada mais recente do modelo
         let versionRec: any = null
         try {
           versionRec = await pb
@@ -82,7 +140,7 @@ export const PerformanceEvaluation: React.FC = () => {
               sort: '-version',
             })
         } catch {
-          const base = PERF_FORMS.find((f) => f.key === formKey)
+          // Cria versão inicial se ainda não existir
           versionRec = await pb.collection('perf_form_versions').create({
             form_key: formKey,
             version: 1,
@@ -90,35 +148,39 @@ export const PerformanceEvaluation: React.FC = () => {
             subtitle: schema.description || '',
             status: 'Publicado',
             schema: JSON.stringify(schema),
-            client: user.client,
+            client: user.client || '',
           })
         }
 
         const rec = await pb.collection('perf_evaluations').create({
-          collaborator: '',
+          collaborator: null,
           form_version: versionRec.id,
           period_label: '',
           responsible: user.id,
-          responsible_name: user.name,
+          responsible_name: user.name || 'Administrador',
           status: 'Rascunho',
-          client: user.client,
+          client: user.client || '',
         })
+
         toast({
-          title: 'Avaliação criada',
-          description: 'Complete a identificação para continuar.',
+          title: 'Avaliação iniciada',
+          description: 'Preencha a identificação e as competências.',
         })
+
+        // Atualiza a listagem em background e abre imediatamente em edição
+        load().catch(() => {})
         setSearchParams({ edit: rec.id }, { replace: true })
       } catch (err: any) {
         toast({
           title: 'Erro ao iniciar avaliação',
-          description: err?.message || 'Tente novamente.',
+          description: err?.message || 'Falha de comunicação com o servidor.',
           variant: 'destructive',
         })
       } finally {
         setStarting(false)
       }
     },
-    [user, toast, setSearchParams],
+    [user, toast, setSearchParams, load],
   )
 
   // ---------- edição (rascunho retomado) ----------
@@ -151,13 +213,40 @@ export const PerformanceEvaluation: React.FC = () => {
     }
   }, [])
 
+  // Se a URL tiver `?edit=<id>`, busca o registro mesmo se `rows` ainda estiver vazio
   useEffect(() => {
     const editId = searchParams.get('edit')
-    if (editId && rows.length > 0 && !editing) {
-      const row = rows.find((r) => r.id === editId)
-      if (row && row.status === 'Rascunho') openForEdit(row)
+    if (!editId) {
+      if (editing) {
+        setEditing(null)
+        setEditingSchema(null)
+        setAnswers({})
+      }
+      return
     }
-  }, [searchParams, rows, editing, openForEdit])
+    if (editing?.id === editId) return
+
+    let alive = true
+    pb.collection('perf_evaluations')
+      .getOne(editId, { expand: 'collaborator,form_version' })
+      .then((record) => {
+        if (!alive) return
+        openForEdit(record as unknown as PerfEvaluationRow)
+      })
+      .catch((err) => {
+        if (!alive) return
+        toast({
+          title: 'Avaliação não encontrada',
+          description: err?.message || 'Não foi possível carregar a avaliação.',
+          variant: 'destructive',
+        })
+        setSearchParams({}, { replace: true })
+      })
+
+    return () => {
+      alive = false
+    }
+  }, [searchParams, editing, openForEdit, toast, setSearchParams])
 
   const setAnswer = (qid: string, value: string) => setAnswers((m) => ({ ...m, [qid]: value }))
 
@@ -165,6 +254,50 @@ export const PerformanceEvaluation: React.FC = () => {
     () => (editingSchema ? (collectQuestions(editingSchema) as any[]) : []),
     [editingSchema],
   )
+
+  // Extrai o colaborador selecionado para associar à avaliação
+  const selectedCollaboratorId = useMemo(() => {
+    const raw = answers['q_colaborador'] || answers['q_avaliado'] || ''
+    if (!raw) return ''
+    try {
+      const parsed = JSON.parse(raw)
+      return typeof parsed === 'string' ? parsed : String(parsed)
+    } catch {
+      return raw
+    }
+  }, [answers])
+
+  // Extrai a data ou gestor para resumo se disponível
+  const evalDate = useMemo(() => {
+    const raw = answers['q_data'] || ''
+    if (!raw) return ''
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return raw
+    }
+  }, [answers])
+
+  const persistAnswers = async (evaluationId: string) => {
+    for (const [question_id, value] of Object.entries(answers)) {
+      const existing = await pb.collection('perf_answers').getList(1, 1, {
+        filter: pb.filter('evaluation = {:e} && question_id = {:q}', {
+          e: evaluationId,
+          q: question_id,
+        }),
+      })
+      if (existing.items.length > 0) {
+        await pb.collection('perf_answers').update(existing.items[0].id, { value })
+      } else {
+        await pb.collection('perf_answers').create({
+          evaluation: evaluationId,
+          question_id,
+          value,
+          client: user?.client || '',
+        })
+      }
+    }
+  }
 
   const finish = async () => {
     if (!editing) return
@@ -180,29 +313,16 @@ export const PerformanceEvaluation: React.FC = () => {
     }
     setSaving(true)
     try {
-      for (const [question_id, value] of Object.entries(answers)) {
-        const existing = await pb.collection('perf_answers').getList(1, 1, {
-          filter: pb.filter('evaluation = {:e} && question_id = {:q}', {
-            e: editing.id,
-            q: question_id,
-          }),
-        })
-        if (existing.items.length > 0) {
-          await pb.collection('perf_answers').update(existing.items[0].id, { value })
-        } else {
-          await pb.collection('perf_answers').create({
-            evaluation: editing.id,
-            question_id,
-            value,
-            client: user?.client,
-          })
-        }
-      }
-      await pb.collection('perf_evaluations').update(editing.id, {
+      await persistAnswers(editing.id)
+      const updateData: Record<string, any> = {
         status: 'Concluida',
         completed_at: new Date().toISOString(),
-        period_label: answers['q_periodo'] || editing.period_label || '',
-      })
+        period_label: evalDate || editing.period_label || '',
+      }
+      if (selectedCollaboratorId) {
+        updateData.collaborator = selectedCollaboratorId
+      }
+      await pb.collection('perf_evaluations').update(editing.id, updateData)
       toast({ title: 'Avaliação concluída', description: 'As respostas foram registradas.' })
       setEditing(null)
       setEditingSchema(null)
@@ -211,7 +331,7 @@ export const PerformanceEvaluation: React.FC = () => {
       await load()
     } catch (err: any) {
       toast({
-        title: 'Erro ao concluir',
+        title: 'Erro ao concluir avaliação',
         description: err?.message || 'Tente novamente.',
         variant: 'destructive',
       })
@@ -224,28 +344,15 @@ export const PerformanceEvaluation: React.FC = () => {
     if (!editing) return
     setSaving(true)
     try {
-      for (const [question_id, value] of Object.entries(answers)) {
-        const existing = await pb.collection('perf_answers').getList(1, 1, {
-          filter: pb.filter('evaluation = {:e} && question_id = {:q}', {
-            e: editing.id,
-            q: question_id,
-          }),
-        })
-        if (existing.items.length > 0) {
-          await pb.collection('perf_answers').update(existing.items[0].id, { value })
-        } else {
-          await pb.collection('perf_answers').create({
-            evaluation: editing.id,
-            question_id,
-            value,
-            client: user?.client,
-          })
-        }
+      await persistAnswers(editing.id)
+      const updateData: Record<string, any> = {
+        period_label: evalDate || editing.period_label || '',
       }
-      await pb.collection('perf_evaluations').update(editing.id, {
-        period_label: answers['q_periodo'] || editing.period_label || '',
-      })
-      toast({ title: 'Rascunho salvo' })
+      if (selectedCollaboratorId) {
+        updateData.collaborator = selectedCollaboratorId
+      }
+      await pb.collection('perf_evaluations').update(editing.id, updateData)
+      toast({ title: 'Rascunho salvo', description: 'Você pode retomar quando quiser.' })
       setEditing(null)
       setEditingSchema(null)
       setAnswers({})
@@ -262,27 +369,6 @@ export const PerformanceEvaluation: React.FC = () => {
     }
   }
 
-  // ---------- listagem ----------
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const list = await pb.collection('perf_evaluations').getList(1, 200, {
-        sort: '-created',
-        expand: 'collaborator,form_version',
-      })
-      setRows(list.items as unknown as PerfEvaluationRow[])
-    } catch {
-      setRows([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (searchParams.get('edit')) return
-    load()
-  }, [load, searchParams])
-
   const filtered = useMemo(
     () =>
       rows.filter((r) => {
@@ -298,8 +384,13 @@ export const PerformanceEvaluation: React.FC = () => {
     [rows, formFilter, statusFilter, periodFilter],
   )
 
-  // ---------- render ----------
+  // ---------- render: formulário de preenchimento ----------
   if (editing) {
+    const personName =
+      collaborators.find((c) => c.id === selectedCollaboratorId)?.name ||
+      editing.expand?.collaborator?.name ||
+      'não selecionada'
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
@@ -308,9 +399,9 @@ export const PerformanceEvaluation: React.FC = () => {
               {editingSchema?.title || 'Avaliação de Desempenho'}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Pessoa avaliada:{' '}
-              <strong>{editing.expand?.collaborator?.name || 'não selecionada'}</strong>
-              {editing.period_label ? ` • Período: ${editing.period_label}` : ''}
+              Pessoa avaliada: <strong>{personName}</strong>
+              {evalDate ? ` • Data: ${evalDate}` : ''}
+              {editing.status === 'Concluida' ? ' • Situação: Concluída' : ' • Situação: Rascunho'}
             </p>
           </div>
           <Button
@@ -350,38 +441,106 @@ export const PerformanceEvaluation: React.FC = () => {
                     if (!visible) return null
                     return (
                       <div key={q.id} className="space-y-2">
-                        <label className="text-sm font-medium">
+                        <label className="text-sm font-medium whitespace-pre-line">
                           {q.label}
                           {q.required ? <span className="text-red-500"> *</span> : null}
                         </label>
-                        {q.type === 'text' ? (
+                        {q.description ? (
+                          <p className="text-xs text-muted-foreground">{q.description}</p>
+                        ) : null}
+
+                        {/* Campo tipo collaborator_select */}
+                        {q.type === 'collaborator_select' ? (
+                          <div className="space-y-1.5">
+                            <select
+                              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+                              value={
+                                answers[q.id]
+                                  ? (() => {
+                                      try {
+                                        return JSON.parse(answers[q.id])
+                                      } catch {
+                                        return answers[q.id]
+                                      }
+                                    })()
+                                  : ''
+                              }
+                              onChange={(e) => setAnswer(q.id, JSON.stringify(e.target.value))}
+                            >
+                              <option value="">Selecione o colaborador…</option>
+                              {collaborators.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.name} {c.role ? `(${c.role})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                            {collaborators.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                Nenhum colaborador cadastrado ainda. Você pode cadastrar em
+                                &quot;Colaboradores&quot;.
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : q.type === 'date' ? (
                           <Input
-                            value={answers[q.id] || ''}
-                            onChange={(e) => setAnswer(q.id, e.target.value)}
+                            type="date"
+                            value={
+                              answers[q.id]
+                                ? (() => {
+                                    try {
+                                      return JSON.parse(answers[q.id])
+                                    } catch {
+                                      return answers[q.id]
+                                    }
+                                  })()
+                                : ''
+                            }
+                            onChange={(e) => setAnswer(q.id, JSON.stringify(e.target.value))}
+                          />
+                        ) : q.type === 'text' ? (
+                          <Input
+                            value={
+                              answers[q.id]
+                                ? (() => {
+                                    try {
+                                      const p = JSON.parse(answers[q.id])
+                                      return typeof p === 'string' ? p : String(p)
+                                    } catch {
+                                      return answers[q.id]
+                                    }
+                                  })()
+                                : ''
+                            }
+                            onChange={(e) => setAnswer(q.id, JSON.stringify(e.target.value))}
                           />
                         ) : q.type === 'textarea' ? (
                           <textarea
                             className="min-h-[90px] w-full rounded-md border bg-transparent px-3 py-2 text-sm"
                             value={answers[q.id] || ''}
                             onChange={(e) => setAnswer(q.id, e.target.value)}
+                            placeholder="Comentários sobre pontos fortes e pontos a melhorar…"
                           />
                         ) : q.type === 'radio' ? (
                           <div className="space-y-1.5">
-                            {q.options.map((opt: string) => (
-                              <label key={opt} className="flex items-center gap-2 text-sm">
+                            {q.options?.map((opt: string) => (
+                              <label
+                                key={opt}
+                                className="flex items-start gap-2 text-sm cursor-pointer hover:bg-muted/40 p-1.5 rounded"
+                              >
                                 <input
                                   type="radio"
                                   name={q.id}
+                                  className="mt-0.5"
                                   checked={(answers[q.id] || '') === JSON.stringify(opt)}
                                   onChange={() => setAnswer(q.id, JSON.stringify(opt))}
                                 />
-                                {opt}
+                                <span>{opt}</span>
                               </label>
                             ))}
                           </div>
                         ) : q.type === 'checkbox' ? (
                           <div className="space-y-1.5">
-                            {q.options.map((opt: string) => {
+                            {q.options?.map((opt: string) => {
                               const cur = parseAnswerValue(answers[q.id])
                               const checked = cur.includes(opt)
                               return (
@@ -444,7 +603,7 @@ export const PerformanceEvaluation: React.FC = () => {
           </form>
         ) : (
           <Card>
-            <CardContent className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CardContent className="flex items-center gap-2 text-sm text-muted-foreground py-6">
               <AlertCircle className="h-4 w-4" /> Formulário da versão não encontrado.
             </CardContent>
           </Card>
@@ -453,6 +612,7 @@ export const PerformanceEvaluation: React.FC = () => {
     )
   }
 
+  // ---------- render: página principal ----------
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -462,7 +622,14 @@ export const PerformanceEvaluation: React.FC = () => {
             Crie, acompanhe e consulte as avaliações de desempenho do seu cliente.
           </p>
         </div>
-        <Button onClick={() => setStarting(true)} disabled={starting}>
+        <Button
+          onClick={() => {
+            // "Nova avaliação": inicia diretamente com o Nível I como padrão
+            const defaultForm = PERF_FORMS[0]
+            if (defaultForm) createDraft(defaultForm.key, defaultForm.schema)
+          }}
+          disabled={starting}
+        >
           {starting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
@@ -473,7 +640,6 @@ export const PerformanceEvaluation: React.FC = () => {
       </div>
 
       {/* Seleção de modelo */}
-      {starting ? null : null}
       <div className="grid gap-4 md:grid-cols-2">
         {PERF_FORMS.map((f) => (
           <Card key={f.key}>
