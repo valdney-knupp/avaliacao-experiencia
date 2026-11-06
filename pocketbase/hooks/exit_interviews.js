@@ -6,44 +6,24 @@
 // Segurança: o token é opaco (hex 48), único por convite, e a rota pública só
 // revela o formulário daquele convite (sem e-mails, sem outros dados do tenant).
 
-const MASTER_EMAIL = 'valdknupp@gmail.com'
-
-function exitAppUrl() {
-  let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
-  try {
-    const envUrl = $os.getenv('SITE_URL')
-    if (envUrl && envUrl.trim()) appUrl = envUrl.trim()
-    else {
-      const s = $app.findFirstRecordByData('settings', 'key', 'app_url')
-      const v = s.getString('value')
-      if (v && v.trim()) appUrl = v.trim()
-    }
-  } catch (_) {}
-  return appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl
-}
-
-function randomToken() {
-  const b = new Uint8Array(24)
-  crypto.randomFillSync(b)
-  return Array.from(b)
-    .map((x) => x.toString(16).padStart(2, '0'))
-    .join('')
-}
-
-function isAuthorizedForExitSend(auth) {
-  if (!auth) return false
-  const email = auth.getString('email')
-  if (email === MASTER_EMAIL) return true
-  const profile = auth.getString('profile')
-  return profile === 'ADMIN' || profile === 'HR'
-}
-
 // ------------------------------------------------------------------
 // Envio de convite (por canal). Registra tentativa em exit_send_attempts.
+// ATENÇÃO: Toda a lógica fica INLINE dentro do callback para compatibilidade
+// com o pool de JSVM do PocketBase (declarações top-level causam ReferenceError).
 // ------------------------------------------------------------------
 routerAdd('POST', '/backend/v1/exit-invites/send', (e) => {
+  const MASTER_EMAIL = 'valdknupp@gmail.com'
   const auth = e.auth
-  if (!isAuthorizedForExitSend(auth)) {
+
+  const isAuthorized = (() => {
+    if (!auth) return false
+    const email = auth.getString('email')
+    if (email === MASTER_EMAIL) return true
+    const profile = auth.getString('profile')
+    return profile === 'ADMIN' || profile === 'HR'
+  })()
+
+  if (!isAuthorized) {
     return e.json(403, { error: 'Você não tem permissão para enviar entrevistas de desligamento.' })
   }
 
@@ -93,7 +73,19 @@ routerAdd('POST', '/backend/v1/exit-invites/send', (e) => {
     formTitle = fv.getString('title') || formTitle
   } catch (_) {}
 
-  const appUrl = exitAppUrl()
+  let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
+  try {
+    const envUrl = $os.getenv('SITE_URL')
+    if (envUrl && envUrl.trim()) {
+      appUrl = envUrl.trim()
+    } else {
+      const s = $app.findFirstRecordByData('settings', 'key', 'app_url')
+      const v = s.getString('value')
+      if (v && v.trim()) appUrl = v.trim()
+    }
+  } catch (_) {}
+  if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1)
+
   const token = invite.getString('token')
   const link = `${appUrl}/entrevista/${token}`
 
