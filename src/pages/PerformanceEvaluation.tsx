@@ -97,6 +97,36 @@ export const PerformanceEvaluation: React.FC = () => {
     }
   }, [user?.client])
 
+  // ---------- edição (rascunho retomado) ----------
+  const [editing, setEditing] = useState<PerfEvaluationRow | null>(null)
+  const [editingSchema, setEditingSchema] = useState<PerfFormSchema | null>(null)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
+
+  const openForEdit = useCallback(async (row: PerfEvaluationRow) => {
+    setEditing(row)
+    let schema: PerfFormSchema | null = null
+    try {
+      const fv: any = await pb.collection('perf_form_versions').getOne(row.form_version)
+      schema = parseSchema<PerfFormSchema>(fv?.schema)
+    } catch {
+      schema = null
+    }
+    setEditingSchema(schema)
+    try {
+      const list = await pb.collection('perf_answers').getList(1, 200, {
+        filter: pb.filter('evaluation = {:id}', { id: row.id }),
+      })
+      const map: Record<string, string> = {}
+      for (const item of list.items as any[]) {
+        map[item.question_id] = item.value
+      }
+      setAnswers(map)
+    } catch {
+      setAnswers({})
+    }
+  }, [])
+
   // ---------- listagem de avaliações ----------
   const load = useCallback(async () => {
     setLoading(true)
@@ -169,6 +199,7 @@ export const PerformanceEvaluation: React.FC = () => {
 
         // Atualiza a listagem em background e abre imediatamente em edição
         load().catch(() => {})
+        await openForEdit(rec as unknown as PerfEvaluationRow)
         setSearchParams({ edit: rec.id }, { replace: true })
       } catch (err: any) {
         toast({
@@ -180,38 +211,8 @@ export const PerformanceEvaluation: React.FC = () => {
         setStarting(false)
       }
     },
-    [user, toast, setSearchParams, load],
+    [user, toast, setSearchParams, load, openForEdit],
   )
-
-  // ---------- edição (rascunho retomado) ----------
-  const [editing, setEditing] = useState<PerfEvaluationRow | null>(null)
-  const [editingSchema, setEditingSchema] = useState<PerfFormSchema | null>(null)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState(false)
-
-  const openForEdit = useCallback(async (row: PerfEvaluationRow) => {
-    setEditing(row)
-    let schema: PerfFormSchema | null = null
-    try {
-      const fv: any = await pb.collection('perf_form_versions').getOne(row.form_version)
-      schema = parseSchema<PerfFormSchema>(fv?.schema)
-    } catch {
-      schema = null
-    }
-    setEditingSchema(schema)
-    try {
-      const list = await pb.collection('perf_answers').getList(1, 200, {
-        filter: pb.filter('evaluation = {:id}', { id: row.id }),
-      })
-      const map: Record<string, string> = {}
-      for (const item of list.items as any[]) {
-        map[item.question_id] = item.value
-      }
-      setAnswers(map)
-    } catch {
-      setAnswers({})
-    }
-  }, [])
 
   // Se a URL tiver `?edit=<id>`, busca o registro mesmo se `rows` ainda estiver vazio
   useEffect(() => {
@@ -753,11 +754,25 @@ export const PerformanceEvaluation: React.FC = () => {
                       </td>
                       <td className="px-2 py-2.5">
                         {r.status === 'Rascunho' ? (
-                          <Button size="sm" variant="outline" onClick={() => openForEdit(r)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              openForEdit(r)
+                              setSearchParams({ edit: r.id })
+                            }}
+                          >
                             <Pencil className="mr-1 h-3.5 w-3.5" /> Retomar
                           </Button>
                         ) : (
-                          <Button size="sm" variant="ghost" onClick={() => openForEdit(r)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              openForEdit(r)
+                              setSearchParams({ edit: r.id })
+                            }}
+                          >
                             <Eye className="mr-1 h-3.5 w-3.5" /> Consultar
                           </Button>
                         )}
