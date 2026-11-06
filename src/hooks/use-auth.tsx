@@ -40,6 +40,8 @@ export interface AuthContextType {
   canManageUsers: boolean
   canCreateCollaborator: boolean
   canEvaluate: boolean
+  canManageExitInvites: boolean
+  canViewExitIndividualAnswers: boolean
   isWorksiteManager: boolean
   isAdminAssistant: boolean
   isDepartmentManager: boolean
@@ -260,6 +262,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user?.profile === 'MANAGER_DEPARTMENT' ||
     user?.profile === 'ADMIN_ASSISTANT'
 
+  const canManageExitInvites = user?.profile === 'ADMIN' || user?.profile === 'HR'
+  const canViewExitIndividualAnswers = user?.profile === 'ADMIN' || user?.profile === 'HR'
+
   const isWorksiteManager = user?.profile === 'MANAGER_WORKSITE'
   const isAdminAssistant = user?.profile === 'ADMIN_ASSISTANT'
   const isDepartmentManager = user?.profile === 'MANAGER_DEPARTMENT'
@@ -291,6 +296,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       canManageUsers,
       canCreateCollaborator,
       canEvaluate,
+      canManageExitInvites,
+      canViewExitIndividualAnswers,
       isWorksiteManager,
       isAdminAssistant,
       isDepartmentManager,

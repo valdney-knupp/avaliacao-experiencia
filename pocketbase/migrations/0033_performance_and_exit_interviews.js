@@ -1,8 +1,16 @@
 // Migration 0033: Avaliação de Desempenho (formulários versionados) + Entrevista de Desligamento
 // Coleções novas (todas com campo client para isolamento multi-tenant):
-//   perf_form_versions, perf_evaluations, perf_answers
-//   exit_form_versions, exit_invites, exit_answers, exit_send_attempts
-// Também adiciona campos de contato (contact_email/contact_phone) em collaborators.
+//   1. perf_form_versions (depende de clients)
+//   2. exit_form_versions (depende de clients e _pb_users_auth_)
+//   3. perf_evaluations (depende de collaborators, perf_form_versions, _pb_users_auth_, clients)
+//   4. perf_answers (depende de perf_evaluations e clients)
+//   5. exit_invites (depende de collaborators, exit_form_versions, _pb_users_auth_, clients)
+//   6. exit_answers (depende de exit_invites e clients)
+//   7. exit_send_attempts (depende de exit_invites, _pb_users_auth_, clients)
+//
+// Cada coleção é criada diretamente via `app.save(new Collection({ ... }))` na exata ordem de dependência,
+// sem funções auxiliares ou blocos try/catch indiretos, permitindo que a análise estática do validador
+// reconheça a criação de cada coleção antes das coleções seguintes que a referenciam.
 
 migrate(
   (app) => {
@@ -18,27 +26,10 @@ migrate(
     const usersId = usersCol.id
     const collaboratorsId = collaboratorsCol.id
 
-    // Helper seguro para criar coleção se não existir
-    function createColIfMissing(def) {
-      try {
-        return app.findCollectionByNameOrId(def.name)
-      } catch (_) {
-        const col = new Collection(def)
-        app.save(col)
-        return app.findCollectionByNameOrId(def.name)
-      }
-    }
-
-    // Helper seguro para índice em coleção recém-criada
-    function tryAddIndex(col, indexSql) {
-      try {
-        col.indexes = [...(col.indexes || []), indexSql]
-        app.save(col)
-      } catch (_) {}
-    }
-
-    // ---------- 1. perf_form_versions (depende apenas de clients) ----------
-    const perfFormCol = createColIfMissing({
+    // =========================================================================
+    // 1. perf_form_versions
+    // =========================================================================
+    const perfFormVersions = new Collection({
       name: 'perf_form_versions',
       type: 'base',
       listRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
@@ -82,14 +73,16 @@ migrate(
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
+      indexes: [
+        'CREATE INDEX idx_perf_form_client_key_ver ON perf_form_versions (client, form_key, version)',
+      ],
     })
-    tryAddIndex(
-      perfFormCol,
-      'CREATE INDEX IF NOT EXISTS idx_perf_form_client_key_ver ON perf_form_versions (client, form_key, version)',
-    )
+    app.save(perfFormVersions)
 
-    // ---------- 2. exit_form_versions (depende de clients e users) ----------
-    createColIfMissing({
+    // =========================================================================
+    // 2. exit_form_versions
+    // =========================================================================
+    const exitFormVersions = new Collection({
       name: 'exit_form_versions',
       type: 'base',
       listRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
@@ -132,13 +125,16 @@ migrate(
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
     })
+    app.save(exitFormVersions)
 
-    // Agora resolve os IDs dessas duas coleções recém-criadas
-    const perfFormVersionsId = app.findCollectionByNameOrId('perf_form_versions').id
-    const exitFormVersionsId = app.findCollectionByNameOrId('exit_form_versions').id
+    // Resoluções de ID após criação
+    const perfFormVersionsId = perfFormVersions.id
+    const exitFormVersionsId = exitFormVersions.id
 
-    // ---------- 3. perf_evaluations (collaborators + perf_form_versions + users + clients) ----------
-    const perfEvalCol = createColIfMissing({
+    // =========================================================================
+    // 3. perf_evaluations
+    // =========================================================================
+    const perfEvaluations = new Collection({
       name: 'perf_evaluations',
       type: 'base',
       listRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
@@ -213,24 +209,20 @@ migrate(
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
+      indexes: [
+        'CREATE INDEX idx_perf_eval_client ON perf_evaluations (client)',
+        'CREATE INDEX idx_perf_eval_collab ON perf_evaluations (collaborator)',
+        'CREATE INDEX idx_perf_eval_status ON perf_evaluations (status)',
+      ],
     })
-    tryAddIndex(
-      perfEvalCol,
-      'CREATE INDEX IF NOT EXISTS idx_perf_eval_client ON perf_evaluations (client)',
-    )
-    tryAddIndex(
-      perfEvalCol,
-      'CREATE INDEX IF NOT EXISTS idx_perf_eval_collab ON perf_evaluations (collaborator)',
-    )
-    tryAddIndex(
-      perfEvalCol,
-      'CREATE INDEX IF NOT EXISTS idx_perf_eval_status ON perf_evaluations (status)',
-    )
+    app.save(perfEvaluations)
 
-    const perfEvaluationsId = app.findCollectionByNameOrId('perf_evaluations').id
+    const perfEvaluationsId = perfEvaluations.id
 
-    // ---------- 4. perf_answers (perf_evaluations + clients) ----------
-    const perfAnsCol = createColIfMissing({
+    // =========================================================================
+    // 4. perf_answers
+    // =========================================================================
+    const perfAnswers = new Collection({
       name: 'perf_answers',
       type: 'base',
       listRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
@@ -272,14 +264,14 @@ migrate(
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
+      indexes: ['CREATE INDEX idx_perf_answers_eval ON perf_answers (evaluation)'],
     })
-    tryAddIndex(
-      perfAnsCol,
-      'CREATE INDEX IF NOT EXISTS idx_perf_answers_eval ON perf_answers (evaluation)',
-    )
+    app.save(perfAnswers)
 
-    // ---------- 5. exit_invites (collaborators + exit_form_versions + users + clients) ----------
-    const exitInvCol = createColIfMissing({
+    // =========================================================================
+    // 5. exit_invites
+    // =========================================================================
+    const exitInvites = new Collection({
       name: 'exit_invites',
       type: 'base',
       listRule:
@@ -348,24 +340,20 @@ migrate(
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
+      indexes: [
+        'CREATE INDEX idx_exit_invite_client ON exit_invites (client)',
+        'CREATE INDEX idx_exit_invite_status ON exit_invites (status)',
+        'CREATE UNIQUE INDEX idx_exit_invite_token ON exit_invites (token)',
+      ],
     })
-    tryAddIndex(
-      exitInvCol,
-      'CREATE INDEX IF NOT EXISTS idx_exit_invite_client ON exit_invites (client)',
-    )
-    tryAddIndex(
-      exitInvCol,
-      'CREATE INDEX IF NOT EXISTS idx_exit_invite_status ON exit_invites (status)',
-    )
-    tryAddIndex(
-      exitInvCol,
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_exit_invite_token ON exit_invites (token)',
-    )
+    app.save(exitInvites)
 
-    const exitInvitesId = app.findCollectionByNameOrId('exit_invites').id
+    const exitInvitesId = exitInvites.id
 
-    // ---------- 6. exit_answers (respostas individuais: apenas ADMIN/HR) ----------
-    const exitAnsCol = createColIfMissing({
+    // =========================================================================
+    // 6. exit_answers
+    // =========================================================================
+    const exitAnswers = new Collection({
       name: 'exit_answers',
       type: 'base',
       listRule:
@@ -400,14 +388,14 @@ migrate(
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
+      indexes: ['CREATE INDEX idx_exit_answers_invite ON exit_answers (invite)'],
     })
-    tryAddIndex(
-      exitAnsCol,
-      'CREATE INDEX IF NOT EXISTS idx_exit_answers_invite ON exit_answers (invite)',
-    )
+    app.save(exitAnswers)
 
-    // ---------- 7. exit_send_attempts (histórico de tentativas por canal) ----------
-    const exitAttCol = createColIfMissing({
+    // =========================================================================
+    // 7. exit_send_attempts
+    // =========================================================================
+    const exitSendAttempts = new Collection({
       name: 'exit_send_attempts',
       type: 'base',
       listRule:
@@ -463,13 +451,13 @@ migrate(
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
+      indexes: ['CREATE INDEX idx_exit_attempts_invite ON exit_send_attempts (invite)'],
     })
-    tryAddIndex(
-      exitAttCol,
-      'CREATE INDEX IF NOT EXISTS idx_exit_attempts_invite ON exit_send_attempts (invite)',
-    )
+    app.save(exitSendAttempts)
 
-    // ---------- 8. Contatos no cadastro de colaboradores ----------
+    // =========================================================================
+    // 8. Contatos no cadastro de colaboradores (contact_email / contact_phone)
+    // =========================================================================
     const collabsColToUpdate = app.findCollectionByNameOrId('collaborators')
     let colChanged = false
     if (!collabsColToUpdate.fields.getByName('contact_email')) {

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { AppLogo } from '@/components/AppLogo'
+import pb from '@/lib/pocketbase/client'
 import { parseAnswerValue, type ExitFormSchema, type ExitQuestion } from '@/lib/exitFormSchema'
 
 type Phase = 'loading' | 'form' | 'already' | 'expired' | 'notfound' | 'done' | 'error'
@@ -19,33 +20,35 @@ export const ExitInterviewPublic: React.FC = () => {
 
   useEffect(() => {
     let alive = true
-    fetch(`/backend/v1/exit-invites/answer?token=${encodeURIComponent(token)}`)
-      .then(async (r) => {
-        const json = await r.json().catch(() => ({}))
+    pb.send(`/backend/v1/exit-invites/answer?token=${encodeURIComponent(token)}`, {
+      method: 'GET',
+    })
+      .then((json: any) => {
         if (!alive) return
-        if (r.status === 409) {
-          setMessage(json.error || 'Esta entrevista já foi respondida.')
-          setPhase('already')
-          return
-        }
-        if (r.status === 410) {
-          setMessage(json.error || 'O prazo para responder expirou.')
-          setPhase('expired')
-          return
-        }
-        if (!r.ok) {
-          setMessage(json.error || 'Link inválido.')
-          setPhase('notfound')
-          return
-        }
         setSchema(json.form)
         setPhase('form')
       })
-      .catch(() => {
-        if (alive) {
-          setMessage('Não foi possível carregar a entrevista. Verifique sua conexão.')
-          setPhase('error')
+      .catch((err: any) => {
+        if (!alive) return
+        const status = err?.status || err?.response?.status
+        const data = err?.data || err?.response?.data || {}
+        if (status === 409) {
+          setMessage(data.error || 'Esta entrevista já foi respondida.')
+          setPhase('already')
+          return
         }
+        if (status === 410) {
+          setMessage(data.error || 'O prazo para responder expirou.')
+          setPhase('expired')
+          return
+        }
+        if (status === 404 || status === 400) {
+          setMessage(data.error || 'Link inválido.')
+          setPhase('notfound')
+          return
+        }
+        setMessage('Não foi possível carregar a entrevista. Verifique sua conexão.')
+        setPhase('error')
       })
     return () => {
       alive = false
@@ -62,36 +65,32 @@ export const ExitInterviewPublic: React.FC = () => {
         question_id,
         value,
       }))
-      const res = await fetch('/backend/v1/exit-invites/answer', {
+      await pb.send('/backend/v1/exit-invites/answer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, answers: payload }),
+        body: { token, answers: payload },
       })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        if (res.status === 409) {
-          setMessage(json.error || 'Esta entrevista já foi respondida.')
-          setPhase('already')
-          return
-        }
-        if (res.status === 410) {
-          setMessage(json.error || 'O prazo para responder expirou.')
-          setPhase('expired')
-          return
-        }
-        if (res.status === 422 && json.missing) {
-          const labels: string[] = []
-          for (const sec of schema.sections)
-            for (const q of sec.questions) if (json.missing.includes(q.id)) labels.push(q.label)
-          setMessage(`Perguntas obrigatórias pendentes: ${labels.slice(0, 4).join(' • ')}`)
-          return
-        }
-        setMessage(json.error || 'Erro ao enviar. Tente novamente.')
+      setPhase('done')
+    } catch (err: any) {
+      const status = err?.status || err?.response?.status
+      const data = err?.data || err?.response?.data || {}
+      if (status === 409) {
+        setMessage(data.error || 'Esta entrevista já foi respondida.')
+        setPhase('already')
         return
       }
-      setPhase('done')
-    } catch {
-      setMessage('Erro ao enviar. Verifique sua conexão.')
+      if (status === 410) {
+        setMessage(data.error || 'O prazo para responder expirou.')
+        setPhase('expired')
+        return
+      }
+      if (status === 422 && data.missing) {
+        const labels: string[] = []
+        for (const sec of schema.sections)
+          for (const q of sec.questions) if (data.missing.includes(q.id)) labels.push(q.label)
+        setMessage(`Perguntas obrigatórias pendentes: ${labels.slice(0, 4).join(' • ')}`)
+        return
+      }
+      setMessage(data.error || 'Erro ao enviar. Verifique sua conexão.')
     } finally {
       setSubmitting(false)
     }
@@ -111,9 +110,7 @@ export const ExitInterviewPublic: React.FC = () => {
 
   if (phase !== 'form' && phase !== 'done') {
     const icon =
-      phase === 'done' ? (
-        <CheckCircle2 className="h-12 w-12 text-green-600" />
-      ) : phase === 'already' ? (
+      phase === 'already' ? (
         <CheckCircle2 className="h-12 w-12 text-amber-500" />
       ) : (
         <XCircle className="h-12 w-12 text-red-500" />

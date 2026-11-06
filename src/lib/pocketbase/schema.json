@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T13:19:28.376Z",
+  "generatedAt": "2026-11-06T13:26:26.349Z",
   "collections": [
     {
       "name": "users",
@@ -499,6 +499,18 @@
           "required": false,
           "system": false,
           "collectionRef": "clients"
+        },
+        {
+          "name": "contact_email",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contact_phone",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -1182,6 +1194,550 @@
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_system_assets_key ON system_assets (key)"]
+    },
+    {
+      "name": "perf_form_versions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "delete": "@request.auth.email = 'valdknupp@gmail.com'"
+      },
+      "fields": [
+        {
+          "name": "form_key",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["NIVEL_I", "NIVEL_II"]
+        },
+        {
+          "name": "version",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "subtitle",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Publicado", "Pendente", "Inativo"]
+        },
+        {
+          "name": "schema",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_perf_form_client_key_ver ON perf_form_versions (client, form_key, version)"
+      ]
+    },
+    {
+      "name": "exit_form_versions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "delete": "@request.auth.email = 'valdknupp@gmail.com'"
+      },
+      "fields": [
+        {
+          "name": "version",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Publicado", "Rascunho"]
+        },
+        {
+          "name": "schema",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "updated_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "perf_evaluations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT' || responsible = @request.auth.id)))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
+      },
+      "fields": [
+        {
+          "name": "collaborator",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "collaborators"
+        },
+        {
+          "name": "form_version",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "perf_form_versions"
+        },
+        {
+          "name": "period_start",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "period_end",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "period_label",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responsible",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "responsible_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Rascunho", "Concluida"]
+        },
+        {
+          "name": "completed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_perf_eval_client ON perf_evaluations (client)",
+        "CREATE INDEX idx_perf_eval_collab ON perf_evaluations (collaborator)",
+        "CREATE INDEX idx_perf_eval_status ON perf_evaluations (status)"
+      ]
+    },
+    {
+      "name": "perf_answers",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
+      },
+      "fields": [
+        {
+          "name": "evaluation",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "perf_evaluations"
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "value",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_perf_answers_eval ON perf_answers (evaluation)"]
+    },
+    {
+      "name": "exit_invites",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT')))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT')))",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
+      },
+      "fields": [
+        {
+          "name": "collaborator",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "collaborators"
+        },
+        {
+          "name": "form_version",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "exit_form_versions"
+        },
+        {
+          "name": "token",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "Aguardando envio",
+            "Enviado",
+            "Respondido",
+            "Expirado",
+            "Falha no envio"
+          ]
+        },
+        {
+          "name": "offboarding_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "expires_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sent_first_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responded_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_exit_invite_client ON exit_invites (client)",
+        "CREATE INDEX idx_exit_invite_status ON exit_invites (status)",
+        "CREATE UNIQUE INDEX idx_exit_invite_token ON exit_invites (token)"
+      ]
+    },
+    {
+      "name": "exit_answers",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.email = 'valdknupp@gmail.com'"
+      },
+      "fields": [
+        {
+          "name": "invite",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "exit_invites"
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "value",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_exit_answers_invite ON exit_answers (invite)"]
+    },
+    {
+      "name": "exit_send_attempts",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.email = 'valdknupp@gmail.com'"
+      },
+      "fields": [
+        {
+          "name": "invite",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "exit_invites"
+        },
+        {
+          "name": "channel",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["email", "whatsapp"]
+        },
+        {
+          "name": "recipient",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "sent_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Sucesso", "Falha"]
+        },
+        {
+          "name": "error_message",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "client",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clients"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_exit_attempts_invite ON exit_send_attempts (invite)"]
     }
   ]
 }

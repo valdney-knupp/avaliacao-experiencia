@@ -30,6 +30,18 @@ export interface ExitFormSchema {
   sections: ExitSection[]
 }
 
+export const parseAnswerValue = (raw: string | undefined): string[] => {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed.map((v) => String(v))
+    if (parsed !== null && parsed !== undefined) return [String(parsed)]
+  } catch {
+    // string simples não-JSON
+  }
+  return [raw]
+}
+
 export const DEFAULT_EXIT_FORM: ExitFormSchema = {
   title: 'Entrevista de Desligamento',
   description:

@@ -23,13 +23,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
-import { PERF_FORMS } from '@/lib/perfForms'
+import { PERF_FORMS, type PerfFormSchema } from '@/lib/perfForms'
 import {
   periodLabel,
   parseSchema,
   collectQuestions,
   validateRequiredAnswers,
-  type PerfFormSchema,
+  isQuestionVisible,
+  parseAnswerValue,
 } from '@/lib/perfEvaluationLogic'
 import { useToast } from '@/hooks/use-toast'
 

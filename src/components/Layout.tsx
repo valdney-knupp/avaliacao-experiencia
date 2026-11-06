@@ -130,6 +130,12 @@ export const Layout: React.FC = () => {
       show: true,
     },
     {
+      to: '/avaliacao-desempenho',
+      label: 'Avaliação de Desempenho',
+      icon: CalendarCheck,
+      show: true,
+    },
+    {
       to: '/admin',
       label: 'Administração',
       icon: Settings,
@@ -164,9 +170,11 @@ export const Layout: React.FC = () => {
     const path = location.pathname
     if (path.startsWith('/dashboard/detail')) return 'Detalhamento do Indicador'
     if (path === '/dashboard') return 'Visão Geral'
-    if (path === '/evaluations') return 'Próximas Avaliações'
+    if (path === '/evaluations' || path.startsWith('/evaluations/'))
+      return 'Avaliação de Experiência'
+    if (path === '/avaliacao-desempenho') return 'Avaliação de Desempenho'
     if (path.startsWith('/collaborators/new')) return 'Novo Colaborador'
-    if (path.includes('/evaluate')) return 'Avaliação de Desempenho'
+    if (path.includes('/evaluate')) return 'Formulário de Avaliação'
     if (path.includes('/edit')) return 'Editar Colaborador'
     if (path.startsWith('/collaborators/')) return 'Detalhes do Colaborador'
     if (path === '/collaborators') return 'Colaboradores'

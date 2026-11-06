@@ -18,6 +18,8 @@ import { ThankYou } from '@/pages/ThankYou'
 import Dashboard from '@/pages/Dashboard'
 import DashboardDetail from '@/pages/DashboardDetail'
 import Evaluations from '@/pages/Evaluations'
+import PerformanceEvaluation from '@/pages/PerformanceEvaluation'
+import ExitInterviewPublic from '@/pages/ExitInterviewPublic'
 import Collaborators from '@/pages/Collaborators'
 import CollaboratorForm from '@/pages/CollaboratorForm'
 import CollaboratorDetail from '@/pages/CollaboratorDetail'
@@ -69,6 +71,7 @@ export const App: React.FC = () => {
               <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
               <Route path="/vendas" element={<Sales />} />
               <Route path="/obrigado" element={<ThankYou />} />
+              <Route path="/entrevista/:token" element={<ExitInterviewPublic />} />
 
               {/* Authenticated Application Shell */}
               <Route
@@ -81,6 +84,9 @@ export const App: React.FC = () => {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/detail" element={<DashboardDetail />} />
                 <Route path="/evaluations" element={<Evaluations />} />
+                <Route path="/evaluations/desligamento" element={<Evaluations />} />
+                <Route path="/avaliacao-experiencia/desligamento" element={<Evaluations />} />
+                <Route path="/avaliacao-desempenho" element={<PerformanceEvaluation />} />
                 <Route path="/collaborators" element={<Collaborators />} />
                 <Route
                   path="/collaborators/new"

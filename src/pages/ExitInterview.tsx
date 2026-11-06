@@ -105,21 +105,15 @@ export const ExitInterview: React.FC = () => {
         ...(sendChannels.email ? ['email'] : []),
         ...(sendChannels.whatsapp ? ['whatsapp'] : []),
       ]
-      const res = await fetch('/backend/v1/exit-invites/send', {
+      const json = await pb.send('/backend/v1/exit-invites/send', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: pb.authStore.token,
-        },
-        body: JSON.stringify({
+        body: {
           invite: sendInviteId,
           channels,
           email: sendEmail,
           phone: sendPhone,
-        }),
+        },
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json?.error || 'Falha no envio')
       const failedChannels = (json.results || []).filter((r: any) => r.status !== 'Sucesso')
       toast({
         title: json.all_ok ? 'Convite enviado' : 'Enviado com ressalvas',
@@ -432,7 +426,7 @@ export const ExitInterview: React.FC = () => {
                         </CardTitle>
                         <p className="text-xs text-muted-foreground">
                           Concluída em {inv.responded_at?.slice(0, 10) || '—'} • formulário v
-                          {inv.expand?.form_version?.version ?? ''}
+                          {(inv.expand as any)?.form_version?.version ?? ''}
                         </p>
                       </CardHeader>
                       <CardContent className="space-y-3">
@@ -545,24 +539,32 @@ export const ExitInterview: React.FC = () => {
                   const q = formSchema?.sections
                     .flatMap((s) => s.questions)
                     .find((x) => x.id === qid)
-                  const total = Array.from(counts.values()).reduce((a, b) => a + b, 0) || 1
+                  const total: number =
+                    Array.from(counts.values()).reduce<number>(
+                      (a, b) => (Number(a) || 0) + (Number(b) || 0),
+                      0,
+                    ) || 1
                   return (
                     <div key={qid} className="space-y-1">
                       <p className="text-sm font-medium">{q?.label || qid}</p>
-                      {Array.from(counts.entries()).map(([opt, n]) => (
-                        <div key={opt} className="flex items-center gap-2 text-sm">
-                          <span className="w-48 shrink-0 truncate text-muted-foreground">
-                            {opt}
-                          </span>
-                          <div className="h-2 flex-1 rounded bg-muted">
-                            <div
-                              className="h-2 rounded bg-primary"
-                              style={{ width: `${(n / total) * 100}%` }}
-                            />
+                      {Array.from(counts.entries()).map(([opt, n]) => {
+                        const countNum = Number(n) || 0
+                        const pct = Math.round((countNum / (total as number)) * 100)
+                        return (
+                          <div key={opt} className="flex items-center gap-2 text-sm">
+                            <span className="w-48 shrink-0 truncate text-muted-foreground">
+                              {opt}
+                            </span>
+                            <div className="h-2 flex-1 rounded bg-muted">
+                              <div
+                                className="h-2 rounded bg-primary"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="w-8 text-right">{countNum}</span>
                           </div>
-                          <span className="w-8 text-right">{n}</span>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )
                 })
