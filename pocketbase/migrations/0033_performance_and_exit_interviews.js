@@ -1,20 +1,23 @@
 // Migration: Avaliação de Desempenho (formulários versionados) + Entrevista de Desligamento
 // Coleções novas (todas com campo client para isolamento multi-tenant):
 //   perf_form_versions, perf_evaluations, perf_answers
-//   exit_form_versions, exit_invites, exit_answers
+//   exit_form_versions, exit_invites, exit_answers, exit_send_attempts
 // Também adiciona campos de contato (contact_email/contact_phone) em collaborators.
+//
+// ORDEM IMPORTANTE: toda coleção é criada DEPOIS de suas referências já existirem
+// (clients, users e collaborators já existem no schema base). Nenhum placeholder.
 
 const MASTER = "@request.auth.email = 'valdknupp@gmail.com'"
 
 function ensureCollection(app, definition) {
-  let col = null
   try {
-    col = app.findCollectionByNameOrId(definition.name)
+    app.findCollectionByNameOrId(definition.name)
+    return app.findCollectionByNameOrId(definition.name)
   } catch (_) {
-    col = new Collection(definition)
+    const col = new Collection(definition)
     app.save(col)
+    return app.findCollectionByNameOrId(definition.name)
   }
-  return app.findCollectionByNameOrId(definition.name)
 }
 
 function addFieldIfMissing(app, collectionName, field) {
@@ -42,9 +45,19 @@ function ensureUniqueIndex(col, name, colsExpr) {
 
 migrate(
   (app) => {
+    // Coleções pré-existentes referenciadas
     const clientsCol = app.findCollectionByNameOrId('clients')
+    const usersCol = app.findCollectionByNameOrId('_pb_users_auth_')
+    const collaboratorsCol = app.findCollectionByNameOrId('collaborators')
 
-    // ---------- 1. perf_form_versions ----------
+    const clientsId = clientsCol.id
+    const usersId = usersCol.id
+    const collaboratorsId = collaboratorsCol.id
+
+    const EVAL_PROFILES =
+      "@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT'"
+
+    // ---------- 1. perf_form_versions (só depende de clients) ----------
     ensureCollection(app, {
       name: 'perf_form_versions',
       type: 'base',
@@ -82,7 +95,7 @@ migrate(
         {
           name: 'client',
           type: 'relation',
-          collectionId: clientsCol.id,
+          collectionId: clientsId,
           maxSelect: 1,
           cascadeDelete: true,
         },
@@ -91,122 +104,7 @@ migrate(
       ],
     })
 
-    // ---------- 2. perf_evaluations ----------
-    ensureCollection(app, {
-      name: 'perf_evaluations',
-      type: 'base',
-      listRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
-      viewRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
-      createRule:
-        "@request.auth.id != '' && (" +
-        MASTER +
-        " || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
-      updateRule:
-        "@request.auth.id != '' && (" +
-        MASTER +
-        " || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT' || responsible = @request.auth.id)))",
-      deleteRule:
-        "@request.auth.id != '' && (" +
-        MASTER +
-        " || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
-      fields: [
-        {
-          name: 'collaborator',
-          type: 'relation',
-          required: true,
-          collectionId: 'collaborators_placeholder',
-          maxSelect: 1,
-          cascadeDelete: true,
-        },
-        {
-          name: 'form_version',
-          type: 'relation',
-          required: true,
-          collectionId: 'perf_form_versions_placeholder',
-          maxSelect: 1,
-          cascadeDelete: false,
-        },
-        { name: 'period_start', type: 'date' },
-        { name: 'period_end', type: 'date' },
-        { name: 'period_label', type: 'text' },
-        {
-          name: 'responsible',
-          type: 'relation',
-          collectionId: '_pb_users_auth_placeholder',
-          maxSelect: 1,
-          cascadeDelete: false,
-        },
-        { name: 'responsible_name', type: 'text' },
-        {
-          name: 'status',
-          type: 'select',
-          required: true,
-          values: ['Rascunho', 'Concluida'],
-          maxSelect: 1,
-        },
-        { name: 'completed_at', type: 'date' },
-        {
-          name: 'created_by',
-          type: 'relation',
-          collectionId: '_pb_users_auth_placeholder',
-          maxSelect: 1,
-          cascadeDelete: false,
-        },
-        { name: 'notes', type: 'text' },
-        {
-          name: 'client',
-          type: 'relation',
-          collectionId: clientsCol.id,
-          maxSelect: 1,
-          cascadeDelete: true,
-        },
-        { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
-        { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
-      ],
-    })
-
-    // ---------- 3. perf_answers ----------
-    ensureCollection(app, {
-      name: 'perf_answers',
-      type: 'base',
-      listRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
-      viewRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
-      createRule:
-        "@request.auth.id != '' && (" +
-        MASTER +
-        " || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
-      updateRule:
-        "@request.auth.id != '' && (" +
-        MASTER +
-        " || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
-      deleteRule:
-        "@request.auth.id != '' && (" +
-        MASTER +
-        " || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
-      fields: [
-        {
-          name: 'evaluation',
-          type: 'relation',
-          required: true,
-          collectionId: 'perf_evaluations_placeholder',
-          maxSelect: 1,
-          cascadeDelete: true,
-        },
-        { name: 'question_id', type: 'text', required: true },
-        { name: 'value', type: 'json' },
-        {
-          name: 'client',
-          type: 'relation',
-          collectionId: clientsCol.id,
-          maxSelect: 1,
-          cascadeDelete: true,
-        },
-        { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
-        { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
-      ],
-    })
-
-    // ---------- 4. exit_form_versions ----------
+    // ---------- 2. exit_form_versions (clients + users) ----------
     ensureCollection(app, {
       name: 'exit_form_versions',
       type: 'base',
@@ -235,14 +133,14 @@ migrate(
         {
           name: 'updated_by',
           type: 'relation',
-          collectionId: '_pb_users_auth_placeholder',
+          collectionId: usersId,
           maxSelect: 1,
           cascadeDelete: false,
         },
         {
           name: 'client',
           type: 'relation',
-          collectionId: clientsCol.id,
+          collectionId: clientsId,
           maxSelect: 1,
           cascadeDelete: true,
         },
@@ -251,8 +149,133 @@ migrate(
       ],
     })
 
-    // ---------- 5. exit_invites ----------
-    ensureCollection(app, {
+    // ---------- 3. perf_evaluations (collaborators + perf_form_versions + users + clients) ----------
+    const perfFormVersionsCol = app.findCollectionByNameOrId('perf_form_versions')
+    const perfEvaluationsCol = ensureCollection(app, {
+      name: 'perf_evaluations',
+      type: 'base',
+      listRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
+      viewRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
+      createRule:
+        "@request.auth.id != '' && (" +
+        MASTER +
+        ' || (client = @request.auth.client && (' +
+        EVAL_PROFILES +
+        ')))',
+      updateRule:
+        "@request.auth.id != '' && (" +
+        MASTER +
+        ' || (client = @request.auth.client && (' +
+        EVAL_PROFILES +
+        ' || responsible = @request.auth.id)))',
+      deleteRule:
+        "@request.auth.id != '' && (" +
+        MASTER +
+        " || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
+      fields: [
+        {
+          name: 'collaborator',
+          type: 'relation',
+          required: true,
+          collectionId: collaboratorsId,
+          maxSelect: 1,
+          cascadeDelete: true,
+        },
+        {
+          name: 'form_version',
+          type: 'relation',
+          required: true,
+          collectionId: perfFormVersionsCol.id,
+          maxSelect: 1,
+          cascadeDelete: false,
+        },
+        { name: 'period_start', type: 'date' },
+        { name: 'period_end', type: 'date' },
+        { name: 'period_label', type: 'text' },
+        {
+          name: 'responsible',
+          type: 'relation',
+          collectionId: usersId,
+          maxSelect: 1,
+          cascadeDelete: false,
+        },
+        { name: 'responsible_name', type: 'text' },
+        {
+          name: 'status',
+          type: 'select',
+          required: true,
+          values: ['Rascunho', 'Concluida'],
+          maxSelect: 1,
+        },
+        { name: 'completed_at', type: 'date' },
+        {
+          name: 'created_by',
+          type: 'relation',
+          collectionId: usersId,
+          maxSelect: 1,
+          cascadeDelete: false,
+        },
+        { name: 'notes', type: 'text' },
+        {
+          name: 'client',
+          type: 'relation',
+          collectionId: clientsId,
+          maxSelect: 1,
+          cascadeDelete: true,
+        },
+        { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
+        { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
+      ],
+    })
+
+    // ---------- 4. perf_answers (perf_evaluations + clients) ----------
+    const perfAnswersCol = ensureCollection(app, {
+      name: 'perf_answers',
+      type: 'base',
+      listRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
+      viewRule: "@request.auth.id != '' && (" + MASTER + ' || client = @request.auth.client)',
+      createRule:
+        "@request.auth.id != '' && (" +
+        MASTER +
+        ' || (client = @request.auth.client && (' +
+        EVAL_PROFILES +
+        ')))',
+      updateRule:
+        "@request.auth.id != '' && (" +
+        MASTER +
+        ' || (client = @request.auth.client && (' +
+        EVAL_PROFILES +
+        ')))',
+      deleteRule:
+        "@request.auth.id != '' && (" +
+        MASTER +
+        " || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))",
+      fields: [
+        {
+          name: 'evaluation',
+          type: 'relation',
+          required: true,
+          collectionId: perfEvaluationsCol.id,
+          maxSelect: 1,
+          cascadeDelete: true,
+        },
+        { name: 'question_id', type: 'text', required: true },
+        { name: 'value', type: 'json' },
+        {
+          name: 'client',
+          type: 'relation',
+          collectionId: clientsId,
+          maxSelect: 1,
+          cascadeDelete: true,
+        },
+        { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
+        { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
+      ],
+    })
+
+    // ---------- 5. exit_invites (collaborators + exit_form_versions + users + clients) ----------
+    const exitFormVersionsCol = app.findCollectionByNameOrId('exit_form_versions')
+    const exitInvitesCol = ensureCollection(app, {
       name: 'exit_invites',
       type: 'base',
       listRule:
@@ -280,7 +303,7 @@ migrate(
           name: 'collaborator',
           type: 'relation',
           required: true,
-          collectionId: 'collaborators_placeholder',
+          collectionId: collaboratorsId,
           maxSelect: 1,
           cascadeDelete: true,
         },
@@ -288,7 +311,7 @@ migrate(
           name: 'form_version',
           type: 'relation',
           required: true,
-          collectionId: 'exit_form_versions_placeholder',
+          collectionId: exitFormVersionsCol.id,
           maxSelect: 1,
           cascadeDelete: false,
         },
@@ -307,14 +330,14 @@ migrate(
         {
           name: 'created_by',
           type: 'relation',
-          collectionId: '_pb_users_auth_placeholder',
+          collectionId: usersId,
           maxSelect: 1,
           cascadeDelete: false,
         },
         {
           name: 'client',
           type: 'relation',
-          collectionId: clientsCol.id,
+          collectionId: clientsId,
           maxSelect: 1,
           cascadeDelete: true,
         },
@@ -324,7 +347,7 @@ migrate(
     })
 
     // ---------- 6. exit_answers (respostas individuais: apenas ADMIN/HR) ----------
-    ensureCollection(app, {
+    const exitAnswersCol = ensureCollection(app, {
       name: 'exit_answers',
       type: 'base',
       listRule:
@@ -343,7 +366,7 @@ migrate(
           name: 'invite',
           type: 'relation',
           required: true,
-          collectionId: 'exit_invites_placeholder',
+          collectionId: exitInvitesCol.id,
           maxSelect: 1,
           cascadeDelete: true,
         },
@@ -352,7 +375,7 @@ migrate(
         {
           name: 'client',
           type: 'relation',
-          collectionId: clientsCol.id,
+          collectionId: clientsId,
           maxSelect: 1,
           cascadeDelete: true,
         },
@@ -361,8 +384,8 @@ migrate(
       ],
     })
 
-    // ---------- 7. exit_send_attempts ----------
-    ensureCollection(app, {
+    // ---------- 7. exit_send_attempts (histórico de tentativas por canal) ----------
+    const exitAttemptsCol = ensureCollection(app, {
       name: 'exit_send_attempts',
       type: 'base',
       listRule:
@@ -381,7 +404,7 @@ migrate(
           name: 'invite',
           type: 'relation',
           required: true,
-          collectionId: 'exit_invites_placeholder',
+          collectionId: exitInvitesCol.id,
           maxSelect: 1,
           cascadeDelete: true,
         },
@@ -396,7 +419,7 @@ migrate(
         {
           name: 'sent_by',
           type: 'relation',
-          collectionId: '_pb_users_auth_placeholder',
+          collectionId: usersId,
           maxSelect: 1,
           cascadeDelete: false,
         },
@@ -411,7 +434,7 @@ migrate(
         {
           name: 'client',
           type: 'relation',
-          collectionId: clientsCol.id,
+          collectionId: clientsId,
           maxSelect: 1,
           cascadeDelete: true,
         },
@@ -420,79 +443,31 @@ migrate(
       ],
     })
 
-    // ---------- 8. Corrigir relations agora que todas as coleções existem ----------
-    const perfEvalCol = app.findCollectionByNameOrId('perf_evaluations')
-    for (const f of perfEvalCol.fields) {
-      if (f.name === 'collaborator')
-        f.collectionId = app.findCollectionByNameOrId('collaborators').id
-      if (f.name === 'form_version')
-        f.collectionId = app.findCollectionByNameOrId('perf_form_versions').id
-      if (f.name === 'responsible' || f.name === 'created_by') f.collectionId = '_pb_users_auth_'
-    }
-    app.save(perfEvalCol)
+    // ---------- 8. Índices ----------
+    addIndexSafe(perfEvaluationsCol, 'idx_perf_eval_client', '`client`')
+    addIndexSafe(perfEvaluationsCol, 'idx_perf_eval_collab', '`collaborator`')
+    addIndexSafe(perfEvaluationsCol, 'idx_perf_eval_status', '`status`')
+    app.save(perfEvaluationsCol)
 
-    const perfAnsCol = app.findCollectionByNameOrId('perf_answers')
-    for (const f of perfAnsCol.fields) {
-      if (f.name === 'evaluation') f.collectionId = perfEvalCol.id
-    }
-    app.save(perfAnsCol)
-
-    const exitInvCol = app.findCollectionByNameOrId('exit_invites')
-    for (const f of exitInvCol.fields) {
-      if (f.name === 'collaborator')
-        f.collectionId = app.findCollectionByNameOrId('collaborators').id
-      if (f.name === 'form_version')
-        f.collectionId = app.findCollectionByNameOrId('exit_form_versions').id
-      if (f.name === 'created_by') f.collectionId = '_pb_users_auth_'
-    }
-    app.save(exitInvCol)
-
-    const exitAnsCol = app.findCollectionByNameOrId('exit_answers')
-    for (const f of exitAnsCol.fields) {
-      if (f.name === 'invite') f.collectionId = exitInvCol.id
-    }
-    app.save(exitAnsCol)
-
-    const exitAttCol = app.findCollectionByNameOrId('exit_send_attempts')
-    for (const f of exitAttCol.fields) {
-      if (f.name === 'invite') f.collectionId = exitInvCol.id
-      if (f.name === 'sent_by') f.collectionId = '_pb_users_auth_'
-    }
-    app.save(exitAttCol)
-
-    const exitFormCol = app.findCollectionByNameOrId('exit_form_versions')
-    for (const f of exitFormCol.fields) {
-      if (f.name === 'updated_by') f.collectionId = '_pb_users_auth_'
-    }
-    app.save(exitFormCol)
-
-    // ---------- 9. Índices ----------
-    addIndexSafe(perfEvalCol, 'idx_perf_eval_client', '`client`')
-    addIndexSafe(perfEvalCol, 'idx_perf_eval_collab', '`collaborator`')
-    addIndexSafe(perfEvalCol, 'idx_perf_eval_status', '`status`')
-    app.save(perfEvalCol)
-
-    addIndexSafe(perfAnsCol, 'idx_perf_answers_eval', '`evaluation`')
-    app.save(perfAnsCol)
+    addIndexSafe(perfAnswersCol, 'idx_perf_answers_eval', '`evaluation`')
+    app.save(perfAnswersCol)
 
     const perfFormCol = app.findCollectionByNameOrId('perf_form_versions')
     addIndexSafe(perfFormCol, 'idx_perf_form_client_key_ver', '`client`,`form_key`,`version`')
     app.save(perfFormCol)
 
-    addIndexSafe(exitInvCol, 'idx_exit_invite_client', '`client`')
-    addIndexSafe(exitInvCol, 'idx_exit_invite_status', '`status`')
-    app.save(exitInvCol)
+    addIndexSafe(exitInvitesCol, 'idx_exit_invite_client', '`client`')
+    addIndexSafe(exitInvitesCol, 'idx_exit_invite_status', '`status`')
+    ensureUniqueIndex(exitInvitesCol, 'idx_exit_invite_token', '`token`')
+    app.save(exitInvitesCol)
 
-    ensureUniqueIndex(exitInvCol, 'idx_exit_invite_token', '`token`')
-    app.save(exitInvCol)
+    addIndexSafe(exitAnswersCol, 'idx_exit_answers_invite', '`invite`')
+    app.save(exitAnswersCol)
 
-    addIndexSafe(exitAnsCol, 'idx_exit_answers_invite', '`invite`')
-    app.save(exitAnsCol)
+    addIndexSafe(exitAttemptsCol, 'idx_exit_attempts_invite', '`invite`')
+    app.save(exitAttemptsCol)
 
-    addIndexSafe(exitAttCol, 'idx_exit_attempts_invite', '`invite`')
-    app.save(exitAttCol)
-
-    // ---------- 10. Contatos no cadastro de colaboradores ----------
+    // ---------- 9. Contatos no cadastro de colaboradores ----------
     addFieldIfMissing(app, 'collaborators', { name: 'contact_email', type: 'text' })
     addFieldIfMissing(app, 'collaborators', { name: 'contact_phone', type: 'text' })
   },
