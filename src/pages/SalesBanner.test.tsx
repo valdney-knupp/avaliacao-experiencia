@@ -83,4 +83,33 @@ describe('Sales page - Faixa de Lançamento Especial', () => {
     expect(screen.getByText(/3\.897,00/i)).toBeDefined()
     expect(screen.getByText(/Mais vantajoso/i)).toBeDefined()
   })
+
+  it('exibe o logo atualizado com "& DESEMPENHO" e itens de navegação legíveis e estruturados', () => {
+    render(
+      <MemoryRouter>
+        <Sales />
+      </MemoryRouter>,
+    )
+
+    // Verifica que o logo exibe AVALIAÇÃO e DE EXPERIÊNCIA & DESEMPENHO
+    expect(screen.getAllByText(/AVALIAÇÃO/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText(/DE EXPERIÊNCIA/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText(/& DESEMPENHO/i).length).toBeGreaterThanOrEqual(1)
+
+    // Links de navegação principais presentes
+    expect(screen.getAllByRole('link', { name: /Benefícios/i }).length).toBeGreaterThanOrEqual(1)
+    expect(
+      screen.getAllByRole('link', { name: /Módulo Desempenho/i }).length,
+    ).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByRole('link', { name: /Como funciona/i }).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByRole('link', { name: /Planos & Preços/i }).length).toBeGreaterThanOrEqual(
+      1,
+    )
+    expect(screen.getAllByRole('link', { name: /Dúvidas/i }).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByRole('link', { name: /Contato/i }).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByRole('link', { name: /Já sou cliente/i }).length).toBeGreaterThanOrEqual(
+      1,
+    )
+    expect(screen.getAllByRole('link', { name: /Ver Planos/i }).length).toBeGreaterThanOrEqual(1)
+  })
 })

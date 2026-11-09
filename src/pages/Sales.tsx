@@ -28,6 +28,9 @@ import {
   CheckCheck,
   Search,
   UserCheck,
+  Menu,
+  X,
+  LogIn,
 } from 'lucide-react'
 import { SYSTEM_CONTACTS } from '@/lib/contacts'
 import { Button } from '@/components/ui/button'
@@ -58,6 +61,47 @@ export const Sales: React.FC = () => {
   const [loadingCheckout, setLoadingCheckout] = useState(true)
   const [checkoutOfferId, setCheckoutOfferId] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState<string>('')
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  // Rastreia scroll para efeito de sombra/transparência e seção ativa
+  useEffect(() => {
+    const sectionIds = [
+      'beneficios',
+      'desempenho',
+      'como-funciona',
+      'para-quem-e',
+      'precos',
+      'faq',
+      'contato',
+    ]
+
+    const handleScroll = () => {
+      // Estado de scroll para sombra e transparência refinada
+      setIsScrolled(window.scrollY > 20)
+
+      // Identifica a seção visível na viewport
+      const scrollPosition = window.scrollY + 140
+      let current = ''
+      for (const id of sectionIds) {
+        const el = document.getElementById(id)
+        if (el) {
+          const top = el.offsetTop
+          const height = el.offsetHeight
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            current = id
+            break
+          }
+        }
+      }
+      setActiveSection(current)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Garante que a tag global do Google Ads esteja sempre ativa na página de vendas
   useEffect(() => {
@@ -204,55 +248,277 @@ export const Sales: React.FC = () => {
       </div>
 
       {/* Header / Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-slate-200/80 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link to="/" className="hover:opacity-90 transition-opacity">
-            <AppLogo variant="light-bg" size="md" layout="compact" />
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? 'backdrop-blur-md bg-white/95 border-b border-slate-200/90 shadow-md shadow-slate-900/5'
+            : 'backdrop-blur-sm bg-white/90 border-b border-slate-200/70 shadow-xs'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+          {/* Logo completo com & Desempenho */}
+          <Link
+            to="/"
+            className="hover:opacity-95 transition-opacity shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-[#2CA840]/40 rounded-lg"
+            aria-label="Avaliação de Experiência & Desempenho - Página Inicial"
+          >
+            <div className="flex items-center">
+              <AppLogo variant="light-bg" size="md" layout="compact" withDesempenho={true} />
+            </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <a href="#beneficios" className="hover:text-emerald-700 transition-colors">
+          {/* Navegação Desktop com espaçamento otimizado, peso equilibrado e hover / active state */}
+          <nav className="hidden xl:flex items-center gap-6 text-[13.5px] font-medium text-slate-600">
+            <a
+              href="#beneficios"
+              className={`transition-all px-2 py-1 rounded-md ${
+                activeSection === 'beneficios'
+                  ? 'text-emerald-800 font-semibold bg-emerald-50/80 shadow-2xs'
+                  : 'hover:text-emerald-700 hover:bg-slate-100/70'
+              }`}
+            >
               Benefícios
             </a>
             <a
               href="#desempenho"
-              className="hover:text-emerald-700 transition-colors font-semibold text-emerald-800"
+              className={`transition-all px-2 py-1 rounded-md flex items-center gap-1 ${
+                activeSection === 'desempenho'
+                  ? 'text-emerald-900 font-bold bg-emerald-100/80'
+                  : 'text-emerald-800 font-semibold hover:text-emerald-950 hover:bg-emerald-50/70'
+              }`}
             >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2CA840]" />
               Módulo Desempenho
             </a>
-            <a href="#como-funciona" className="hover:text-emerald-700 transition-colors">
+            <a
+              href="#como-funciona"
+              className={`transition-all px-2 py-1 rounded-md ${
+                activeSection === 'como-funciona'
+                  ? 'text-emerald-800 font-semibold bg-emerald-50/80 shadow-2xs'
+                  : 'hover:text-emerald-700 hover:bg-slate-100/70'
+              }`}
+            >
               Como funciona
             </a>
-            <a href="#para-quem-e" className="hover:text-emerald-700 transition-colors">
+            <a
+              href="#para-quem-e"
+              className={`transition-all px-2 py-1 rounded-md ${
+                activeSection === 'para-quem-e'
+                  ? 'text-emerald-800 font-semibold bg-emerald-50/80 shadow-2xs'
+                  : 'hover:text-emerald-700 hover:bg-slate-100/70'
+              }`}
+            >
               Público-alvo
             </a>
-            <a href="#precos" className="hover:text-emerald-700 transition-colors">
-              Planos & Preços
+            <a
+              href="#precos"
+              className={`transition-all px-2 py-1 rounded-md ${
+                activeSection === 'precos'
+                  ? 'text-emerald-800 font-semibold bg-emerald-50/80 shadow-2xs'
+                  : 'hover:text-emerald-700 hover:bg-slate-100/70'
+              }`}
+            >
+              Planos &amp; Preços
             </a>
-            <a href="#faq" className="hover:text-emerald-700 transition-colors">
+            <a
+              href="#faq"
+              className={`transition-all px-2 py-1 rounded-md ${
+                activeSection === 'faq'
+                  ? 'text-emerald-800 font-semibold bg-emerald-50/80 shadow-2xs'
+                  : 'hover:text-emerald-700 hover:bg-slate-100/70'
+              }`}
+            >
               Dúvidas
             </a>
-            <a href="#contato" className="hover:text-emerald-700 transition-colors">
+            <a
+              href="#contato"
+              className={`transition-all px-2 py-1 rounded-md ${
+                activeSection === 'contato'
+                  ? 'text-emerald-800 font-semibold bg-emerald-50/80 shadow-2xs'
+                  : 'hover:text-emerald-700 hover:bg-slate-100/70'
+              }`}
+            >
               Contato
             </a>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <Link
-              to="/login"
-              className="text-xs sm:text-sm text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg transition-colors font-medium hover:bg-slate-100"
+          {/* Versão intermediária para telas grandes (lg -> xl) com links mais condensados */}
+          <nav className="hidden lg:flex xl:hidden items-center gap-4 text-xs font-medium text-slate-600">
+            <a
+              href="#beneficios"
+              className="hover:text-emerald-700 hover:bg-slate-100/70 px-1.5 py-1 rounded transition-colors"
             >
-              Já sou cliente
-            </Link>
+              Benefícios
+            </a>
+            <a
+              href="#desempenho"
+              className="text-emerald-800 font-semibold hover:text-emerald-950 px-1.5 py-1 rounded transition-colors"
+            >
+              Desempenho
+            </a>
+            <a
+              href="#como-funciona"
+              className="hover:text-emerald-700 hover:bg-slate-100/70 px-1.5 py-1 rounded transition-colors"
+            >
+              Como funciona
+            </a>
             <a
               href="#precos"
-              className="inline-flex items-center justify-center bg-gradient-to-r from-[#54D769] to-[#2CA840] hover:from-[#43c457] hover:to-[#228734] text-white font-bold shadow-sm shadow-emerald-500/20 px-5 py-2.5 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] text-sm"
+              className="hover:text-emerald-700 hover:bg-slate-100/70 px-1.5 py-1 rounded transition-colors"
             >
-              Ver Planos
-              <ArrowRight className="ml-1.5 h-4 w-4" />
+              Planos
             </a>
+            <a
+              href="#faq"
+              className="hover:text-emerald-700 hover:bg-slate-100/70 px-1.5 py-1 rounded transition-colors"
+            >
+              Dúvidas
+            </a>
+            <a
+              href="#contato"
+              className="hover:text-emerald-700 hover:bg-slate-100/70 px-1.5 py-1 rounded transition-colors"
+            >
+              Contato
+            </a>
+          </nav>
+
+          {/* Ações da direita: Já sou cliente + Ver Planos + Hambúrguer mobile */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/login"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs sm:text-sm text-slate-700 hover:text-emerald-800 px-3 py-2 rounded-lg transition-colors font-semibold hover:bg-slate-100"
+            >
+              <LogIn className="h-4 w-4 text-slate-500" />
+              <span>Já sou cliente</span>
+            </Link>
+
+            <a
+              href="#precos"
+              className="inline-flex items-center justify-center bg-gradient-to-r from-[#54D769] to-[#2CA840] hover:from-[#43c457] hover:to-[#228734] text-white font-bold shadow-md shadow-emerald-500/25 px-4 sm:px-5 py-2.5 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] text-xs sm:text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#2CA840]/50"
+            >
+              <span>Ver Planos</span>
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </a>
+
+            {/* Botão Hambúrguer para telas < lg */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden inline-flex items-center justify-center p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2CA840]/50 transition-colors"
+              aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
+
+        {/* Menu Dropdown Mobile com transição fluida */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 pt-3 pb-6 space-y-2 shadow-xl animate-in slide-in-from-top-2 duration-200">
+            <div className="flex flex-col space-y-1">
+              <a
+                href="#beneficios"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeSection === 'beneficios'
+                    ? 'bg-emerald-50 text-emerald-900 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-emerald-800'
+                }`}
+              >
+                Benefícios
+              </a>
+              <a
+                href="#desempenho"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center justify-between ${
+                  activeSection === 'desempenho'
+                    ? 'bg-emerald-100/80 text-emerald-950 font-bold'
+                    : 'text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900'
+                }`}
+              >
+                <span>Módulo Avaliação de Desempenho</span>
+                <span className="text-[10px] uppercase font-bold bg-[#2CA840] text-white px-2 py-0.5 rounded-full">
+                  Novo
+                </span>
+              </a>
+              <a
+                href="#como-funciona"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeSection === 'como-funciona'
+                    ? 'bg-emerald-50 text-emerald-900 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-emerald-800'
+                }`}
+              >
+                Como funciona
+              </a>
+              <a
+                href="#para-quem-e"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeSection === 'para-quem-e'
+                    ? 'bg-emerald-50 text-emerald-900 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-emerald-800'
+                }`}
+              >
+                Público-alvo
+              </a>
+              <a
+                href="#precos"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeSection === 'precos'
+                    ? 'bg-emerald-50 text-emerald-900 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-emerald-800'
+                }`}
+              >
+                Planos &amp; Preços
+              </a>
+              <a
+                href="#faq"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeSection === 'faq'
+                    ? 'bg-emerald-50 text-emerald-900 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-emerald-800'
+                }`}
+              >
+                Perguntas Frequentes (FAQ)
+              </a>
+              <a
+                href="#contato"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeSection === 'contato'
+                    ? 'bg-emerald-50 text-emerald-900 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-emerald-800'
+                }`}
+              >
+                Contato
+              </a>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200/80 flex flex-col gap-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 bg-slate-50 hover:bg-slate-100 transition-colors"
+              >
+                <LogIn className="h-4 w-4 text-emerald-700" />
+                Já sou cliente / Entrar no sistema
+              </Link>
+              <a
+                href="#precos"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#54D769] to-[#2CA840] shadow-md shadow-emerald-500/20"
+              >
+                <span>Ver Planos &amp; Começar</span>
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* HERO SECTION */}
@@ -1593,9 +1859,10 @@ export const Sales: React.FC = () => {
       <footer className="bg-white border-t border-slate-200 py-12 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <AppLogo variant="light-bg" size="sm" layout="compact" />
+            <AppLogo variant="light-bg" size="sm" layout="compact" withDesempenho={true} />
             <p className="text-slate-500 mt-1 max-w-sm">
-              Plataforma especializada na gestão de contratos de experiência de 45 e 90 dias.
+              Plataforma especializada na gestão estratégica de contratos de experiência de 45 e 90
+              dias e avaliação contínua de desempenho.
             </p>
           </div>
 

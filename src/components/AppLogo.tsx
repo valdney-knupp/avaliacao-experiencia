@@ -27,6 +27,10 @@ export interface AppLogoProps {
    */
   align?: 'center' | 'left'
   /**
+   * Se verdadeiro, inclui "& DESEMPENHO" junto ao módulo de experiência
+   */
+  withDesempenho?: boolean
+  /**
    * Classes extras para o container
    */
   className?: string
@@ -211,6 +215,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({
   size = 'md',
   layout = 'full',
   align = 'center',
+  withDesempenho = false,
   className = '',
   imgClassName = '',
 }) => {
@@ -257,22 +262,29 @@ export const AppLogo: React.FC<AppLogoProps> = ({
   if (layout === 'compact') {
     return (
       <div
-        className={`inline-flex items-center gap-3 select-none text-left ${className}`}
+        className={`inline-flex items-center gap-2.5 sm:gap-3 select-none text-left ${className}`}
         role="banner"
       >
         <div className="shrink-0 transition-transform hover:scale-105">
           <AppLogoSymbol className={`${symbolDimensions} ${imgClassName}`} isDark={isDark} />
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col justify-center">
           <span
-            className={`${titleSizes} leading-none ${isDark ? 'text-white' : 'text-slate-900 dark:text-white'}`}
+            className={`${titleSizes} leading-none tracking-tight font-black ${
+              isDark ? 'text-white' : 'text-slate-900 dark:text-white'
+            }`}
           >
             AVALIAÇÃO
           </span>
           <span
-            className={`${subtitleSizes} font-bold uppercase text-[#2CA840] dark:text-[#54D769] leading-tight mt-1`}
+            className={`${subtitleSizes} font-bold uppercase text-[#2CA840] dark:text-[#54D769] leading-tight mt-1 flex flex-wrap items-center gap-x-1`}
           >
-            DE EXPERIÊNCIA
+            <span>DE EXPERIÊNCIA</span>
+            {withDesempenho && (
+              <span className="font-extrabold text-emerald-800 dark:text-emerald-300 tracking-wider">
+                &amp; DESEMPENHO
+              </span>
+            )}
           </span>
         </div>
       </div>
@@ -306,11 +318,16 @@ export const AppLogo: React.FC<AppLogoProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex flex-wrap items-center gap-2 mt-1">
           <span
-            className={`${subtitleSizes} font-bold uppercase text-[#2CA840] dark:text-[#54D769] leading-tight`}
+            className={`${subtitleSizes} font-bold uppercase text-[#2CA840] dark:text-[#54D769] leading-tight flex items-center gap-1`}
           >
-            DE EXPERIÊNCIA
+            <span>DE EXPERIÊNCIA</span>
+            {withDesempenho && (
+              <span className="font-extrabold text-emerald-800 dark:text-emerald-300 tracking-wider">
+                &amp; DESEMPENHO
+              </span>
+            )}
           </span>
           <span
             className={`${badgeSizes} font-semibold uppercase rounded-full ${
