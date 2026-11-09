@@ -193,7 +193,67 @@ routerAdd('POST', '/backend/v1/billing/create-checkout-session', (e) => {
       return e.json(200, { url: link })
     }
 
-    // Para outros preços (Desempenho e Combo), criar Checkout Session via Stripe API
+    // Para outros preços (Desempenho e Combo), criar Checkout Session via $connectors.executeAsOwner ('stripe')
+    let sessionUrl = ''
+    let sessionId = ''
+    let connectorError = ''
+
+    // 1. Tenta via conector Stripe configurado no modo owner
+    if (typeof $connectors !== 'undefined' && typeof $connectors.executeAsOwner === 'function') {
+      try {
+        const connectorArgs = {
+          mode: 'subscription',
+          line_items: [
+            {
+              price: priceId,
+              quantity: 1,
+            },
+          ],
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          allow_promotion_codes: true,
+        }
+
+        if (customerEmail) {
+          connectorArgs.customer_email = customerEmail
+        }
+
+        console.log(`[create-checkout-session] Chamando conector Stripe para price_id: ${priceId}`)
+        let connRes = null
+        try {
+          connRes = $connectors.executeAsOwner(
+            'stripe',
+            'STRIPE_CREATE_CHECKOUT_SESSION',
+            connectorArgs,
+          )
+        } catch (_) {
+          connRes = $connectors.executeAsOwner('STRIPE_CREATE_CHECKOUT_SESSION', connectorArgs)
+        }
+
+        if (connRes && connRes.successful && connRes.data) {
+          const d = connRes.data
+          sessionUrl = d.url || (d.response_data && d.response_data.url) || ''
+          sessionId = d.id || (d.response_data && d.response_data.id) || ''
+        } else {
+          connectorError =
+            connRes && connRes.error
+              ? String(connRes.error)
+              : 'Falha desconhecida no conector Stripe'
+          console.warn('[create-checkout-session] Erro no conector Stripe: ' + connectorError)
+        }
+      } catch (connErr) {
+        connectorError = connErr ? String(connErr.message || connErr) : 'Exceção no conector Stripe'
+        console.warn(
+          '[create-checkout-session] Exceção ao executar conector Stripe: ' + connectorError,
+        )
+      }
+    }
+
+    if (sessionUrl) {
+      return e.json(200, { url: sessionUrl, session_id: sessionId })
+    }
+
+    // 2. Fallback secundário apenas se houver STRIPE_SECRET_KEY configurada diretamente
     let stripeKey = ''
     try {
       stripeKey = $os.getenv('STRIPE_SECRET_KEY') || ''
@@ -237,15 +297,17 @@ routerAdd('POST', '/backend/v1/billing/create-checkout-session', (e) => {
           return e.json(200, { url: data.url, session_id: data.id })
         }
       } else {
-        console.warn('[create-checkout-session] Erro resposta Stripe: ' + res.raw)
+        console.warn('[create-checkout-session] Erro resposta Stripe direct HTTP: ' + res.raw)
+        connectorError = connectorError || 'Erro Stripe: ' + res.raw
       }
     }
 
-    // Fallback amigável se não tiver STRIPE_SECRET_KEY
-    return e.json(200, {
-      url: `https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00?prefilled_email=${encodeURIComponent(customerEmail)}`,
-      fallback: true,
-      message: 'Redirecionando para checkout seguro Stripe.',
+    // Se a criação da sessão falhou, NÃO redirecionar para plano antigo nem mascarar:
+    // Devolve erro 502 claro e explícito
+    return e.json(502, {
+      error:
+        connectorError ||
+        `Não foi possível iniciar o checkout do plano selecionado (${priceId}). O serviço Stripe do proprietário não retornou a sessão.`,
     })
   } catch (err) {
     return e.json(500, { error: 'Erro ao gerar sessão de checkout: ' + String(err) })

@@ -408,15 +408,28 @@ export async function createCheckoutSession(params: {
 }): Promise<{ url: string }> {
   const backendUrl = import.meta.env.VITE_POCKETBASE_URL || ''
   const endpoint = `${backendUrl.replace(/\/+$/, '')}/backend/v1/billing/create-checkout-session`
-  const res = await pb.send(endpoint, {
-    method: 'POST',
-    body: JSON.stringify(params),
-    headers: { 'Content-Type': 'application/json' },
-  })
-  if (!res || !res.url) {
-    throw new Error('Não foi possível gerar a sessão de checkout.')
+  try {
+    const res = await pb.send(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(params),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!res || !res.url) {
+      throw new Error('Não foi possível gerar a sessão de checkout.')
+    }
+    return { url: res.url }
+  } catch (err: any) {
+    const backendMsg =
+      err?.data?.error ||
+      err?.response?.error ||
+      err?.data?.message ||
+      err?.response?.message ||
+      err?.message
+    if (backendMsg) {
+      throw new Error(String(backendMsg))
+    }
+    throw err
   }
-  return { url: res.url }
 }
 
 /**

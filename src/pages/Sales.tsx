@@ -170,6 +170,7 @@ export const Sales: React.FC = () => {
     }
 
     // 2. Tenta gerar a Checkout Session via endpoint oficial /backend/v1/billing/create-checkout-session
+    let sessionErrorMsg = ''
     try {
       const res = await createCheckoutSession({
         price_id: priceId,
@@ -181,9 +182,10 @@ export const Sales: React.FC = () => {
       }
     } catch (err: any) {
       console.warn('Falha ao chamar create-checkout-session:', err)
+      sessionErrorMsg = err?.message || 'Falha na comunicação com o checkout da Stripe.'
     }
 
-    // 3. Fallback se paymentLink tiver URL válida
+    // 3. Fallback se paymentLink tiver URL válida direta oficial
     if (
       paymentLink &&
       paymentLink.startsWith('http') &&
@@ -193,10 +195,11 @@ export const Sales: React.FC = () => {
       return
     }
 
-    // 4. Mensagem com WhatsApp se a conta Stripe ainda estiver configurando os links
+    // 4. Exibe mensagem de erro real para o usuário
     setCheckoutOfferId(null)
     setCheckoutError(
-      `O link de checkout para "${offer.title}" (${billingPeriod === 'monthly' ? 'Mensal' : 'Anual'}) está em sincronização. Finalize agora mesmo com atendimento imediato pelo WhatsApp ou tente novamente em instantes.`,
+      sessionErrorMsg ||
+        `Não foi possível iniciar o checkout de "${offer.title}" (${billingPeriod === 'monthly' ? 'Mensal' : 'Anual'}). Entre em contato pelo WhatsApp para atendimento imediato.`,
     )
   }
 
