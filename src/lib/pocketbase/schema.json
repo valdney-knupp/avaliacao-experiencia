@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T14:17:07.408Z",
+  "generatedAt": "2026-11-09T13:06:03.714Z",
   "collections": [
     {
       "name": "users",
@@ -1037,6 +1037,18 @@
         {
           "name": "notified_milestones",
           "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "experiencia_until",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "desempenho_until",
+          "type": "date",
           "required": false,
           "system": false
         }
