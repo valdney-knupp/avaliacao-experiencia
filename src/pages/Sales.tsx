@@ -97,11 +97,11 @@ export const Sales: React.FC = () => {
     }
   }, [])
 
-  const offersList: ModuleOfferConfig[] = [
-    config.offers?.experiencia || FALLBACK_MODULE_OFFERS.experiencia,
-    config.offers?.desempenho || FALLBACK_MODULE_OFFERS.desempenho,
-    config.offers?.combo || FALLBACK_MODULE_OFFERS.combo,
-  ]
+  const offerExperiencia = config.offers?.experiencia || FALLBACK_MODULE_OFFERS.experiencia
+  const offerDesempenho = config.offers?.desempenho || FALLBACK_MODULE_OFFERS.desempenho
+  const offerCombo = config.offers?.combo || FALLBACK_MODULE_OFFERS.combo
+
+  const offersList: ModuleOfferConfig[] = [offerExperiencia, offerDesempenho, offerCombo]
 
   const handleCheckoutOffer = async (offer: ModuleOfferConfig) => {
     setCheckoutError(null)
@@ -158,15 +158,49 @@ export const Sales: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-900 selection:bg-[#54D769]/30 selection:text-slate-900">
       {/* Top Notification / Banner */}
-      <div className="bg-emerald-50 border-b border-emerald-100 px-4 py-2.5 text-center text-xs sm:text-sm font-medium text-emerald-900 flex items-center justify-center gap-2">
-        <Sparkles className="h-4 w-4 text-[#2CA840] shrink-0" />
-        <span>
-          <strong>Lançamento Especial:</strong> Escolha entre os planos{' '}
-          <strong className="text-emerald-950 font-bold">Mensal</strong> (R${' '}
-          {config.monthly?.price_label || '297,00'}) e{' '}
-          <strong className="text-emerald-950 font-bold">Anual com economia de R$ 665</strong> (R${' '}
-          {config.annual?.price_label || '2.899,00'}).
-        </span>
+      <div className="bg-emerald-50 border-b border-emerald-100 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-emerald-950">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2.5 text-center leading-relaxed">
+          <div className="inline-flex items-center gap-1.5 shrink-0 font-bold text-emerald-900">
+            <Sparkles className="h-4 w-4 text-[#2CA840] shrink-0" />
+            <span>Lançamento Especial:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-slate-800">
+            {/* Oferta Experiência */}
+            <span className="inline-flex items-center gap-1">
+              <strong className="text-emerald-950 font-bold">Experiência:</strong>{' '}
+              <span>
+                Mensal R$ {offerExperiencia.monthly?.price_label || '297,00'} · Anual com economia
+                de R$ 665 (R$ {offerExperiencia.annual?.price_label || '2.899,00'})
+              </span>
+            </span>
+
+            <span className="hidden md:inline text-emerald-300 font-light select-none">|</span>
+
+            {/* Oferta Desempenho */}
+            <span className="inline-flex items-center gap-1">
+              <strong className="text-emerald-950 font-bold">Avaliação de Desempenho:</strong>{' '}
+              <span>
+                Mensal R$ {offerDesempenho.monthly?.price_label || '150,00'} · Anual R${' '}
+                {offerDesempenho.annual?.price_label || '1.399,00'}
+              </span>
+            </span>
+
+            <span className="hidden md:inline text-emerald-300 font-light select-none">|</span>
+
+            {/* Oferta Combo */}
+            <span className="inline-flex items-center gap-1 bg-emerald-100/70 border border-emerald-200/80 px-2 py-0.5 rounded-md text-emerald-950">
+              <strong className="text-emerald-950 font-extrabold">Combo:</strong>{' '}
+              <span>
+                Mensal R$ {offerCombo.monthly?.price_label || '397,00'} · Anual R${' '}
+                {offerCombo.annual?.price_label || '3.897,00'}
+              </span>
+              <span className="bg-[#2CA840] text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.2 rounded font-mono ml-0.5 whitespace-nowrap">
+                Mais vantajoso
+              </span>
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Header / Navbar */}
