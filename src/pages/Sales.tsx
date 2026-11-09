@@ -22,6 +22,12 @@ import {
   Phone,
   Mail,
   Headphones,
+  Award,
+  Layers,
+  Save,
+  CheckCheck,
+  Search,
+  UserCheck,
 } from 'lucide-react'
 import { SYSTEM_CONTACTS } from '@/lib/contacts'
 import { Button } from '@/components/ui/button'
@@ -174,6 +180,12 @@ export const Sales: React.FC = () => {
             <a href="#beneficios" className="hover:text-emerald-700 transition-colors">
               Benefícios
             </a>
+            <a
+              href="#desempenho"
+              className="hover:text-emerald-700 transition-colors font-semibold text-emerald-800"
+            >
+              Módulo Desempenho
+            </a>
             <a href="#como-funciona" className="hover:text-emerald-700 transition-colors">
               Como funciona
             </a>
@@ -220,16 +232,17 @@ export const Sales: React.FC = () => {
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-950 leading-tight">
-            Nunca mais perca o prazo de{' '}
+            Gestão estratégica de RH:{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2CA840] via-[#54D769] to-[#238734]">
-              45 e 90 dias
+              Experiência de 45 e 90 dias
             </span>{' '}
-            do contrato de experiência.
+            e Avaliação de Desempenho contínua.
           </h1>
 
           <p className="mt-6 text-base sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Elimine riscos trabalhistas, padronize critérios de avaliação por centro de custo e
-            setor, e tome decisões embasadas de efetivação ou desligamento com auditoria completa.
+            Elimine riscos trabalhistas no período de experiência, aplique entrevistas de
+            desligamento e desenvolva sua equipe com avaliações de desempenho estruturadas em
+            competências e níveis.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -749,87 +762,117 @@ export const Sales: React.FC = () => {
                       <div className="space-y-3 text-xs sm:text-sm">
                         {offer.id === 'experiencia' && (
                           <>
-                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                            <div className="flex items-start gap-2.5 text-slate-900 font-semibold">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Gestão do período de experiência (45 e 90 dias)</span>
+                              <span>Avaliações de 45 e 90 dias com cálculo automático</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-900 font-semibold">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>
+                                Entrevista de Desligamento com envio de link ao colaborador (sem
+                                login)
+                              </span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-800 font-medium">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Entrevistas de desligamento integradas</span>
+                              <span>Dashboard de acompanhamento em tempo real</span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-700">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Alertas preventivos de prazo CLT</span>
+                              <span>
+                                Alertas diários com 5 dias de antecedência (art. 445/451 CLT)
+                              </span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-700">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Critérios customizáveis (Obra e Escritório)</span>
+                              <span>
+                                Critérios customizados para Canteiro de Obras e Escritório
+                              </span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-700">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Importação e exportação de planilhas</span>
-                            </div>
-                            <div className="flex items-start gap-2.5 text-slate-700">
-                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Colaboradores e centros de custo ilimitados</span>
+                              <span>Importação e exportação em Excel com validação prévia</span>
                             </div>
                           </>
                         )}
 
                         {offer.id === 'desempenho' && (
                           <>
-                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                            <div className="flex items-start gap-2.5 text-slate-900 font-semibold">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Avaliação contínua por competências</span>
+                              <span>
+                                2 Modelos oficiais: Nível I (Operacional/Tático) e Nível II
+                                (Liderança)
+                              </span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-900 font-semibold">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>
+                                Preenchimento com rascunho automático e retomada a qualquer momento
+                              </span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-800 font-medium">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Formulários oficiais Nível I e Nível II</span>
+                              <span>
+                                Histórico completo com filtros por modelo, período e situação
+                              </span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>
+                                Identificação clara do responsável pelo preenchimento via login
+                              </span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-700">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Ciclos anuais e semestrais por colaborador</span>
+                              <span>
+                                Escala de 4 níveis (Atende, Atende Parcialmente, Não Atende, Supera)
+                              </span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-700">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Notas ponderadas e histórico evolutivo</span>
-                            </div>
-                            <div className="flex items-start gap-2.5 text-slate-700">
-                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Comentários de feedback e plano de ação</span>
-                            </div>
-                            <div className="flex items-start gap-2.5 text-slate-700">
-                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Exportação de relatórios para diretoria</span>
+                              <span>
+                                Comentários de pontos fortes, melhorias e plano de desenvolvimento
+                              </span>
                             </div>
                           </>
                         )}
 
                         {offer.id === 'combo' && (
                           <>
-                            <div className="flex items-start gap-2.5 text-emerald-950 font-bold bg-emerald-50/80 p-2 rounded-xl border border-emerald-200">
+                            <div className="flex items-start gap-2.5 text-emerald-950 font-bold bg-emerald-50/90 p-2.5 rounded-xl border border-emerald-200">
                               <Sparkles className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Acesso Total: Experiência + Desempenho</span>
+                              <span>Acesso completo: Experiência + Desempenho + Desligamento</span>
                             </div>
-                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                            <div className="flex items-start gap-2.5 text-slate-900 font-semibold">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Tudo do módulo de Experiência e Desligamento</span>
+                              <span>
+                                Tudo do módulo de Experiência (45/90 dias e Entrevistas de
+                                Desligamento)
+                              </span>
                             </div>
-                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                            <div className="flex items-start gap-2.5 text-slate-900 font-semibold">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Tudo do módulo de Avaliação de Desempenho</span>
+                              <span>
+                                Tudo do módulo de Desempenho (Modelos Nível I e II, Rascunhos e
+                                Filtros)
+                              </span>
                             </div>
-                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
-                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Maior economia: desconto direto na assinatura</span>
+                            <div className="flex items-start gap-2.5 text-emerald-900 font-bold bg-amber-50/70 p-2 rounded-lg border border-amber-200">
+                              <Award className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                              <span>
+                                {billingPeriod === 'monthly'
+                                  ? 'Economia de R$ 50/mês comparado aos módulos separados'
+                                  : 'Economia de R$ 401/ano (R$ 3.897 em vez de R$ 4.298)'}
+                              </span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-700">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Gestão unificada em um único painel e login</span>
+                              <span>Gestão unificada em um único painel e login por empresa</span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-700">
                               <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                              <span>Atendimento e suporte prioritários</span>
+                              <span>Atendimento consultivo e suporte prioritário</span>
                             </div>
                           </>
                         )}
@@ -867,6 +910,421 @@ export const Sales: React.FC = () => {
         </div>
       </section>
 
+      {/* SEÇÃO COMPLETA: MÓDULO AVALIAÇÃO DE DESEMPENHO */}
+      <section id="desempenho" className="py-20 bg-white border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4 shadow-xs">
+              <Award className="h-4 w-4 text-[#2CA840]" />
+              Novo Módulo Especializado
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-950 leading-tight">
+              Avaliação de Desempenho:{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2CA840] via-[#54D769] to-[#238734]">
+                Competências, Feedback e Evolução Contínua
+              </span>
+            </h2>
+            <p className="mt-4 text-slate-600 text-base sm:text-lg leading-relaxed">
+              Vá além do período de experiência: impulsione o desenvolvimento de toda a equipe com
+              modelos estruturados por nível hierárquico, rascunho seguro, auditoria por gestor e
+              análise transparente de competências.
+            </p>
+          </div>
+
+          {/* PARA QUEM É O MÓDULO DESEMPENHO */}
+          <div className="bg-gradient-to-br from-emerald-50/60 via-slate-50 to-white rounded-3xl p-8 sm:p-10 border border-emerald-100 shadow-sm mb-14">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-5">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#2CA840]">
+                  Público-alvo & Aplicação
+                </span>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-950 mt-1 mb-4">
+                  Para quem é a Avaliação de Desempenho?
+                </h3>
+                <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-6">
+                  Ideal para empresas, construtoras e escritórios que já superaram o controle básico
+                  de admissão e precisam de um processo contínuo de gestão de talentos, alinhamento
+                  de expectativas e fundamentação de promoções, bonificações ou planos de
+                  desenvolvimento individual (PDI).
+                </p>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex items-center gap-2 text-slate-800 font-semibold">
+                    <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0" />
+                    <span>Líderes de obras, encarregados e gestores operacionais</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-800 font-semibold">
+                    <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0" />
+                    <span>Equipes corporativas, técnicas e administrativas</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-800 font-semibold">
+                    <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0" />
+                    <span>Diretoria e RH em busca de dados consistentes para PDI</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2CA840] flex items-center justify-center font-bold mb-3">
+                    01
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base mb-1">
+                    Critérios Objetivos de Meritocracia
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Substitua o "achismo" por notas padronizadas e justificativas reais sobre o dia
+                    a dia do colaborador.
+                  </p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2CA840] flex items-center justify-center font-bold mb-3">
+                    02
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base mb-1">
+                    Cultura de Feedback Estruturado
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Estimule os gestores a registrarem pontos fortes e aspectos a melhorar com
+                    espaço dedicado para comentários.
+                  </p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2CA840] flex items-center justify-center font-bold mb-3">
+                    03
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base mb-1">
+                    Histórico Evolutivo do Colaborador
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Acompanhe o crescimento de cada profissional ao longo dos semestres e anos em um
+                    único painel.
+                  </p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2CA840] flex items-center justify-center font-bold mb-3">
+                    04
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base mb-1">
+                    Segurança e Auditoria por Login
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Cada avaliação registra automaticamente quem a preencheu e quando foi concluída,
+                    evitando edições indevidas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* OS DOIS MODELOS OFICIAIS (NÍVEL I e NÍVEL II) */}
+          <div className="mb-14">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <span className="text-[#2CA840] text-xs font-bold uppercase tracking-wider">
+                Modelos Oficiais de Avaliação
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-1">
+                Dois instrumentos desenhados para cada maturidade da função
+              </h3>
+              <p className="text-slate-600 text-sm mt-2">
+                O módulo já vem com formulários estruturados e validados para equipes operacionais e
+                posições de liderança.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* MODELO NÍVEL I */}
+              <div className="bg-white rounded-3xl p-7 sm:p-8 border-2 border-emerald-100 hover:border-emerald-300 shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800">
+                      Modelo Oficial 1
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500">Escala em 4 Níveis</span>
+                  </div>
+                  <h4 className="text-xl sm:text-2xl font-black text-slate-950 mb-2">
+                    Avaliação de Desempenho — Nível I
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                    Focado em colaboradores operacionais, técnicos e de execução direta. Avalia a
+                    conformidade dos processos, produtividade e integração com o time.
+                  </p>
+
+                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 mb-6">
+                    <div className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <Layers className="h-4 w-4 text-[#2CA840]" /> 5 Competências Centrais
+                      Avaliadas:
+                    </div>
+                    <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700">
+                      <li className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-xs">
+                          1
+                        </span>
+                        <div>
+                          <strong className="text-slate-900">
+                            Domínio dos processos de trabalho:
+                          </strong>{' '}
+                          conhecimento técnico, visão crítica e eficiência.
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-xs">
+                          2
+                        </span>
+                        <div>
+                          <strong className="text-slate-900">Qualidade do trabalho:</strong>{' '}
+                          organização, planejamento, conformidade com os padrões.
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-xs">
+                          3
+                        </span>
+                        <div>
+                          <strong className="text-slate-900">Produtividade de trabalho:</strong>{' '}
+                          cumprimento de prazos, otimização de recursos e metas.
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-xs">
+                          4
+                        </span>
+                        <div>
+                          <strong className="text-slate-900">Solução de problemas:</strong>{' '}
+                          proatividade, mediação de conflitos e adaptação a mudanças.
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-xs">
+                          5
+                        </span>
+                        <div>
+                          <strong className="text-slate-900">Colaboração:</strong> relacionamento
+                          interpessoal, empatia, integração e espírito de equipe.
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-slate-600 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+                    <div className="font-bold text-emerald-950 flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#2CA840]" />
+                      Escala padronizada de resposta:
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      <span className="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-800 font-semibold">
+                        ATENDE
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-800 font-semibold">
+                        ATENDE PARCIALMENTE
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-800 font-semibold">
+                        NÃO ATENDE
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-100 border border-emerald-200 text-emerald-900 font-bold">
+                        SUPERA
+                      </span>
+                    </div>
+                    <p className="pt-2 text-slate-600">
+                      Inclui campo de <strong>comentários gerais livres</strong> em cada competência
+                      para registrar pontos fortes e oportunidades de melhoria.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* MODELO NÍVEL II */}
+              <div className="bg-white rounded-3xl p-7 sm:p-8 border-2 border-emerald-100 hover:border-emerald-300 shadow-sm transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800">
+                      Modelo Oficial 2
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500">
+                      10 Competências em 3 Seções
+                    </span>
+                  </div>
+                  <h4 className="text-xl sm:text-2xl font-black text-slate-950 mb-2">
+                    Avaliação de Desempenho — Nível II
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                    Estruturado para posições de liderança, coordenação, supervisão e analistas
+                    seniores. Divide a análise em três pilares estratégicos da organização:
+                  </p>
+
+                  <div className="space-y-3 mb-6">
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80">
+                      <div className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        Seção 1: Clima Organizacional
+                      </div>
+                      <p className="text-xs text-slate-600 mb-2">
+                        Atitudes, convivência ética e saúde do ambiente corporativo.
+                      </p>
+                      <div className="text-xs text-slate-700 space-y-1 pl-4 border-l-2 border-emerald-300">
+                        <div>• Ética e transparência com pares, clientes e equipe</div>
+                        <div>• Relacionamento interpessoal positivo e cooperação</div>
+                        <div>• Respeito e manutenção de ambiente de trabalho saudável</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80">
+                      <div className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        Seção 2: Crescimento
+                      </div>
+                      <p className="text-xs text-slate-600 mb-2">
+                        Busca por desenvolvimento contínuo, maturidade e raciocínio crítico.
+                      </p>
+                      <div className="text-xs text-slate-700 space-y-1 pl-4 border-l-2 border-blue-300">
+                        <div>• Autodesenvolvimento e interesse por novos aprendizados</div>
+                        <div>• Pensamento crítico e otimização dos processos</div>
+                        <div>• Inteligência emocional diante de desafios e conflitos</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80">
+                      <div className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-purple-500" />
+                        Seção 3: Performance e Resultados
+                      </div>
+                      <p className="text-xs text-slate-600 mb-2">
+                        Entrega consistente de metas, segurança operacional e proatividade.
+                      </p>
+                      <div className="text-xs text-slate-700 space-y-1 pl-4 border-l-2 border-purple-300">
+                        <div>• Foco em resultados, planos de ação e prazos</div>
+                        <div>• Comprometimento e dedicação acima das expectativas</div>
+                        <div>• Qualidade e conformidade com normas e procedimentos</div>
+                        <div>• Proatividade e solução ágil de problemas</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-slate-600 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                    <span className="font-bold text-blue-950">Comentários por Seção Temática:</span>{' '}
+                    O gestor avalia as competências com a escala de 4 níveis (ATENDE, ATENDE
+                    PARCIALMENTE, NÃO ATENDE, SUPERA) e redige um parecer consolidado em cada um dos
+                    3 pilares.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* FLUXO PRÁTICO DO MÓDULO (4 ETAPAS) */}
+          <div className="bg-slate-100/70 rounded-3xl p-8 sm:p-12 border border-slate-200">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <span className="text-[#2CA840] text-xs font-bold uppercase tracking-wider">
+                Fluxo de Uso Inteligente
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-1">
+                Como funciona a rotina de preenchimento no sistema
+              </h3>
+              <p className="text-slate-600 text-sm mt-2">
+                Simplicidade e segurança do início ao fim, pensadas para o ritmo dinâmico dos
+                gestores.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#2CA840] border border-emerald-100 flex items-center justify-center font-black text-lg mb-4">
+                    <Layers className="h-6 w-6" />
+                  </div>
+                  <div className="text-xs font-bold text-[#2CA840] uppercase tracking-wider mb-1">
+                    Passo 1
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base mb-2">Iniciar & Selecionar</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    O gestor clica em <strong>"Nova Avaliação"</strong>, escolhe o modelo (Nível I
+                    ou Nível II), seleciona o colaborador da sua equipe e define o período de
+                    referência (ano/semestre).
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 font-medium">
+                  Sem formulários em papel
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#2CA840] border border-emerald-100 flex items-center justify-center font-black text-lg mb-4">
+                    <Save className="h-6 w-6" />
+                  </div>
+                  <div className="text-xs font-bold text-[#2CA840] uppercase tracking-wider mb-1">
+                    Passo 2
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base mb-2">Rascunho & Retomada</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Precisa pausar? Sem problemas: o sistema permite{' '}
+                    <strong>"Salvar Rascunho"</strong> a qualquer momento. Suas respostas ficam
+                    salvas para retomar com calma quando for oportuno.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-emerald-700 font-semibold">
+                  Zero risco de perder dados
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#2CA840] border border-emerald-100 flex items-center justify-center font-black text-lg mb-4">
+                    <CheckCheck className="h-6 w-6" />
+                  </div>
+                  <div className="text-xs font-bold text-[#2CA840] uppercase tracking-wider mb-1">
+                    Passo 3
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base mb-2">
+                    Conclusão com Validação
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    O sistema valida se todas as perguntas obrigatórias foram respondidas antes de
+                    permitir a conclusão. O responsável pelo preenchimento fica identificado pelo
+                    seu login.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 font-medium">
+                  Auditoria e autoria garantidas
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#2CA840] border border-emerald-100 flex items-center justify-center font-black text-lg mb-4">
+                    <Search className="h-6 w-6" />
+                  </div>
+                  <div className="text-xs font-bold text-[#2CA840] uppercase tracking-wider mb-1">
+                    Passo 4
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base mb-2">Consulta & Filtros</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Listagem dinâmica com filtros por{' '}
+                    <strong>modelo, período e situação (Rascunho ou Concluída)</strong>. Consulta
+                    rápida do histórico de qualquer colaborador com modo somente leitura.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 font-medium">
+                  Visão consolidada para o RH
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 text-center">
+              <a
+                href="#precos"
+                className="inline-flex items-center justify-center bg-gradient-to-r from-[#54D769] to-[#2CA840] hover:from-[#43c457] hover:to-[#228734] text-white font-extrabold px-8 py-3.5 rounded-xl shadow-md shadow-emerald-500/20 transition-all"
+              >
+                Contratar o Módulo de Desempenho
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section id="faq" className="py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
@@ -884,13 +1342,16 @@ export const Sales: React.FC = () => {
             className="border border-slate-200 rounded-xl px-6 bg-white shadow-xs"
           >
             <AccordionTrigger className="text-left font-bold text-slate-900 hover:text-emerald-700 py-5">
-              Qual a diferença entre o Plano Mensal e o Plano Anual?
+              Como funcionam os módulos? Posso contratar apenas um ou o Combo?
             </AccordionTrigger>
             <AccordionContent className="text-sm text-slate-600 leading-relaxed pb-5">
-              Ambos dão acesso irrestrito e idêntico a todas as funcionalidades do sistema,
-              colaboradores e obras ilimitadas. A vantagem do Plano Anual é a economia direta de R$
-              665: você investe R$ {config.annual?.price_label || '2.899,00'}/ano em vez de R$
-              3.564,00 (12× R$ 297).
+              Total flexibilidade: sua empresa pode contratar apenas a{' '}
+              <strong>Avaliação de Experiência</strong> (R$ 297/mês ou R$ 2.899/ano, que inclui as
+              avaliações de 45 e 90 dias e a Entrevista de Desligamento), apenas a{' '}
+              <strong>Avaliação de Desempenho</strong> (R$ 150/mês ou R$ 1.399/ano, com os modelos
+              Nível I e II, rascunhos e filtros), ou o <strong>Combo Completo</strong> (R$ 397/mês
+              ou R$ 3.897/ano), que unifica os dois módulos com desconto expressivo em um único
+              login.
             </AccordionContent>
           </AccordionItem>
 
@@ -899,13 +1360,17 @@ export const Sales: React.FC = () => {
             className="border border-slate-200 rounded-xl px-6 bg-white shadow-xs"
           >
             <AccordionTrigger className="text-left font-bold text-slate-900 hover:text-emerald-700 py-5">
-              O que acontece ao fim dos 90 dias do contrato de experiência?
+              O que está incluído na Avaliação de Desempenho?
             </AccordionTrigger>
             <AccordionContent className="text-sm text-slate-600 leading-relaxed pb-5">
-              Pela CLT, se a empresa não comunicar o término até o 90º dia, o contrato torna-se
-              automaticamente por prazo indeterminado. O sistema emite alertas diários com 5 dias de
-              antecedência para que a decisão de prorrogação ou rescisão seja tomada e assinada
-              rigorosamente no prazo.
+              O módulo traz os dois modelos oficiais completos: o <strong>Nível I</strong> (5
+              competências operacionais: Domínio dos processos, Qualidade, Produtividade, Solução de
+              problemas e Colaboração, com escala em 4 níveis e comentários) e o{' '}
+              <strong>Nível II</strong> (10 competências distribuídas em 3 seções temáticas: Clima
+              Organizacional, Crescimento e Performance & Resultados). Conta com recurso de salvar
+              como rascunho e retomar quando quiser, validação de preenchimento, filtros por modelo,
+              período e situação, e identificação auditável do gestor responsável pelo
+              preenchimento.
             </AccordionContent>
           </AccordionItem>
 
@@ -914,12 +1379,14 @@ export const Sales: React.FC = () => {
             className="border border-slate-200 rounded-xl px-6 bg-white shadow-xs"
           >
             <AccordionTrigger className="text-left font-bold text-slate-900 hover:text-emerald-700 py-5">
-              Quantos colaboradores posso cadastrar na minha conta?
+              Como funciona a Entrevista de Desligamento no módulo de Experiência?
             </AccordionTrigger>
             <AccordionContent className="text-sm text-slate-600 leading-relaxed pb-5">
-              Tanto o plano mensal quanto o anual oferecem capacidade ilimitada. Você pode cadastrar
-              quantos colaboradores, obras e setores precisar, sem qualquer cobrança adicional por
-              volume de dados.
+              A Entrevista de Desligamento faz parte do módulo Avaliação de Experiência. O RH gera o
+              convite e envia um link seguro para o colaborador responder no próprio celular ou
+              computador, sem necessidade de login. As respostas alimentam gráficos de distribuição,
+              médias de escalas e evolução mensal para que a empresa entenda os motivos reais de
+              saídas e reduza o turnover.
             </AccordionContent>
           </AccordionItem>
 
@@ -928,13 +1395,13 @@ export const Sales: React.FC = () => {
             className="border border-slate-200 rounded-xl px-6 bg-white shadow-xs"
           >
             <AccordionTrigger className="text-left font-bold text-slate-900 hover:text-emerald-700 py-5">
-              Como funciona a importação da base atual de colaboradores?
+              Qual a economia do Plano Anual em comparação ao Mensal?
             </AccordionTrigger>
             <AccordionContent className="text-sm text-slate-600 leading-relaxed pb-5">
-              O sistema disponibiliza modelos em formato Excel (.xlsx) prontos para download. Basta
-              preencher as colunas (Nome, CPF, Data de Admissão, Centro de Custo, Setor e Cargo) e
-              fazer o upload. O sistema valida todos os dados em modo simulação antes de efetivar o
-              cadastro.
+              No módulo de Experiência, a economia é de R$ 665 ao ano (R$ 2.899/ano vs. R$ 3.564 no
+              mensal). No módulo de Desempenho, a economia é de R$ 401 ao ano (R$ 1.399/ano vs. R$
+              1.800 no mensal). No Combo, a economia anual é de R$ 867 em relação ao parcelamento
+              mensal, além do desconto especial já aplicado no pacote.
             </AccordionContent>
           </AccordionItem>
 
@@ -943,11 +1410,25 @@ export const Sales: React.FC = () => {
             className="border border-slate-200 rounded-xl px-6 bg-white shadow-xs"
           >
             <AccordionTrigger className="text-left font-bold text-slate-900 hover:text-emerald-700 py-5">
+              Quantos colaboradores posso cadastrar na minha conta?
+            </AccordionTrigger>
+            <AccordionContent className="text-sm text-slate-600 leading-relaxed pb-5">
+              Tanto no plano mensal quanto no anual, a capacidade é ilimitada. Você pode cadastrar
+              quantos colaboradores, obras, setores e avaliações precisar, sem cobranças adicionais
+              por colaborador ou volume de avaliações.
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem
+            value="item-6"
+            className="border border-slate-200 rounded-xl px-6 bg-white shadow-xs"
+          >
+            <AccordionTrigger className="text-left font-bold text-slate-900 hover:text-emerald-700 py-5">
               Posso cancelar a assinatura quando quiser?
             </AccordionTrigger>
             <AccordionContent className="text-sm text-slate-600 leading-relaxed pb-5">
-              Sim, totalmente livre. No plano mensal não há fidelidade. Você gerencia sua assinatura
-              com total autonomia e pode desativar a renovação quando preferir.
+              Sim, totalmente transparente. No plano mensal não há fidelidade. Você gerencia sua
+              assinatura com total autonomia e pode cancelar ou alterar seu plano quando preferir.
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -1087,6 +1568,9 @@ export const Sales: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-6 text-slate-600">
             <a href="#beneficios" className="hover:text-emerald-700 transition-colors">
               Benefícios
+            </a>
+            <a href="#desempenho" className="hover:text-emerald-700 transition-colors">
+              Avaliação de Desempenho
             </a>
             <a href="#como-funciona" className="hover:text-emerald-700 transition-colors">
               Como funciona
