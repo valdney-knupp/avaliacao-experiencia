@@ -52,6 +52,7 @@ import {
 } from '@/lib/stripeCheckout'
 import { useSearchParams } from 'react-router-dom'
 import { initGoogleAds } from '@/lib/googleAds'
+import { LeadCaptureSection } from '@/components/LeadCaptureSection'
 
 export const Sales: React.FC = () => {
   const [config, setConfig] = useState<StripeCheckoutConfig>(FALLBACK_CHECKOUT_CONFIG)
@@ -1825,6 +1826,9 @@ export const Sales: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* BLOCO DE CAPTURA DE LEADS (INTEGRAÇÃO COM MAILCHIMP AUDIÊNCIA KNUPP DADOS) */}
+      <LeadCaptureSection id="materiais-gratuitos" source="sales_page" />
 
       {/* FINAL CTA BANNER */}
       <section className="py-20 bg-gradient-to-r from-emerald-600 via-[#2CA840] to-emerald-700 text-white">

@@ -112,4 +112,21 @@ describe('Sales page - Faixa de Lançamento Especial', () => {
     )
     expect(screen.getAllByRole('link', { name: /Ver Planos/i }).length).toBeGreaterThanOrEqual(1)
   })
+
+  it('exibe o bloco de captura de leads integrado na página de vendas', () => {
+    render(
+      <MemoryRouter>
+        <Sales />
+      </MemoryRouter>,
+    )
+
+    expect(
+      screen.getByText(/Quer receber novidades, modelos de avaliação e materiais de RH\?/i),
+    ).toBeDefined()
+    expect(screen.getByLabelText(/Nome completo/i)).toBeDefined()
+    expect(screen.getByLabelText(/E-mail corporativo ou pessoal/i)).toBeDefined()
+    expect(
+      screen.getByRole('button', { name: /Quero receber novidades e materiais/i }),
+    ).toBeDefined()
+  })
 })

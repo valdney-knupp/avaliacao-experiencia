@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T14:30:42.561Z",
+  "generatedAt": "2026-11-09T15:08:25.435Z",
   "collections": [
     {
       "name": "users",
@@ -1750,6 +1750,74 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_exit_attempts_invite ON exit_send_attempts (invite)"]
+    },
+    {
+      "name": "leads",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "view": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'",
+        "create": "",
+        "update": null,
+        "delete": "@request.auth.id != '' && @request.auth.profile = 'ADMIN'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pending", "synced", "exists", "failed"]
+        },
+        {
+          "name": "mailchimp_status",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_leads_email ON leads (email)",
+        "CREATE INDEX idx_leads_created ON leads (created DESC)"
+      ]
     }
   ]
 }
