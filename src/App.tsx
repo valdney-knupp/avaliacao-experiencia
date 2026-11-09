@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+// Providers de autenticação e tema
 import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { ThemeProvider } from '@/hooks/use-theme'
 import { ProtectedRoute } from '@/components/ProtectedRoute'

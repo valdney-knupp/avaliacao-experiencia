@@ -169,8 +169,62 @@ export interface SaleRecord {
  */
 export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
   try {
-    // 1. Tenta chamar o endpoint de checkout do backend
     const backendUrl = import.meta.env.VITE_POCKETBASE_URL || ''
+
+    // 1. Tenta consultar as ofertas por módulo em /backend/v1/billing/offers
+    let remoteOffers: Record<string, ModuleOfferConfig> | null = null
+    try {
+      const offersEndpoint = `${backendUrl.replace(/\/+$/, '')}/backend/v1/billing/offers`
+      const offersRes = await fetch(offersEndpoint)
+      if (offersRes.ok) {
+        const offersData = await offersRes.json()
+        if (offersData?.offers) {
+          const raw = offersData.offers
+          remoteOffers = {
+            experiencia: {
+              ...FALLBACK_MODULE_OFFERS.experiencia,
+              ...(raw.experiencia || {}),
+              monthly: {
+                ...FALLBACK_MODULE_OFFERS.experiencia.monthly,
+                ...(raw.experiencia?.monthly || {}),
+              },
+              annual: {
+                ...FALLBACK_MODULE_OFFERS.experiencia.annual,
+                ...(raw.experiencia?.annual || {}),
+              },
+            },
+            desempenho: {
+              ...FALLBACK_MODULE_OFFERS.desempenho,
+              ...(raw.desempenho || {}),
+              monthly: {
+                ...FALLBACK_MODULE_OFFERS.desempenho.monthly,
+                ...(raw.desempenho?.monthly || {}),
+              },
+              annual: {
+                ...FALLBACK_MODULE_OFFERS.desempenho.annual,
+                ...(raw.desempenho?.annual || {}),
+              },
+            },
+            combo: {
+              ...FALLBACK_MODULE_OFFERS.combo,
+              ...(raw.combo || {}),
+              monthly: {
+                ...FALLBACK_MODULE_OFFERS.combo.monthly,
+                ...(raw.combo?.monthly || {}),
+              },
+              annual: {
+                ...FALLBACK_MODULE_OFFERS.combo.annual,
+                ...(raw.combo?.annual || {}),
+              },
+            },
+          }
+        }
+      }
+    } catch (_) {
+      // ignora e usa fallback
+    }
+
+    // 2. Tenta chamar o endpoint de checkout-link do backend
     const endpoint = `${backendUrl.replace(/\/+$/, '')}/backend/v1/billing/checkout-link`
     const res = await fetch(endpoint)
     if (res.ok) {
@@ -217,7 +271,7 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
             badge: data.annual?.badge || '2 meses grátis • Economia de R$ 665',
             is_official: annualIsOfficial,
           },
-          offers: data.offers || FALLBACK_MODULE_OFFERS,
+          offers: remoteOffers || data.offers || FALLBACK_MODULE_OFFERS,
         }
       }
     }
