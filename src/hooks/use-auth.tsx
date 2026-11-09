@@ -43,6 +43,7 @@ export interface AuthContextType {
   requestEmailChange: (newEmail: string) => Promise<{ error: Error | null }>
   confirmEmailChange: (token: string, pass: string) => Promise<{ error: Error | null }>
   canAccessAdmin: boolean
+  canAccessSalesDashboard: boolean
   canAccessImport: boolean
   canExportReports: boolean
   canViewAudit: boolean
@@ -272,6 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // MANAGER_WORKSITE & MANAGER_DEPARTMENT: apenas Visão geral, Próximas avaliações, Colaboradores (sem Administração, sem Importação, sem Relatórios/Exportação, sem Auditoria)
   // ADMIN_ASSISTANT & VIEWER (Consulta): permissões mantidas intactas
   const canAccessAdmin = user?.profile === 'ADMIN' || user?.profile === 'HR'
+  const canAccessSalesDashboard = user?.profile === 'ADMIN'
   const canAccessImport = user?.profile === 'ADMIN'
   const canExportReports =
     user?.profile === 'ADMIN' || user?.profile === 'ADMIN_ASSISTANT' || user?.profile === 'VIEWER'
@@ -354,6 +356,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       requestEmailChange,
       confirmEmailChange,
       canAccessAdmin,
+      canAccessSalesDashboard,
       canAccessImport,
       canExportReports,
       canViewAudit,

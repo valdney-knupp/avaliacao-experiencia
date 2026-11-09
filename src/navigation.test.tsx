@@ -17,6 +17,7 @@ vi.mock('@/hooks/use-auth', () => ({
     },
     signOut: vi.fn(),
     canAccessAdmin: true,
+    canAccessSalesDashboard: true,
     canAccessImport: true,
     canExportReports: true,
     canViewAudit: true,

@@ -28,6 +28,7 @@ import EvaluateForm from '@/pages/EvaluateForm'
 import Admin from '@/pages/Admin'
 import DataImport from '@/pages/DataImport'
 import Reports from '@/pages/Reports'
+import SalesDashboard from '@/pages/SalesDashboard'
 import NotFound from '@/pages/NotFound'
 
 /**
@@ -163,6 +164,14 @@ export const App: React.FC = () => {
                     ]}
                   >
                     <EvaluateForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/sales-dashboard"
+                element={
+                  <ProtectedRoute allowedProfiles={['ADMIN']}>
+                    <SalesDashboard />
                   </ProtectedRoute>
                 }
               />

@@ -11,6 +11,7 @@ import {
   Upload,
   FileSpreadsheet,
   ShieldCheck,
+  TrendingUp,
   LogOut,
   Menu,
   X,
@@ -38,6 +39,7 @@ export const Layout: React.FC = () => {
     user,
     signOut,
     canAccessAdmin,
+    canAccessSalesDashboard,
     canAccessImport,
     canExportReports,
     canViewAudit,
@@ -144,6 +146,12 @@ export const Layout: React.FC = () => {
       show: hasDesempenhoAccess,
     },
     {
+      to: '/sales-dashboard',
+      label: 'Dashboard de Vendas',
+      icon: TrendingUp,
+      show: canAccessSalesDashboard,
+    },
+    {
       to: '/admin',
       label: 'Administração',
       icon: Settings,
@@ -186,6 +194,7 @@ export const Layout: React.FC = () => {
     if (path.includes('/edit')) return 'Editar Colaborador'
     if (path.startsWith('/collaborators/')) return 'Detalhes do Colaborador'
     if (path === '/collaborators') return 'Colaboradores'
+    if (path === '/sales-dashboard') return 'Dashboard de Vendas'
     if (path === '/admin') return 'Administração do Sistema'
     if (path === '/import') return 'Importação de Planilhas'
     if (path === '/reports') return 'Relatórios e Exportação'
