@@ -69,7 +69,7 @@ cronAdd('daily_deadline_check', '0 7 * * *', () => {
     } catch (_) {}
 
     // 3. Load active, verified users with notification-eligible profiles
-    // Allowed profiles: ADMIN, HR, MANAGER_WORKSITE, MANAGER_DEPARTMENT
+    // Allowed profiles: ADMIN, HR, MANAGER (and legacy MANAGER_WORKSITE, MANAGER_DEPARTMENT)
     const activeUsers = []
     try {
       const usersList = $app.findRecordsByFilter(
@@ -79,7 +79,7 @@ cronAdd('daily_deadline_check', '0 7 * * *', () => {
         1000,
         0,
       )
-      const allowedProfiles = ['ADMIN', 'HR', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
+      const allowedProfiles = ['ADMIN', 'HR', 'MANAGER', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
       for (const u of usersList) {
         const prof = u.getString('profile')
         const email = u.getString('email').trim().toLowerCase()
@@ -257,12 +257,16 @@ cronAdd('daily_deadline_check', '0 7 * * *', () => {
           if (u.profile === 'ADMIN' || u.profile === 'HR') {
             recipientEmails.add(u.email)
           } else if (
-            u.profile === 'MANAGER_WORKSITE' &&
+            (u.profile === 'MANAGER' || u.profile === 'MANAGER_WORKSITE') &&
             u.cost_center &&
             u.cost_center === costCenterId
           ) {
             recipientEmails.add(u.email)
-          } else if (u.profile === 'MANAGER_DEPARTMENT' && u.sector && u.sector === sectorId) {
+          } else if (
+            (u.profile === 'MANAGER' || u.profile === 'MANAGER_DEPARTMENT') &&
+            u.sector &&
+            u.sector === sectorId
+          ) {
             recipientEmails.add(u.email)
           }
         }
@@ -428,7 +432,7 @@ routerAdd(
           1000,
           0,
         )
-        const allowedProfiles = ['ADMIN', 'HR', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
+        const allowedProfiles = ['ADMIN', 'HR', 'MANAGER', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
         for (const u of usersList) {
           const prof = u.getString('profile')
           const email = u.getString('email').trim().toLowerCase()
@@ -569,12 +573,16 @@ routerAdd(
             if (u.profile === 'ADMIN' || u.profile === 'HR') {
               recipientEmails.add(u.email)
             } else if (
-              u.profile === 'MANAGER_WORKSITE' &&
+              (u.profile === 'MANAGER' || u.profile === 'MANAGER_WORKSITE') &&
               u.cost_center &&
               u.cost_center === costCenterId
             ) {
               recipientEmails.add(u.email)
-            } else if (u.profile === 'MANAGER_DEPARTMENT' && u.sector && u.sector === sectorId) {
+            } else if (
+              (u.profile === 'MANAGER' || u.profile === 'MANAGER_DEPARTMENT') &&
+              u.sector &&
+              u.sector === sectorId
+            ) {
               recipientEmails.add(u.email)
             }
           }

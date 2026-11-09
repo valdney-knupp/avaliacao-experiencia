@@ -152,8 +152,9 @@ export const EvaluateForm: React.FC = () => {
           const profileRoleLabels: Record<string, string> = {
             ADMIN: 'Administrador',
             HR: 'Gestão de Pessoas',
-            MANAGER_WORKSITE: 'Gestor de Obra',
-            MANAGER_DEPARTMENT: 'Gestor de Setor',
+            MANAGER: 'Gestor',
+            MANAGER_WORKSITE: 'Gestor',
+            MANAGER_DEPARTMENT: 'Gestor',
             ADMIN_ASSISTANT: 'Assistente Administrativo',
             VIEWER: 'Consulta',
           }

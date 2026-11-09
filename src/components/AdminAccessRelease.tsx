@@ -344,10 +344,15 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
           password: userForm.password,
           profile: userForm.profile,
           cost_center:
-            userForm.profile === 'MANAGER_WORKSITE' || userForm.profile === 'ADMIN_ASSISTANT'
+            userForm.profile === 'MANAGER' ||
+            userForm.profile === 'MANAGER_WORKSITE' ||
+            userForm.profile === 'ADMIN_ASSISTANT'
               ? userForm.cost_center || null
               : null,
-          sector: userForm.profile === 'MANAGER_DEPARTMENT' ? userForm.sector || null : null,
+          sector:
+            userForm.profile === 'MANAGER' || userForm.profile === 'MANAGER_DEPARTMENT'
+              ? userForm.sector || null
+              : null,
           active: userForm.active,
           client: selectedClientForTeam.id,
         },
@@ -1071,7 +1076,19 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
                         </td>
                         <td className="px-2 py-2">
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-800">
-                            {u.profile}
+                            {u.profile === 'MANAGER' ||
+                            u.profile === 'MANAGER_WORKSITE' ||
+                            u.profile === 'MANAGER_DEPARTMENT'
+                              ? 'Gestor'
+                              : u.profile === 'ADMIN'
+                                ? 'Administrador'
+                                : u.profile === 'HR'
+                                  ? 'Gestão de Pessoas'
+                                  : u.profile === 'ADMIN_ASSISTANT'
+                                    ? 'Assistente Administrativo'
+                                    : u.profile === 'VIEWER'
+                                      ? 'Consulta'
+                                      : u.profile}
                           </span>
                         </td>
                         <td className="px-2 py-2 text-right whitespace-nowrap">
@@ -1149,12 +1166,7 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
                 <SelectContent>
                   <SelectItem value="ADMIN">ADMIN (Administrador)</SelectItem>
                   <SelectItem value="HR">HR (Gestão de Pessoas)</SelectItem>
-                  <SelectItem value="MANAGER_WORKSITE">
-                    MANAGER_WORKSITE (Gestor de Obra)
-                  </SelectItem>
-                  <SelectItem value="MANAGER_DEPARTMENT">
-                    MANAGER_DEPARTMENT (Gestor de Setor)
-                  </SelectItem>
+                  <SelectItem value="MANAGER">MANAGER (Gestor)</SelectItem>
                   <SelectItem value="ADMIN_ASSISTANT">
                     ADMIN_ASSISTANT (Assistente Administrativo)
                   </SelectItem>
@@ -1163,20 +1175,28 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
               </Select>
             </div>
 
-            {(userForm.profile === 'MANAGER_WORKSITE' ||
+            {(userForm.profile === 'MANAGER' ||
+              userForm.profile === 'MANAGER_WORKSITE' ||
               userForm.profile === 'ADMIN_ASSISTANT') && (
               <div>
                 <Label className="text-xs font-semibold text-gray-700">
-                  Centro de Custo / Obra
+                  {userForm.profile === 'MANAGER'
+                    ? 'Centro de Custo / Obra (opcional)'
+                    : 'Centro de Custo / Obra'}
                 </Label>
                 <Select
-                  value={userForm.cost_center}
-                  onValueChange={(val) => setUserForm({ ...userForm, cost_center: val })}
+                  value={userForm.cost_center || 'none'}
+                  onValueChange={(val) =>
+                    setUserForm({ ...userForm, cost_center: val === 'none' ? '' : val })
+                  }
                 >
                   <SelectTrigger className="mt-1 text-xs">
                     <SelectValue placeholder="Selecione o centro de custo..." />
                   </SelectTrigger>
                   <SelectContent>
+                    {userForm.profile === 'MANAGER' && (
+                      <SelectItem value="none">Nenhum centro de custo</SelectItem>
+                    )}
                     {clientCostCenters.map((cc) => (
                       <SelectItem key={cc.id} value={cc.id}>
                         {cc.name}
@@ -1193,17 +1213,24 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
               </div>
             )}
 
-            {userForm.profile === 'MANAGER_DEPARTMENT' && (
+            {(userForm.profile === 'MANAGER' || userForm.profile === 'MANAGER_DEPARTMENT') && (
               <div>
-                <Label className="text-xs font-semibold text-gray-700">Setor</Label>
+                <Label className="text-xs font-semibold text-gray-700">
+                  {userForm.profile === 'MANAGER' ? 'Setor (opcional)' : 'Setor'}
+                </Label>
                 <Select
-                  value={userForm.sector}
-                  onValueChange={(val) => setUserForm({ ...userForm, sector: val })}
+                  value={userForm.sector || 'none'}
+                  onValueChange={(val) =>
+                    setUserForm({ ...userForm, sector: val === 'none' ? '' : val })
+                  }
                 >
                   <SelectTrigger className="mt-1 text-xs">
                     <SelectValue placeholder="Selecione o setor..." />
                   </SelectTrigger>
                   <SelectContent>
+                    {userForm.profile === 'MANAGER' && (
+                      <SelectItem value="none">Nenhum setor vinculado</SelectItem>
+                    )}
                     {clientSectors.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}

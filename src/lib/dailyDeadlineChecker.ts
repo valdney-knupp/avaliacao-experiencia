@@ -19,7 +19,14 @@ export interface UserCandidate {
   id: string
   email: string
   name?: string
-  profile: 'ADMIN' | 'HR' | 'MANAGER_WORKSITE' | 'MANAGER_DEPARTMENT' | 'ADMIN_ASSISTANT' | 'VIEWER'
+  profile:
+    | 'ADMIN'
+    | 'HR'
+    | 'MANAGER'
+    | 'MANAGER_WORKSITE'
+    | 'MANAGER_DEPARTMENT'
+    | 'ADMIN_ASSISTANT'
+    | 'VIEWER'
   active: boolean
   verified: boolean
   cost_center?: string
@@ -149,7 +156,7 @@ export function buildRecipients(
   const recipientEmails = new Set<string>()
 
   // 1. Users: ONLY active AND verified with allowed profiles
-  const allowedProfiles = ['ADMIN', 'HR', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
+  const allowedProfiles = ['ADMIN', 'HR', 'MANAGER', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
   for (const u of users) {
     if (!u.active || !u.verified) continue
     const email = (u.email || '').trim().toLowerCase()
@@ -158,14 +165,14 @@ export function buildRecipients(
     if (u.profile === 'ADMIN' || u.profile === 'HR') {
       recipientEmails.add(email)
     } else if (
-      u.profile === 'MANAGER_WORKSITE' &&
+      (u.profile === 'MANAGER' || u.profile === 'MANAGER_WORKSITE') &&
       u.cost_center &&
       collaborator.cost_center &&
       u.cost_center === collaborator.cost_center
     ) {
       recipientEmails.add(email)
     } else if (
-      u.profile === 'MANAGER_DEPARTMENT' &&
+      (u.profile === 'MANAGER' || u.profile === 'MANAGER_DEPARTMENT') &&
       u.sector &&
       collaborator.sector &&
       u.sector === collaborator.sector

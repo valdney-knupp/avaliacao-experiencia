@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T17:04:38.537Z",
+  "generatedAt": "2026-11-09T17:20:12.948Z",
   "collections": [
     {
       "name": "users",
@@ -49,7 +49,8 @@
             "MANAGER_WORKSITE",
             "MANAGER_DEPARTMENT",
             "ADMIN_ASSISTANT",
-            "VIEWER"
+            "VIEWER",
+            "MANAGER"
           ]
         },
         {
@@ -389,10 +390,10 @@
       "name": "collaborators",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
-        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
-        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
-        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER' && (cost_center = @request.auth.cost_center || sector = @request.auth.sector || (@request.auth.cost_center = '' && @request.auth.sector = ''))) || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || (@request.auth.profile = 'MANAGER' && (cost_center = @request.auth.cost_center || sector = @request.auth.sector || (@request.auth.cost_center = '' && @request.auth.sector = ''))) || (@request.auth.profile = 'MANAGER_WORKSITE' && cost_center = @request.auth.cost_center) || (@request.auth.profile = 'MANAGER_DEPARTMENT' && sector = @request.auth.sector) || @request.auth.profile = 'VIEWER' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
         "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
@@ -1361,8 +1362,8 @@
       "apiRules": {
         "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
         "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || client = @request.auth.client)",
-        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
-        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT' || responsible = @request.auth.id)))",
+        "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT')))",
+        "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT' || @request.auth.profile = 'ADMIN_ASSISTANT' || responsible = @request.auth.id)))",
         "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"
       },
       "fields": [
@@ -1523,8 +1524,8 @@
       "name": "exit_invites",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT')))",
-        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT')))",
+        "list": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT')))",
+        "view": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR' || @request.auth.profile = 'MANAGER' || @request.auth.profile = 'MANAGER_WORKSITE' || @request.auth.profile = 'MANAGER_DEPARTMENT')))",
         "create": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
         "update": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && (@request.auth.profile = 'ADMIN' || @request.auth.profile = 'HR')))",
         "delete": "@request.auth.id != '' && (@request.auth.email = 'valdknupp@gmail.com' || (client = @request.auth.client && @request.auth.profile = 'ADMIN'))"

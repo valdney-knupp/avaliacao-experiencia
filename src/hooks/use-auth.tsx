@@ -5,6 +5,7 @@ import type { RecordModel } from 'pocketbase'
 export type UserProfile =
   | 'ADMIN'
   | 'HR'
+  | 'MANAGER'
   | 'MANAGER_WORKSITE'
   | 'MANAGER_DEPARTMENT'
   | 'ADMIN_ASSISTANT'
@@ -270,7 +271,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Matriz de permissões estrita definida pelo usuário:
   // ADMIN: acesso irrestrito a tudo (Visão geral, Próximas avaliações, Colaboradores, Administração, Importação, Relatórios/Exportação, Auditoria)
   // HR (Gestão de Pessoas): Visão geral, Próximas avaliações, Colaboradores, Administração (sem Importação, sem Relatórios/Exportação, sem Auditoria)
-  // MANAGER_WORKSITE & MANAGER_DEPARTMENT: apenas Visão geral, Próximas avaliações, Colaboradores (sem Administração, sem Importação, sem Relatórios/Exportação, sem Auditoria)
+  // MANAGER (e legados MANAGER_WORKSITE & MANAGER_DEPARTMENT): apenas Visão geral, Próximas avaliações, Colaboradores (sem Administração, sem Importação, sem Relatórios/Exportação, sem Auditoria)
   // ADMIN_ASSISTANT & VIEWER (Consulta): permissões mantidas intactas
   // Usuário master de sistema (dono do sistema): exclusivamente valdknupp@gmail.com com perfil ADMIN
   const isMasterUser =
@@ -291,6 +292,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const canEvaluate =
     user?.profile === 'ADMIN' ||
     user?.profile === 'HR' ||
+    user?.profile === 'MANAGER' ||
     user?.profile === 'MANAGER_WORKSITE' ||
     user?.profile === 'MANAGER_DEPARTMENT' ||
     user?.profile === 'ADMIN_ASSISTANT'
@@ -298,9 +300,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const canManageExitInvites = user?.profile === 'ADMIN' || user?.profile === 'HR'
   const canViewExitIndividualAnswers = user?.profile === 'ADMIN' || user?.profile === 'HR'
 
-  const isWorksiteManager = user?.profile === 'MANAGER_WORKSITE'
+  const isWorksiteManager =
+    user?.profile === 'MANAGER_WORKSITE' || (user?.profile === 'MANAGER' && !!user?.cost_center)
   const isAdminAssistant = user?.profile === 'ADMIN_ASSISTANT'
-  const isDepartmentManager = user?.profile === 'MANAGER_DEPARTMENT'
+  const isDepartmentManager =
+    user?.profile === 'MANAGER_DEPARTMENT' || (user?.profile === 'MANAGER' && !!user?.sector)
 
   const scopedCostCenterId = isWorksiteManager || isAdminAssistant ? user?.cost_center : undefined
   const scopedSectorId = isDepartmentManager ? user?.sector : undefined

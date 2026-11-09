@@ -248,30 +248,43 @@ export const Admin: React.FC = () => {
         return
       }
 
-      if (
-        (userForm.profile === 'MANAGER_WORKSITE' || userForm.profile === 'ADMIN_ASSISTANT') &&
-        !userForm.cost_center
-      ) {
-        const roleLabel =
-          userForm.profile === 'ADMIN_ASSISTANT' ? 'Assistente Administrativo' : 'Gestor de Obra'
-        setErrorMsg(`${roleLabel} deve estar associado a um centro de custo do tipo Obra.`)
+      if (userForm.profile === 'ADMIN_ASSISTANT' && !userForm.cost_center) {
+        setErrorMsg(
+          'Assistente Administrativo deve estar associado a um centro de custo do tipo Obra.',
+        )
+        return
+      }
+
+      if (userForm.profile === 'MANAGER' && !userForm.cost_center && !userForm.sector) {
+        setErrorMsg(
+          'Gestor deve estar associado a um centro de custo (Obra) ou a um setor do escritório.',
+        )
+        return
+      }
+
+      if (userForm.profile === 'MANAGER_WORKSITE' && !userForm.cost_center) {
+        setErrorMsg('Gestor deve estar associado a um centro de custo do tipo Obra.')
         return
       }
 
       if (userForm.profile === 'MANAGER_DEPARTMENT' && !userForm.sector) {
-        setErrorMsg('Gestor de Setor deve estar associado a um setor do escritório.')
+        setErrorMsg('Gestor deve estar associado a um setor do escritório.')
         return
       }
 
       const isWorksiteLinked =
-        userForm.profile === 'MANAGER_WORKSITE' || userForm.profile === 'ADMIN_ASSISTANT'
+        userForm.profile === 'MANAGER' ||
+        userForm.profile === 'MANAGER_WORKSITE' ||
+        userForm.profile === 'ADMIN_ASSISTANT'
+      const isSectorLinked =
+        userForm.profile === 'MANAGER' || userForm.profile === 'MANAGER_DEPARTMENT'
 
       if (editingUser) {
         const updateData: any = {
           name: userForm.name.trim(),
           profile: userForm.profile,
-          cost_center: isWorksiteLinked ? userForm.cost_center : null,
-          sector: userForm.profile === 'MANAGER_DEPARTMENT' ? userForm.sector : null,
+          cost_center: isWorksiteLinked ? userForm.cost_center || null : null,
+          sector: isSectorLinked ? userForm.sector || null : null,
           active: userForm.active,
         }
 
@@ -301,8 +314,8 @@ export const Admin: React.FC = () => {
             email: cleanEmail,
             password: userForm.password,
             profile: userForm.profile,
-            cost_center: isWorksiteLinked ? userForm.cost_center : null,
-            sector: userForm.profile === 'MANAGER_DEPARTMENT' ? userForm.sector : null,
+            cost_center: isWorksiteLinked ? userForm.cost_center || null : null,
+            sector: isSectorLinked ? userForm.sector || null : null,
             active: userForm.active,
           },
         })
@@ -844,49 +857,59 @@ export const Admin: React.FC = () => {
                               title={
                                 u.profile === 'ADMIN_ASSISTANT'
                                   ? 'Assistente Administrativo'
-                                  : u.profile === 'MANAGER_WORKSITE'
-                                    ? 'Gestor de Obra'
-                                    : u.profile === 'MANAGER_DEPARTMENT'
-                                      ? 'Gestor de Setor'
-                                      : u.profile === 'HR'
-                                        ? 'Gestão de Pessoas'
-                                        : u.profile === 'ADMIN'
-                                          ? 'Administrador'
-                                          : u.profile === 'VIEWER'
-                                            ? 'Consulta'
-                                            : u.profile
-                              }
-                            >
-                              {u.profile === 'ADMIN_ASSISTANT'
-                                ? 'Assistente Administrativo'
-                                : u.profile === 'MANAGER_WORKSITE'
-                                  ? 'Gestor de Obra'
-                                  : u.profile === 'MANAGER_DEPARTMENT'
-                                    ? 'Gestor de Setor'
+                                  : u.profile === 'MANAGER' ||
+                                      u.profile === 'MANAGER_WORKSITE' ||
+                                      u.profile === 'MANAGER_DEPARTMENT'
+                                    ? 'Gestor'
                                     : u.profile === 'HR'
                                       ? 'Gestão de Pessoas'
                                       : u.profile === 'ADMIN'
                                         ? 'Administrador'
                                         : u.profile === 'VIEWER'
                                           ? 'Consulta'
-                                          : u.profile}
+                                          : u.profile
+                              }
+                            >
+                              {u.profile === 'ADMIN_ASSISTANT'
+                                ? 'Assistente Administrativo'
+                                : u.profile === 'MANAGER' ||
+                                    u.profile === 'MANAGER_WORKSITE' ||
+                                    u.profile === 'MANAGER_DEPARTMENT'
+                                  ? 'Gestor'
+                                  : u.profile === 'HR'
+                                    ? 'Gestão de Pessoas'
+                                    : u.profile === 'ADMIN'
+                                      ? 'Administrador'
+                                      : u.profile === 'VIEWER'
+                                        ? 'Consulta'
+                                        : u.profile}
                             </span>
                           </td>
                           <td
                             className="px-1.5 md:px-2 py-2 text-[11px] md:text-xs text-gray-600 truncate"
                             title={
-                              u.profile === 'MANAGER_WORKSITE' || u.profile === 'ADMIN_ASSISTANT'
+                              u.profile === 'ADMIN_ASSISTANT'
                                 ? u.expand?.cost_center?.name || 'Obra não definida'
-                                : u.profile === 'MANAGER_DEPARTMENT'
-                                  ? u.expand?.sector?.name || 'Setor não definido'
-                                  : '-'
+                                : u.profile === 'MANAGER'
+                                  ? u.expand?.cost_center?.name ||
+                                    u.expand?.sector?.name ||
+                                    'Sem vínculo'
+                                  : u.profile === 'MANAGER_WORKSITE'
+                                    ? u.expand?.cost_center?.name || 'Obra não definida'
+                                    : u.profile === 'MANAGER_DEPARTMENT'
+                                      ? u.expand?.sector?.name || 'Setor não definido'
+                                      : '-'
                             }
                           >
-                            {u.profile === 'MANAGER_WORKSITE' || u.profile === 'ADMIN_ASSISTANT'
+                            {u.profile === 'ADMIN_ASSISTANT'
                               ? u.expand?.cost_center?.name || 'Obra não definida'
-                              : u.profile === 'MANAGER_DEPARTMENT'
-                                ? u.expand?.sector?.name || 'Setor não definido'
-                                : '-'}
+                              : u.profile === 'MANAGER'
+                                ? u.expand?.cost_center?.name || u.expand?.sector?.name || '-'
+                                : u.profile === 'MANAGER_WORKSITE'
+                                  ? u.expand?.cost_center?.name || 'Obra não definida'
+                                  : u.profile === 'MANAGER_DEPARTMENT'
+                                    ? u.expand?.sector?.name || 'Setor não definido'
+                                    : '-'}
                           </td>
                           <td className="px-1 md:px-1.5 py-2 text-center">
                             <span
@@ -1879,12 +1902,7 @@ export const Admin: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="ADMIN">ADMIN (Administrador)</SelectItem>
                   <SelectItem value="HR">HR (Gestão de Pessoas)</SelectItem>
-                  <SelectItem value="MANAGER_WORKSITE">
-                    MANAGER_WORKSITE (Gestor de Obra)
-                  </SelectItem>
-                  <SelectItem value="MANAGER_DEPARTMENT">
-                    MANAGER_DEPARTMENT (Gestor de Setor)
-                  </SelectItem>
+                  <SelectItem value="MANAGER">MANAGER (Gestor)</SelectItem>
                   <SelectItem value="ADMIN_ASSISTANT">
                     ADMIN_ASSISTANT (Assistente Administrativo)
                   </SelectItem>
@@ -1893,18 +1911,28 @@ export const Admin: React.FC = () => {
               </Select>
             </div>
 
-            {(userForm.profile === 'MANAGER_WORKSITE' ||
+            {(userForm.profile === 'MANAGER' ||
+              userForm.profile === 'MANAGER_WORKSITE' ||
               userForm.profile === 'ADMIN_ASSISTANT') && (
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-700">Obra Vinculada</Label>
+                <Label className="text-xs font-semibold text-gray-700">
+                  {userForm.profile === 'MANAGER'
+                    ? 'Obra Vinculada (opcional se setor preenchido)'
+                    : 'Obra Vinculada'}
+                </Label>
                 <Select
-                  value={userForm.cost_center}
-                  onValueChange={(val) => setUserForm({ ...userForm, cost_center: val })}
+                  value={userForm.cost_center || 'none'}
+                  onValueChange={(val) =>
+                    setUserForm({ ...userForm, cost_center: val === 'none' ? '' : val })
+                  }
                 >
                   <SelectTrigger className="h-10 text-xs">
                     <SelectValue placeholder="Selecione a obra..." />
                   </SelectTrigger>
                   <SelectContent>
+                    {userForm.profile === 'MANAGER' && (
+                      <SelectItem value="none">Nenhuma obra vinculada</SelectItem>
+                    )}
                     {costCenters
                       .filter((c) => c.type === 'Obra')
                       .map((c) => (
@@ -1917,17 +1945,26 @@ export const Admin: React.FC = () => {
               </div>
             )}
 
-            {userForm.profile === 'MANAGER_DEPARTMENT' && (
+            {(userForm.profile === 'MANAGER' || userForm.profile === 'MANAGER_DEPARTMENT') && (
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-700">Setor Vinculado</Label>
+                <Label className="text-xs font-semibold text-gray-700">
+                  {userForm.profile === 'MANAGER'
+                    ? 'Setor Vinculado (opcional se obra preenchida)'
+                    : 'Setor Vinculado'}
+                </Label>
                 <Select
-                  value={userForm.sector}
-                  onValueChange={(val) => setUserForm({ ...userForm, sector: val })}
+                  value={userForm.sector || 'none'}
+                  onValueChange={(val) =>
+                    setUserForm({ ...userForm, sector: val === 'none' ? '' : val })
+                  }
                 >
                   <SelectTrigger className="h-10 text-xs">
                     <SelectValue placeholder="Selecione o setor..." />
                   </SelectTrigger>
                   <SelectContent>
+                    {userForm.profile === 'MANAGER' && (
+                      <SelectItem value="none">Nenhum setor vinculado</SelectItem>
+                    )}
                     {sectors.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
