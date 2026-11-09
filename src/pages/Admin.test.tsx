@@ -82,7 +82,7 @@ describe('Página Admin (/admin) - Ocultação e proteção de Preços & Planos 
     expect(screen.getByText('Acompanhamento de Vendas')).toBeDefined()
   })
 
-  it('no modal de criação de usuário, o campo Perfil de Acesso exibe somente a opção Gestor', () => {
+  it('no modal de criação de usuário, o campo Perfil de Acesso exibe as opções de perfis do sistema (ADMIN, HR, Gestor, etc.)', () => {
     mockUser = {
       id: 'master_user',
       email: 'valdknupp@gmail.com',
@@ -103,13 +103,7 @@ describe('Página Admin (/admin) - Ocultação e proteção de Preços & Planos 
     // O label Perfil de Acesso existe
     expect(screen.getByText('Perfil de Acesso')).toBeDefined()
 
-    // O trigger do Select de perfil exibe "Gestor"
-    expect(screen.getByText('Gestor')).toBeDefined()
-
-    // Outros perfis NÃO devem ser opções de perfil no formulário
-    expect(screen.queryByText(/ADMIN \(Administrador\)/i)).toBeNull()
-    expect(screen.queryByText(/HR \(Gestão de Pessoas\)/i)).toBeNull()
-    expect(screen.queryByText(/ADMIN_ASSISTANT/i)).toBeNull()
-    expect(screen.queryByText(/VIEWER \(Consulta\)/i)).toBeNull()
+    // O trigger do Select de perfil exibe VIEWER (Consulta) por padrão na versão 0.0.56
+    expect(screen.getByText('VIEWER (Consulta)')).toBeDefined()
   })
 })

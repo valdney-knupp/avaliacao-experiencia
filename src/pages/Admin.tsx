@@ -227,7 +227,7 @@ export const Admin: React.FC = () => {
       setUserForm({
         name: '',
         email: '',
-        profile: 'MANAGER_WORKSITE',
+        profile: 'VIEWER',
         cost_center: '',
         sector: '',
         active: true,
@@ -1877,7 +1877,18 @@ export const Admin: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="MANAGER_WORKSITE">Gestor</SelectItem>
+                  <SelectItem value="ADMIN">ADMIN (Administrador)</SelectItem>
+                  <SelectItem value="HR">HR (Gestão de Pessoas)</SelectItem>
+                  <SelectItem value="MANAGER_WORKSITE">
+                    MANAGER_WORKSITE (Gestor de Obra)
+                  </SelectItem>
+                  <SelectItem value="MANAGER_DEPARTMENT">
+                    MANAGER_DEPARTMENT (Gestor de Setor)
+                  </SelectItem>
+                  <SelectItem value="ADMIN_ASSISTANT">
+                    ADMIN_ASSISTANT (Assistente Administrativo)
+                  </SelectItem>
+                  <SelectItem value="VIEWER">VIEWER (Consulta)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
