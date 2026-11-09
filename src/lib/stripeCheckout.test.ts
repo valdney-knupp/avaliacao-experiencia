@@ -19,6 +19,21 @@ describe('Stripe Checkout Configuration', () => {
     expect(FALLBACK_CHECKOUT_CONFIG.annual.badge).toContain('2 meses grátis')
   })
 
+  it('has valid Desempenho and Combo fallback configurations', () => {
+    expect(FALLBACK_CHECKOUT_CONFIG.offers.desempenho.monthly.price_id).toBe(
+      'price_1UZs1vLpoAima4qdpy6h3fIE',
+    )
+    expect(FALLBACK_CHECKOUT_CONFIG.offers.desempenho.annual.price_id).toBe(
+      'price_1UZs22LpoAima4qd2xUCt4c3',
+    )
+    expect(FALLBACK_CHECKOUT_CONFIG.offers.combo.monthly.price_id).toBe(
+      'price_1UZs2BLpoAima4qdHILjzxQG',
+    )
+    expect(FALLBACK_CHECKOUT_CONFIG.offers.combo.annual.price_id).toBe(
+      'price_1UZs2HLpoAima4qdkMumJCvL',
+    )
+  })
+
   it('correctly discriminates official Stripe URLs from fallback test links', () => {
     expect(isOfficialStripeLink('https://buy.stripe.com/test_avaliacao_experiencia_297')).toBe(
       false,

@@ -169,11 +169,13 @@ export const Sales: React.FC = () => {
       return
     }
 
-    // 2. Tenta gerar a Checkout Session via endpoint oficial /backend/v1/billing/create-checkout-session
+    // 2. Tenta gerar a Checkout Session via endpoint oficial (POST create-checkout-session / GET checkout-link)
     let sessionErrorMsg = ''
     try {
       const res = await createCheckoutSession({
         price_id: priceId,
+        module: offer.id,
+        interval: billingPeriod,
         email: customerEmailParam || undefined,
       })
       if (res && res.url) {
@@ -181,7 +183,7 @@ export const Sales: React.FC = () => {
         return
       }
     } catch (err: any) {
-      console.warn('Falha ao chamar create-checkout-session:', err)
+      console.warn('Falha ao gerar checkout Stripe:', err)
       sessionErrorMsg = err?.message || 'Falha na comunicação com o checkout da Stripe.'
     }
 

@@ -60,6 +60,7 @@ const STRIPE_PRICES_MAP = {
 
 // 1. Rota para consultar as ofertas e payment links
 routerAdd('GET', '/backend/v1/billing/offers', (e) => {
+  const isV2 = true
   const offers = {
     experiencia: {
       id: 'experiencia',
@@ -130,47 +131,15 @@ routerAdd('GET', '/backend/v1/billing/offers', (e) => {
   return e.json(200, { offers })
 })
 
-// Rota de compatibilidade para /backend/v1/billing/checkout-link
+// 2. Rota para /backend/v1/billing/checkout-link
+// Respeita os parâmetros module e interval (ex: ?module=desempenho&interval=monthly ou ?module=combo&interval=annual)
 routerAdd('GET', '/backend/v1/billing/checkout-link', (e) => {
-  return e.json(200, {
-    stripe_connected: true,
-    payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
-    price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
-    price_label: '297,00',
-    monthly: {
-      name: 'Plano Mensal',
-      price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
-      payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
-      price_label: '297,00',
-      amount_cents: 29700,
-      active: true,
-      interval: 'month',
-      is_official: true,
-    },
-    annual: {
-      name: 'Plano Anual',
-      price_id: 'price_1UW0OhLpoAima4qdRW4Xmqs0',
-      payment_link: 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02',
-      price_label: '2.899,00',
-      amount_cents: 289900,
-      active: true,
-      interval: 'year',
-      badge: '2 meses grátis • Economia de R$ 665',
-      is_official: true,
-    },
-  })
-})
-
-// 2. Rota para criar Checkout Session na Stripe via API oficial
-routerAdd('POST', '/backend/v1/billing/create-checkout-session', (e) => {
-  try {
-    const body = e.requestInfo().body || {}
-    const priceId = body.price_id ? String(body.price_id).trim() : 'price_1UW08YLpoAima4qdNrVsYYC5'
-    const customerEmail = body.customer_email
-      ? String(body.customer_email).trim().toLowerCase()
-      : ''
-    const customerName = body.customer_name ? String(body.customer_name).trim() : ''
-
+  const createStripeCheckoutUrlForPrice = function (
+    priceId,
+    customerEmail,
+    customSuccessUrl,
+    customCancelUrl,
+  ) {
     let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
     try {
       const envUrl = $os.getenv('SITE_URL')
@@ -178,27 +147,26 @@ routerAdd('POST', '/backend/v1/billing/create-checkout-session', (e) => {
     } catch (_) {}
     if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1)
 
-    const successUrl = body.success_url || `${appUrl}/obrigado?session_id={CHECKOUT_SESSION_ID}`
-    const cancelUrl = body.cancel_url || `${appUrl}/#precos`
+    const successUrl = customSuccessUrl || `${appUrl}/obrigado?session_id={CHECKOUT_SESSION_ID}`
+    const cancelUrl = customCancelUrl || `${appUrl}/#precos`
 
-    // Se o preço tiver um Payment Link direto oficial conhecido:
+    // 1. Payment Links oficiais diretos conhecidos (Experiência)
     if (priceId === 'price_1UW08YLpoAima4qdNrVsYYC5') {
       let link = 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00'
       if (customerEmail) link += `?prefilled_email=${encodeURIComponent(customerEmail)}`
-      return e.json(200, { url: link })
+      return { url: link, session_id: '' }
     }
     if (priceId === 'price_1UW0OhLpoAima4qdRW4Xmqs0') {
       let link = 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02'
       if (customerEmail) link += `?prefilled_email=${encodeURIComponent(customerEmail)}`
-      return e.json(200, { url: link })
+      return { url: link, session_id: '' }
     }
 
-    // Para outros preços (Desempenho e Combo), criar Checkout Session via $connectors.executeAsOwner ('stripe')
+    // 2. Conector Stripe owner ($connectors.executeAsOwner) para Desempenho e Combo
     let sessionUrl = ''
     let sessionId = ''
     let connectorError = ''
 
-    // 1. Tenta via conector Stripe configurado no modo owner
     if (typeof $connectors !== 'undefined' && typeof $connectors.executeAsOwner === 'function') {
       try {
         const connectorArgs = {
@@ -218,16 +186,21 @@ routerAdd('POST', '/backend/v1/billing/create-checkout-session', (e) => {
           connectorArgs.customer_email = customerEmail
         }
 
-        console.log(`[create-checkout-session] Chamando conector Stripe para price_id: ${priceId}`)
+        console.log(`[stripe_checkout] Chamando conector Stripe para price_id: ${priceId}`)
         let connRes = null
         try {
-          connRes = $connectors.executeAsOwner(
-            'stripe',
-            'STRIPE_CREATE_CHECKOUT_SESSION',
-            connectorArgs,
-          )
-        } catch (_) {
           connRes = $connectors.executeAsOwner('STRIPE_CREATE_CHECKOUT_SESSION', connectorArgs)
+        } catch (callErr) {
+          console.warn('[stripe_checkout] Tentativa 1 arg falhou: ' + callErr)
+          try {
+            connRes = $connectors.executeAsOwner(
+              'stripe',
+              'STRIPE_CREATE_CHECKOUT_SESSION',
+              connectorArgs,
+            )
+          } catch (callErr2) {
+            console.warn('[stripe_checkout] Tentativa 2 args falhou: ' + callErr2)
+          }
         }
 
         if (connRes && connRes.successful && connRes.data) {
@@ -237,23 +210,25 @@ routerAdd('POST', '/backend/v1/billing/create-checkout-session', (e) => {
         } else {
           connectorError =
             connRes && connRes.error
-              ? String(connRes.error)
-              : 'Falha desconhecida no conector Stripe'
-          console.warn('[create-checkout-session] Erro no conector Stripe: ' + connectorError)
+              ? typeof connRes.error === 'object'
+                ? JSON.stringify(connRes.error)
+                : String(connRes.error)
+              : connRes
+                ? JSON.stringify(connRes)
+                : 'Falha desconhecida no conector Stripe'
+          console.warn('[stripe_checkout] Erro no conector Stripe: ' + connectorError)
         }
       } catch (connErr) {
         connectorError = connErr ? String(connErr.message || connErr) : 'Exceção no conector Stripe'
-        console.warn(
-          '[create-checkout-session] Exceção ao executar conector Stripe: ' + connectorError,
-        )
+        console.warn('[stripe_checkout] Exceção ao executar conector Stripe: ' + connectorError)
       }
     }
 
     if (sessionUrl) {
-      return e.json(200, { url: sessionUrl, session_id: sessionId })
+      return { url: sessionUrl, session_id: sessionId }
     }
 
-    // 2. Fallback secundário apenas se houver STRIPE_SECRET_KEY configurada diretamente
+    // 3. Fallback se houver STRIPE_SECRET_KEY
     let stripeKey = ''
     try {
       stripeKey = $os.getenv('STRIPE_SECRET_KEY') || ''
@@ -294,20 +269,303 @@ routerAdd('POST', '/backend/v1/billing/create-checkout-session', (e) => {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         const data = JSON.parse(res.raw)
         if (data && data.url) {
-          return e.json(200, { url: data.url, session_id: data.id })
+          return { url: data.url, session_id: data.id }
         }
       } else {
-        console.warn('[create-checkout-session] Erro resposta Stripe direct HTTP: ' + res.raw)
+        console.warn('[stripe_checkout] Erro resposta Stripe direct HTTP: ' + res.raw)
         connectorError = connectorError || 'Erro Stripe: ' + res.raw
       }
     }
 
-    // Se a criação da sessão falhou, NÃO redirecionar para plano antigo nem mascarar:
-    // Devolve erro 502 claro e explícito
+    return {
+      error:
+        connectorError ||
+        `Não foi possível iniciar o checkout do plano selecionado (${priceId}). O conector Stripe do proprietário não retornou a sessão.`,
+    }
+  }
+  try {
+    const reqInfo = e.requestInfo()
+    const query = reqInfo.query || {}
+    const requestedModule =
+      (query.module ? String(query.module).trim().toLowerCase() : '') || 'experiencia'
+    const requestedInterval =
+      (query.interval ? String(query.interval).trim().toLowerCase() : '') || 'monthly'
+    const customerEmail = query.email ? String(query.email).trim().toLowerCase() : ''
+
+    // Se nenhum module específico for pedido (chamada padrão legada sem query params),
+    // retorna a estrutura esperada pelo frontend com os dados da Experiência e compatibilidade
+    if (!query.module && !query.interval) {
+      return e.json(200, {
+        stripe_connected: true,
+        payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
+        price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
+        price_label: '297,00',
+        monthly: {
+          name: 'Plano Mensal',
+          price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
+          payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
+          price_label: '297,00',
+          amount_cents: 29700,
+          active: true,
+          interval: 'month',
+          is_official: true,
+        },
+        annual: {
+          name: 'Plano Anual',
+          price_id: 'price_1UW0OhLpoAima4qdRW4Xmqs0',
+          payment_link: 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02',
+          price_label: '2.899,00',
+          amount_cents: 289900,
+          active: true,
+          interval: 'year',
+          badge: '2 meses grátis • Economia de R$ 665',
+          is_official: true,
+        },
+      })
+    }
+
+    // Mapeamento explícito de module + interval para price_id oficial
+    let targetPriceId = ''
+    let moduleLabel = ''
+    let priceLabel = ''
+    let amountCents = 0
+
+    if (requestedModule === 'desempenho') {
+      if (requestedInterval === 'annual' || requestedInterval === 'year') {
+        targetPriceId = 'price_1UZs22LpoAima4qd2xUCt4c3'
+        moduleLabel = 'Avaliação de Desempenho (Anual)'
+        priceLabel = '1.399,00'
+        amountCents = 139900
+      } else {
+        targetPriceId = 'price_1UZs1vLpoAima4qdpy6h3fIE'
+        moduleLabel = 'Avaliação de Desempenho (Mensal)'
+        priceLabel = '150,00'
+        amountCents = 15000
+      }
+    } else if (requestedModule === 'combo') {
+      if (requestedInterval === 'annual' || requestedInterval === 'year') {
+        targetPriceId = 'price_1UZs2HLpoAima4qdkMumJCvL'
+        moduleLabel = 'Combo Experiência + Desempenho (Anual)'
+        priceLabel = '3.897,00'
+        amountCents = 389700
+      } else {
+        targetPriceId = 'price_1UZs2BLpoAima4qdHILjzxQG'
+        moduleLabel = 'Combo Experiência + Desempenho (Mensal)'
+        priceLabel = '397,00'
+        amountCents = 39700
+      }
+    } else {
+      // experiencia (padrão)
+      if (requestedInterval === 'annual' || requestedInterval === 'year') {
+        targetPriceId = 'price_1UW0OhLpoAima4qdRW4Xmqs0'
+        moduleLabel = 'Avaliação de Experiência (Anual)'
+        priceLabel = '2.899,00'
+        amountCents = 289900
+      } else {
+        targetPriceId = 'price_1UW08YLpoAima4qdNrVsYYC5'
+        moduleLabel = 'Avaliação de Experiência (Mensal)'
+        priceLabel = '297,00'
+        amountCents = 29700
+      }
+    }
+
+    const checkoutResult = createStripeCheckoutUrlForPrice(targetPriceId, customerEmail)
+
+    if (checkoutResult.error || !checkoutResult.url) {
+      return e.json(502, {
+        error: checkoutResult.error || 'Não foi possível gerar a URL de checkout na Stripe.',
+        module: requestedModule,
+        interval: requestedInterval,
+        price_id: targetPriceId,
+      })
+    }
+
+    return e.json(200, {
+      url: checkoutResult.url,
+      payment_link: checkoutResult.url,
+      session_id: checkoutResult.session_id || '',
+      module: requestedModule,
+      interval: requestedInterval,
+      price_id: targetPriceId,
+      price_label: priceLabel,
+      amount_cents: amountCents,
+      module_label: moduleLabel,
+      stripe_connected: true,
+    })
+  } catch (err) {
+    return e.json(500, { error: 'Erro ao gerar checkout link: ' + String(err) })
+  }
+})
+
+// 3. Rota para criar Checkout Session na Stripe via POST
+routerAdd('POST', '/backend/v1/billing/create-checkout-session', (e) => {
+  try {
+    const body = e.requestInfo().body || {}
+    let priceId = body.price_id ? String(body.price_id).trim() : ''
+
+    // Se vier module e interval no body, deduz o price_id correto
+    if (!priceId && body.module) {
+      const m = String(body.module).toLowerCase()
+      const isAnnual =
+        String(body.interval || '').toLowerCase() === 'annual' ||
+        String(body.interval || '').toLowerCase() === 'year'
+      if (m === 'desempenho') {
+        priceId = isAnnual ? 'price_1UZs22LpoAima4qd2xUCt4c3' : 'price_1UZs1vLpoAima4qdpy6h3fIE'
+      } else if (m === 'combo') {
+        priceId = isAnnual ? 'price_1UZs2HLpoAima4qdkMumJCvL' : 'price_1UZs2BLpoAima4qdHILjzxQG'
+      } else {
+        priceId = isAnnual ? 'price_1UW0OhLpoAima4qdRW4Xmqs0' : 'price_1UW08YLpoAima4qdNrVsYYC5'
+      }
+    }
+
+    if (!priceId) {
+      priceId = 'price_1UW08YLpoAima4qdNrVsYYC5'
+    }
+
+    const customerEmail = body.customer_email
+      ? String(body.customer_email).trim().toLowerCase()
+      : body.email
+        ? String(body.email).trim().toLowerCase()
+        : ''
+
+    let appUrl = 'https://avaliacao-de-experiencia-67c4f.goskip.app'
+    try {
+      const envUrl = $os.getenv('SITE_URL')
+      if (envUrl && envUrl.trim()) appUrl = envUrl.trim()
+    } catch (_) {}
+    if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1)
+
+    const successUrl = body.success_url || `${appUrl}/obrigado?session_id={CHECKOUT_SESSION_ID}`
+    const cancelUrl = body.cancel_url || `${appUrl}/#precos`
+
+    // 1. Payment Links oficiais diretos conhecidos (Experiência)
+    if (priceId === 'price_1UW08YLpoAima4qdNrVsYYC5') {
+      let link = 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00'
+      if (customerEmail) link += `?prefilled_email=${encodeURIComponent(customerEmail)}`
+      return e.json(200, { url: link, session_id: '' })
+    }
+    if (priceId === 'price_1UW0OhLpoAima4qdRW4Xmqs0') {
+      let link = 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02'
+      if (customerEmail) link += `?prefilled_email=${encodeURIComponent(customerEmail)}`
+      return e.json(200, { url: link, session_id: '' })
+    }
+
+    // 2. Conector Stripe owner ($connectors.executeAsOwner) para Desempenho e Combo
+    let sessionUrl = ''
+    let sessionId = ''
+    let connectorError = ''
+
+    if (typeof $connectors !== 'undefined' && typeof $connectors.executeAsOwner === 'function') {
+      try {
+        const connectorArgs = {
+          mode: 'subscription',
+          line_items: [
+            {
+              price: priceId,
+              quantity: 1,
+            },
+          ],
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          allow_promotion_codes: true,
+        }
+
+        if (customerEmail) {
+          connectorArgs.customer_email = customerEmail
+        }
+
+        console.log(`[stripe_checkout] Chamando conector Stripe para price_id: ${priceId}`)
+        let connRes = null
+        try {
+          connRes = $connectors.executeAsOwner('STRIPE_CREATE_CHECKOUT_SESSION', connectorArgs)
+        } catch (callErr) {
+          console.warn('[stripe_checkout] Tentativa 1 arg falhou: ' + callErr)
+          try {
+            connRes = $connectors.executeAsOwner(
+              'stripe',
+              'STRIPE_CREATE_CHECKOUT_SESSION',
+              connectorArgs,
+            )
+          } catch (callErr2) {
+            console.warn('[stripe_checkout] Tentativa 2 args falhou: ' + callErr2)
+          }
+        }
+
+        if (connRes && connRes.successful && connRes.data) {
+          const d = connRes.data
+          sessionUrl = d.url || (d.response_data && d.response_data.url) || ''
+          sessionId = d.id || (d.response_data && d.response_data.id) || ''
+        } else {
+          connectorError =
+            connRes && connRes.error
+              ? String(connRes.error)
+              : 'Falha desconhecida no conector Stripe'
+          console.warn('[stripe_checkout] Erro no conector Stripe: ' + connectorError)
+        }
+      } catch (connErr) {
+        connectorError = connErr ? String(connErr.message || connErr) : 'Exceção no conector Stripe'
+        console.warn('[stripe_checkout] Exceção ao executar conector Stripe: ' + connectorError)
+      }
+    }
+
+    if (sessionUrl) {
+      return e.json(200, { url: sessionUrl, session_id: sessionId, price_id: priceId })
+    }
+
+    // 3. Fallback se houver STRIPE_SECRET_KEY
+    let stripeKey = ''
+    try {
+      stripeKey = $os.getenv('STRIPE_SECRET_KEY') || ''
+    } catch (_) {}
+
+    if (!stripeKey) {
+      try {
+        const s = $app.findFirstRecordByData('settings', 'key', 'stripe_secret_key')
+        if (s && s.getString('value')) stripeKey = s.getString('value').trim()
+      } catch (_) {}
+    }
+
+    if (stripeKey) {
+      const params = [
+        'mode=subscription',
+        `success_url=${encodeURIComponent(successUrl)}`,
+        `cancel_url=${encodeURIComponent(cancelUrl)}`,
+        `line_items[0][price]=${encodeURIComponent(priceId)}`,
+        'line_items[0][quantity]=1',
+        'allow_promotion_codes=true',
+        'billing_address_collection=auto',
+      ]
+      if (customerEmail) {
+        params.push(`customer_email=${encodeURIComponent(customerEmail)}`)
+      }
+
+      const postData = params.join('&')
+      const res = $http.send({
+        url: 'https://api.stripe.com/v1/checkout/sessions',
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${stripeKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: postData,
+      })
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        const data = JSON.parse(res.raw)
+        if (data && data.url) {
+          return e.json(200, { url: data.url, session_id: data.id, price_id: priceId })
+        }
+      } else {
+        console.warn('[stripe_checkout] Erro resposta Stripe direct HTTP: ' + res.raw)
+        connectorError = connectorError || 'Erro Stripe: ' + res.raw
+      }
+    }
+
     return e.json(502, {
       error:
         connectorError ||
-        `Não foi possível iniciar o checkout do plano selecionado (${priceId}). O serviço Stripe do proprietário não retornou a sessão.`,
+        `Não foi possível iniciar o checkout do plano selecionado (${priceId}). O conector Stripe do proprietário não retornou a sessão.`,
+      price_id: priceId,
     })
   } catch (err) {
     return e.json(500, { error: 'Erro ao gerar sessão de checkout: ' + String(err) })

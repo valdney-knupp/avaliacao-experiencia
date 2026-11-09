@@ -400,36 +400,62 @@ export function buildCheckoutUrl(
  * Cria sessão de checkout via endpoint /backend/v1/billing/create-checkout-session
  */
 export async function createCheckoutSession(params: {
-  price_id: string
+  price_id?: string
+  module?: string
+  interval?: 'monthly' | 'annual'
   email?: string
   name?: string
   success_url?: string
   cancel_url?: string
 }): Promise<{ url: string }> {
   const backendUrl = import.meta.env.VITE_POCKETBASE_URL || ''
-  const endpoint = `${backendUrl.replace(/\/+$/, '')}/backend/v1/billing/create-checkout-session`
+  const normalizedBackendUrl = backendUrl.replace(/\/+$/, '')
+
+  // 1. Tenta via POST /backend/v1/billing/create-checkout-session
   try {
+    const endpoint = `${normalizedBackendUrl}/backend/v1/billing/create-checkout-session`
     const res = await pb.send(endpoint, {
       method: 'POST',
       body: JSON.stringify(params),
       headers: { 'Content-Type': 'application/json' },
     })
-    if (!res || !res.url) {
-      throw new Error('Não foi possível gerar a sessão de checkout.')
+    if (res && res.url) {
+      return { url: res.url }
     }
-    return { url: res.url }
-  } catch (err: any) {
-    const backendMsg =
-      err?.data?.error ||
-      err?.response?.error ||
-      err?.data?.message ||
-      err?.response?.message ||
-      err?.message
-    if (backendMsg) {
-      throw new Error(String(backendMsg))
-    }
-    throw err
+  } catch (postErr: any) {
+    console.warn(
+      'POST create-checkout-session falhou, tentando fallback GET checkout-link:',
+      postErr,
+    )
   }
+
+  // 2. Fallback unificado via GET /backend/v1/billing/checkout-link?module=...&interval=...
+  try {
+    const searchParams = new URLSearchParams()
+    if (params.module) searchParams.set('module', params.module)
+    if (params.interval) searchParams.set('interval', params.interval)
+    if (params.email) searchParams.set('email', params.email)
+
+    const queryStr = searchParams.toString()
+    const getEndpoint = `${normalizedBackendUrl}/backend/v1/billing/checkout-link${queryStr ? `?${queryStr}` : ''}`
+    const res = await fetch(getEndpoint)
+    if (res.ok) {
+      const data = await res.json()
+      if (data && (data.url || data.payment_link)) {
+        return { url: data.url || data.payment_link }
+      }
+    } else {
+      const errData = await res.json().catch(() => ({}))
+      if (errData && errData.error) {
+        throw new Error(errData.error)
+      }
+    }
+  } catch (getErr: any) {
+    const msg = getErr?.message
+    if (msg) throw new Error(msg)
+  }
+
+  throw new Error('Não foi possível gerar a sessão de checkout da Stripe.')
 }
 
 /**
