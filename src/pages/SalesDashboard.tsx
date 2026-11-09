@@ -60,7 +60,7 @@ const MODULE_COLORS: Record<ModuleCategory, string> = {
 }
 
 export const SalesDashboard: React.FC = () => {
-  const { user, canAccessAdmin } = useAuth()
+  const { user, canAccessSalesDashboard } = useAuth()
 
   const [loading, setLoading] = useState(true)
   const [sales, setSales] = useState<UnifiedSaleRecord[]>([])
@@ -81,10 +81,10 @@ export const SalesDashboard: React.FC = () => {
   }
 
   useEffect(() => {
-    if (canAccessAdmin) {
+    if (canAccessSalesDashboard) {
       loadData()
     }
-  }, [canAccessAdmin])
+  }, [canAccessSalesDashboard])
 
   // Filtragem dos registros
   const filteredSales = useMemo(() => {
@@ -107,14 +107,14 @@ export const SalesDashboard: React.FC = () => {
   }, [filteredSales])
 
   // Se o usuário não tiver acesso, a rota protegida já cuidará, mas garantimos fallback seguro
-  if (!canAccessAdmin) {
+  if (!canAccessSalesDashboard) {
     return (
       <div className="p-8 text-center">
         <ShieldAlert className="mx-auto h-12 w-12 text-red-500 mb-3" />
         <h2 className="text-lg font-bold text-slate-900 dark:text-white">Acesso Restrito</h2>
         <p className="text-sm text-slate-500 mt-1">
-          Apenas usuários com perfil de Administração possuem permissão para visualizar o Dashboard
-          de Vendas.
+          Apenas o administrador dono do sistema possui permissão para visualizar o Dashboard de
+          Vendas.
         </p>
       </div>
     )

@@ -49,7 +49,7 @@ import { DollarSign, TrendingUp } from 'lucide-react'
 
 export const Admin: React.FC = () => {
   const { user, canViewAudit, isMasterUser, clientId } = useAuth()
-  const isSuperAdmin = user?.profile === 'ADMIN'
+  const isSuperAdmin = isMasterUser
 
   // Tab active
   const [activeTab, setActiveTab] = useState('users')

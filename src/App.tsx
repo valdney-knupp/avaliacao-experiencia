@@ -170,7 +170,7 @@ export const App: React.FC = () => {
               <Route
                 path="/sales-dashboard"
                 element={
-                  <ProtectedRoute allowedProfiles={['ADMIN']}>
+                  <ProtectedRoute allowedProfiles={['ADMIN']} requireMasterUser>
                     <SalesDashboard />
                   </ProtectedRoute>
                 }
@@ -178,7 +178,7 @@ export const App: React.FC = () => {
               <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute allowedProfiles={['ADMIN', 'HR']}>
+                  <ProtectedRoute allowedProfiles={['ADMIN']} requireMasterUser>
                     <Admin />
                   </ProtectedRoute>
                 }
@@ -186,7 +186,7 @@ export const App: React.FC = () => {
               <Route
                 path="/audit"
                 element={
-                  <ProtectedRoute allowedProfiles={['ADMIN']}>
+                  <ProtectedRoute allowedProfiles={['ADMIN']} requireMasterUser>
                     <Admin />
                   </ProtectedRoute>
                 }

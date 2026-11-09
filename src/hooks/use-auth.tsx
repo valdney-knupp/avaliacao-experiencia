@@ -272,13 +272,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // HR (Gestão de Pessoas): Visão geral, Próximas avaliações, Colaboradores, Administração (sem Importação, sem Relatórios/Exportação, sem Auditoria)
   // MANAGER_WORKSITE & MANAGER_DEPARTMENT: apenas Visão geral, Próximas avaliações, Colaboradores (sem Administração, sem Importação, sem Relatórios/Exportação, sem Auditoria)
   // ADMIN_ASSISTANT & VIEWER (Consulta): permissões mantidas intactas
-  const canAccessAdmin = user?.profile === 'ADMIN' || user?.profile === 'HR'
-  const canAccessSalesDashboard = user?.profile === 'ADMIN'
+  // Usuário master de sistema (dono do sistema): exclusivamente valdknupp@gmail.com com perfil ADMIN
+  const isMasterUser =
+    user?.profile === 'ADMIN' && (user?.email || '').trim().toLowerCase() === 'valdknupp@gmail.com'
+
+  // Acesso à Administração, Auditoria e ao Dashboard de Vendas:
+  // Restritos estritamente ao dono do sistema (isMasterUser)
+  const canAccessAdmin = isMasterUser
+  const canAccessSalesDashboard = isMasterUser
+  const canViewAudit = isMasterUser
   const canAccessImport = user?.profile === 'ADMIN'
   const canExportReports =
     user?.profile === 'ADMIN' || user?.profile === 'ADMIN_ASSISTANT' || user?.profile === 'VIEWER'
-  const canViewAudit = user?.profile === 'ADMIN'
-  const canManageUsers = user?.profile === 'ADMIN' || user?.profile === 'HR'
+  const canManageUsers = isMasterUser
 
   const canCreateCollaborator =
     user?.profile === 'ADMIN' || user?.profile === 'HR' || user?.profile === 'ADMIN_ASSISTANT'
@@ -298,10 +304,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const scopedCostCenterId = isWorksiteManager || isAdminAssistant ? user?.cost_center : undefined
   const scopedSectorId = isDepartmentManager ? user?.sector : undefined
-
-  // Usuário master de sistema: exclusivamente valdknupp@gmail.com com perfil ADMIN
-  const isMasterUser =
-    user?.profile === 'ADMIN' && (user?.email || '').trim().toLowerCase() === 'valdknupp@gmail.com'
 
   const clientId = user?.client || undefined
 

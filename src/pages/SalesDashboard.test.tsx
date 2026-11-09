@@ -11,11 +11,12 @@ vi.mock('@/hooks/use-auth', () => ({
   useAuth: () => ({
     user: {
       name: 'Admin Test',
-      email: 'admin@rpontes.com.br',
+      email: mockCanAccessSalesDashboard ? 'valdknupp@gmail.com' : 'gestor@cliente.com.br',
       profile: mockCanAccessAdmin ? 'ADMIN' : 'HR',
     },
     canAccessAdmin: mockCanAccessAdmin,
     canAccessSalesDashboard: mockCanAccessSalesDashboard,
+    isMasterUser: mockCanAccessSalesDashboard,
   }),
 }))
 
@@ -26,12 +27,13 @@ describe('SalesDashboard component', () => {
     mockCanAccessSalesDashboard = true
   })
 
-  it('exibe tela de acesso restrito se o usuário não for ADMIN', () => {
+  it('exibe tela de acesso restrito se o usuário não for o dono do sistema', () => {
     mockCanAccessAdmin = false
+    mockCanAccessSalesDashboard = false
     render(<SalesDashboard />)
     expect(screen.getByText(/Acesso Restrito/i)).toBeDefined()
     expect(
-      screen.getByText(/Apenas usuários com perfil de Administração possuem permissão/i),
+      screen.getByText(/Apenas o administrador dono do sistema possui permissão/i),
     ).toBeDefined()
   })
 

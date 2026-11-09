@@ -6,14 +6,23 @@ interface ProtectedRouteProps {
   children: React.ReactNode
   allowedProfiles?: UserProfile[]
   requiredModule?: 'experiencia' | 'desempenho'
+  requireMasterUser?: boolean
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   allowedProfiles,
   requiredModule,
+  requireMasterUser,
 }) => {
-  const { user, loading, isAuthenticated, hasExperienciaAccess, hasDesempenhoAccess } = useAuth()
+  const {
+    user,
+    loading,
+    isAuthenticated,
+    hasExperienciaAccess,
+    hasDesempenhoAccess,
+    isMasterUser,
+  } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -29,6 +38,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // Verificação de acesso exclusivo do administrador/dono (isMasterUser)
+  if (requireMasterUser && !isMasterUser) {
+    return <Navigate to="/dashboard" replace />
   }
 
   if (allowedProfiles && !allowedProfiles.includes(user.profile)) {

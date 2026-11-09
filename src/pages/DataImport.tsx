@@ -58,7 +58,7 @@ interface FileSlotState {
 }
 
 export const DataImport: React.FC = () => {
-  const { canAccessAdmin } = useAuth()
+  const { isMasterUser, canAccessImport } = useAuth()
 
   // 5 slots configuration
   const [slots, setSlots] = useState<FileSlotState[]>([
@@ -726,10 +726,10 @@ export const DataImport: React.FC = () => {
   }
 
   const handleExecuteResetDatabase = async () => {
-    if (!canAccessAdmin) {
+    if (!isMasterUser) {
       setResetFeedback({
         type: 'error',
-        message: 'Apenas Administradores possuem autorização para executar esta ação.',
+        message: 'Apenas o Administrador Dono possui autorização para executar esta ação.',
       })
       return
     }
@@ -879,7 +879,7 @@ Duplicidades: ${rep.duplicates.length} | CPFs inválidos: ${rep.invalidCpfs.leng
               </span>
             </div>
           </div>
-          {canAccessAdmin && (
+          {canAccessImport && (
             <Button
               variant="outline"
               size="sm"
@@ -1238,7 +1238,7 @@ Duplicidades: ${rep.duplicates.length} | CPFs inválidos: ${rep.invalidCpfs.leng
                     diretrizes do sistema, tais registros somente podem ser importados com
                     autorização explícita do Administrador.
                   </p>
-                  {canAccessAdmin ? (
+                  {canAccessImport ? (
                     <label className="flex items-center gap-2 pt-2 cursor-pointer font-semibold text-red-950">
                       <Checkbox
                         checked={adminAuthorized}
@@ -1366,7 +1366,7 @@ Duplicidades: ${rep.duplicates.length} | CPFs inválidos: ${rep.invalidCpfs.leng
                           </span>
                         </td>
                         <td className="px-1.5 md:px-2 py-2 text-right whitespace-nowrap">
-                          {imp.status === 'executed' && canAccessAdmin && (
+                          {imp.status === 'executed' && canAccessImport && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1387,8 +1387,8 @@ Duplicidades: ${rep.duplicates.length} | CPFs inválidos: ${rep.invalidCpfs.leng
         </TabsContent>
       </Tabs>
 
-      {/* Zona de Perigo: Limpeza do Banco de Dados (Restrito exclusivamente a ADMIN) */}
-      {canAccessAdmin && (
+      {/* Zona de Perigo: Limpeza do Banco de Dados (Restrito exclusivamente ao Administrador Dono) */}
+      {isMasterUser && (
         <div className="rounded-2xl border-2 border-red-200 bg-red-50/40 p-6 shadow-xs mt-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
