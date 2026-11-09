@@ -158,6 +158,7 @@ export const App: React.FC = () => {
                     allowedProfiles={[
                       'ADMIN',
                       'HR',
+                      'MANAGER',
                       'MANAGER_WORKSITE',
                       'MANAGER_DEPARTMENT',
                       'ADMIN_ASSISTANT',

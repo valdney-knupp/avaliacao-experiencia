@@ -70,7 +70,7 @@ describe('Auditoria de Acesso - Controle Estrito para Dono do Sistema (isMasterU
         id: 'manager_user',
         email: 'gestor@empresa.com.br',
         name: 'Gestor da Obra',
-        profile: 'MANAGER_WORKSITE',
+        profile: 'MANAGER',
       }
       mockIsAuthenticated = true
       mockIsMasterUser = false

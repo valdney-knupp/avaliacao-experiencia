@@ -1900,13 +1900,11 @@ export const Admin: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ADMIN">ADMIN (Administrador)</SelectItem>
-                  <SelectItem value="HR">HR (Gestão de Pessoas)</SelectItem>
-                  <SelectItem value="MANAGER">MANAGER (Gestor)</SelectItem>
-                  <SelectItem value="ADMIN_ASSISTANT">
-                    ADMIN_ASSISTANT (Assistente Administrativo)
-                  </SelectItem>
-                  <SelectItem value="VIEWER">VIEWER (Consulta)</SelectItem>
+                  <SelectItem value="ADMIN">Administrador</SelectItem>
+                  <SelectItem value="HR">Gestão de Pessoas (RH)</SelectItem>
+                  <SelectItem value="MANAGER">Gestor</SelectItem>
+                  <SelectItem value="ADMIN_ASSISTANT">Assistente Administrativo</SelectItem>
+                  <SelectItem value="VIEWER">Consulta</SelectItem>
                 </SelectContent>
               </Select>
             </div>

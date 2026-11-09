@@ -103,7 +103,26 @@ describe('Página Admin (/admin) - Ocultação e proteção de Preços & Planos 
     // O label Perfil de Acesso existe
     expect(screen.getByText('Perfil de Acesso')).toBeDefined()
 
-    // O trigger do Select de perfil exibe VIEWER (Consulta) por padrão na versão 0.0.56
-    expect(screen.getByText('VIEWER (Consulta)')).toBeDefined()
+    // O trigger do Select de perfil exibe Consulta por padrão
+    expect(screen.getByText('Consulta')).toBeDefined()
+  })
+
+  it('o seletor de perfil contém Administrador, Gestão de Pessoas (RH), Gestor, Assistente Administrativo e Consulta — e não contém Gestor de Obra nem Gestor de Setor', () => {
+    mockUser = {
+      id: 'master_user',
+      email: 'valdknupp@gmail.com',
+      profile: 'ADMIN',
+      name: 'Valdecir Knupp',
+    }
+    mockIsMasterUser = true
+
+    render(<Admin />)
+
+    const newUserBtn = screen.getByRole('button', { name: /novo usuário/i })
+    newUserBtn.click()
+
+    // O seletor unificado deve conter apenas Gestor
+    expect(screen.queryByText(/Gestor de Obra/i)).toBeNull()
+    expect(screen.queryByText(/Gestor de Setor/i)).toBeNull()
   })
 })

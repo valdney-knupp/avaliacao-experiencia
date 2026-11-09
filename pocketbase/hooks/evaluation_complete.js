@@ -73,7 +73,7 @@ onRecordAfterCreateSuccess((e) => {
         ? `active = true && client = '${collabClientId}'`
         : 'active = true'
       const activeUsers = $app.findRecordsByFilter('_pb_users_auth_', filterExpr, '', 1000, 0)
-      const allowedProfiles = ['ADMIN', 'HR', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
+      const allowedProfiles = ['ADMIN', 'HR', 'MANAGER', 'MANAGER_WORKSITE', 'MANAGER_DEPARTMENT']
       for (const u of activeUsers) {
         const p = u.getString('profile')
         const em = u.getString('email').trim().toLowerCase()

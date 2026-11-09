@@ -58,10 +58,11 @@ routerAdd(
       return e.json(400, { error: 'Formato de e-mail inválido.' })
     }
 
-    // Perfis válidos
+    // Perfis válidos (incluindo MANAGER unificado e legados para compatibilidade)
     const validProfiles = [
       'ADMIN',
       'HR',
+      'MANAGER',
       'MANAGER_WORKSITE',
       'MANAGER_DEPARTMENT',
       'ADMIN_ASSISTANT',
@@ -77,7 +78,42 @@ routerAdd(
     }
 
     // 3. Regras de negócio por perfil
-    // Gestor de Obra e Assistente Administrativo exigem centro de custo ativo do tipo Obra
+    // Gestor (MANAGER) pode ser associado a obra, setor ou ambos (pelo menos um se fornecido)
+    if (profile === 'MANAGER') {
+      if (!costCenterId && !sectorId) {
+        return e.json(400, {
+          error:
+            'Gestor deve estar associado a um centro de custo (Obra) ou a um setor do escritório.',
+        })
+      }
+      if (costCenterId) {
+        try {
+          const cc = $app.findRecordById('cost_centers', costCenterId)
+          if (!cc.getBool('active')) {
+            return e.json(400, { error: 'O centro de custo selecionado está inativo.' })
+          }
+          if (cc.getString('type') !== 'Obra') {
+            return e.json(400, {
+              error: 'O centro de custo vinculado ao Gestor deve ser do tipo "Obra".',
+            })
+          }
+        } catch (_) {
+          return e.json(400, { error: 'Centro de custo informado não foi encontrado.' })
+        }
+      }
+      if (sectorId) {
+        try {
+          const sec = $app.findRecordById('sectors', sectorId)
+          if (!sec.getBool('active')) {
+            return e.json(400, { error: 'O setor selecionado está inativo.' })
+          }
+        } catch (_) {
+          return e.json(400, { error: 'Setor informado não foi encontrado.' })
+        }
+      }
+    }
+
+    // Gestor de Obra (legado) e Assistente Administrativo exigem centro de custo ativo do tipo Obra
     if (profile === 'MANAGER_WORKSITE' || profile === 'ADMIN_ASSISTANT') {
       const roleLabel =
         profile === 'ADMIN_ASSISTANT' ? 'Assistente Administrativo' : 'Gestor de Obra'
@@ -101,7 +137,7 @@ routerAdd(
       }
     }
 
-    // Gestor de Setor exige setor ativo
+    // Gestor de Setor (legado) exige setor ativo
     if (profile === 'MANAGER_DEPARTMENT') {
       if (!sectorId) {
         return e.json(400, {
@@ -120,8 +156,11 @@ routerAdd(
 
     // Administrador, HR e Consulta não exigem centro nem setor
     const resolvedCostCenter =
-      profile === 'MANAGER_WORKSITE' || profile === 'ADMIN_ASSISTANT' ? costCenterId : null
-    const resolvedSector = profile === 'MANAGER_DEPARTMENT' ? sectorId : null
+      profile === 'MANAGER' || profile === 'MANAGER_WORKSITE' || profile === 'ADMIN_ASSISTANT'
+        ? costCenterId
+        : null
+    const resolvedSector =
+      profile === 'MANAGER' || profile === 'MANAGER_DEPARTMENT' ? sectorId : null
 
     // 4. Verificação de e-mail único
     try {
