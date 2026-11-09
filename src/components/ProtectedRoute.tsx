@@ -5,10 +5,15 @@ import { useAuth, UserProfile } from '@/hooks/use-auth'
 interface ProtectedRouteProps {
   children: React.ReactNode
   allowedProfiles?: UserProfile[]
+  requiredModule?: 'experiencia' | 'desempenho'
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedProfiles }) => {
-  const { user, loading, isAuthenticated } = useAuth()
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  allowedProfiles,
+  requiredModule,
+}) => {
+  const { user, loading, isAuthenticated, hasExperienciaAccess, hasDesempenhoAccess } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -28,6 +33,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   if (allowedProfiles && !allowedProfiles.includes(user.profile)) {
     return <Navigate to="/dashboard" replace />
+  }
+
+  // Verificação de acesso por módulo contratado
+  if (requiredModule === 'experiencia' && !hasExperienciaAccess) {
+    // Se tem acesso apenas a Desempenho, redireciona para lá
+    if (hasDesempenhoAccess) {
+      return <Navigate to="/avaliacao-desempenho" replace />
+    }
+    return <Navigate to="/login" replace />
+  }
+
+  if (requiredModule === 'desempenho' && !hasDesempenhoAccess) {
+    // Se tem acesso a Experiência, redireciona para a home/dashboard
+    if (hasExperienciaAccess) {
+      return <Navigate to="/dashboard" replace />
+    }
+    return <Navigate to="/login" replace />
   }
 
   return <>{children}</>

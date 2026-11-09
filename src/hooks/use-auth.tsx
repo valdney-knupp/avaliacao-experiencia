@@ -21,6 +21,15 @@ export interface AppUser {
   avatar?: string
   last_accessed?: string
   client?: string
+  clientRecord?: {
+    id: string
+    name: string
+    active: boolean
+    status?: string
+    paid_until?: string
+    experiencia_until?: string
+    desempenho_until?: string
+  }
 }
 
 export interface AuthContextType {
@@ -49,6 +58,8 @@ export interface AuthContextType {
   scopedSectorId: string | undefined
   isMasterUser: boolean
   clientId: string | undefined
+  hasExperienciaAccess: boolean
+  hasDesempenhoAccess: boolean
   refreshUser: () => Promise<void>
 }
 
@@ -59,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true)
 
   const mapPbRecordToAppUser = (rec: RecordModel): AppUser => {
+    const clientExpand = rec.expand?.client as RecordModel | undefined
     return {
       id: rec.id,
       email: rec.email || '',
@@ -70,6 +82,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatar: rec.avatar || undefined,
       last_accessed: rec.last_accessed || undefined,
       client: rec.client || undefined,
+      clientRecord: clientExpand
+        ? {
+            id: clientExpand.id,
+            name: clientExpand.name || '',
+            active: clientExpand.active !== false,
+            status: clientExpand.status,
+            paid_until: clientExpand.paid_until,
+            experiencia_until: clientExpand.experiencia_until,
+            desempenho_until: clientExpand.desempenho_until,
+          }
+        : undefined,
     }
   }
 
@@ -92,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Validação ativa contra o servidor via authRefresh.
         // Se o tokenKey foi rotacionado (ex: troca/redefinição de senha) ou expirado,
         // o servidor rejeitará com 401/403 e a sessão zumbi é eliminada imediatamente.
-        const authData = await pb.collection('users').authRefresh()
+        const authData = await pb.collection('users').authRefresh({ expand: 'client' })
         if (authData.record.active === false) {
           handleExpiredSession('Usuário inativo. Contate o administrador.')
           setLoading(false)
@@ -169,7 +192,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, pass: string) => {
     try {
       const cleanEmail = email.trim().toLowerCase()
-      const authData = await pb.collection('users').authWithPassword(cleanEmail, pass)
+      const authData = await pb.collection('users').authWithPassword(cleanEmail, pass, {
+        expand: 'client',
+      })
       if (authData.record.active === false) {
         pb.authStore.clear()
         setUser(null)
@@ -278,6 +303,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clientId = user?.client || undefined
 
+  // Lógica de verificação de acesso por módulo para o cliente do usuário:
+  // - Usuário master (valdknupp@gmail.com) e contas de sistema sem tenant vinculado têm acesso total a ambos os módulos.
+  // - Para usuários vinculados a um client, checamos a data de vigência do módulo e a situação geral do cliente:
+  //   * Módulo Experiência: ativo se experiencia_until >= hoje (ou fallback para paid_until) e client ativo.
+  //   * Módulo Desempenho: ativo se desempenho_until >= hoje e client ativo.
+  const { hasExperienciaAccess, hasDesempenhoAccess } = useMemo(() => {
+    if (isMasterUser || !clientId) {
+      return { hasExperienciaAccess: true, hasDesempenhoAccess: true }
+    }
+
+    const c = user?.clientRecord
+    if (!c) {
+      // Se não tem expand carregado ainda, concede temporariamente até o refresh
+      return { hasExperienciaAccess: true, hasDesempenhoAccess: true }
+    }
+
+    // Se cliente está suspenso ou bloqueado
+    if (c.active === false || (c.status && c.status !== 'active')) {
+      return { hasExperienciaAccess: false, hasDesempenhoAccess: false }
+    }
+
+    const nowIso = new Date().toISOString().split('T')[0]
+
+    // Módulo Experiência:
+    const expUntil = c.experiencia_until || c.paid_until || ''
+    const expIso = expUntil.split(' ')[0].split('T')[0]
+    const expOk = !!expIso && expIso >= nowIso
+
+    // Módulo Desempenho:
+    const desUntil = c.desempenho_until || ''
+    const desIso = desUntil.split(' ')[0].split('T')[0]
+    const desOk = !!desIso && desIso >= nowIso
+
+    return {
+      hasExperienciaAccess: expOk,
+      hasDesempenhoAccess: desOk,
+    }
+  }, [isMasterUser, clientId, user?.clientRecord])
+
   const value = useMemo(
     () => ({
       user,
@@ -305,9 +369,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       scopedSectorId,
       isMasterUser,
       clientId,
+      hasExperienciaAccess,
+      hasDesempenhoAccess,
       refreshUser,
     }),
-    [user, loading, isMasterUser, clientId],
+    [user, loading, isMasterUser, clientId, hasExperienciaAccess, hasDesempenhoAccess],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

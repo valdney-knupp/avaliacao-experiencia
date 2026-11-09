@@ -12,6 +12,16 @@ export interface PlanConfig {
   is_official?: boolean
 }
 
+export interface ModuleOfferConfig {
+  id: 'experiencia' | 'desempenho' | 'combo'
+  title: string
+  subtitle: string
+  tag?: string
+  popular?: boolean
+  monthly: PlanConfig
+  annual: PlanConfig
+}
+
 export interface StripeCheckoutConfig {
   payment_link: string
   price_id: string
@@ -22,6 +32,11 @@ export interface StripeCheckoutConfig {
   is_official_link?: boolean
   monthly: PlanConfig
   annual: PlanConfig
+  offers?: {
+    experiencia: ModuleOfferConfig
+    desempenho: ModuleOfferConfig
+    combo: ModuleOfferConfig
+  }
 }
 
 export const isOfficialStripeLink = (url: string): boolean => {
@@ -31,33 +46,105 @@ export const isOfficialStripeLink = (url: string): boolean => {
   return isStripeDomain && !url.includes('test_avaliacao_experiencia')
 }
 
+export const FALLBACK_MODULE_OFFERS: {
+  experiencia: ModuleOfferConfig
+  desempenho: ModuleOfferConfig
+  combo: ModuleOfferConfig
+} = {
+  experiencia: {
+    id: 'experiencia',
+    title: 'Avaliação de Experiência',
+    subtitle:
+      'Gestão completa do período de experiência (45/90 dias) e entrevista de desligamento.',
+    monthly: {
+      name: 'Experiência Mensal',
+      price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
+      payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
+      price_label: '297,00',
+      amount_cents: 29700,
+      active: true,
+      interval: 'month',
+      is_official: true,
+    },
+    annual: {
+      name: 'Experiência Anual',
+      price_id: 'price_1UW0OhLpoAima4qdRW4Xmqs0',
+      payment_link: 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02',
+      price_label: '2.899,00',
+      amount_cents: 289900,
+      active: true,
+      interval: 'year',
+      badge: '2 meses grátis • Economia de R$ 665',
+      is_official: true,
+    },
+  },
+  desempenho: {
+    id: 'desempenho',
+    title: 'Avaliação de Desempenho',
+    subtitle: 'Avaliação contínua por competências (Nível I e Nível II) para toda a equipe.',
+    monthly: {
+      name: 'Desempenho Mensal',
+      price_id: 'price_1UZs1vLpoAima4qdpy6h3fIE',
+      payment_link: '',
+      price_label: '150,00',
+      amount_cents: 15000,
+      active: true,
+      interval: 'month',
+      is_official: true,
+    },
+    annual: {
+      name: 'Desempenho Anual',
+      price_id: 'price_1UZs22LpoAima4qd2xUCt4c3',
+      payment_link: '',
+      price_label: '1.399,00',
+      amount_cents: 139900,
+      active: true,
+      interval: 'year',
+      badge: 'Economia de R$ 401 ao ano',
+      is_official: true,
+    },
+  },
+  combo: {
+    id: 'combo',
+    title: 'Combo Experiência + Desempenho',
+    subtitle:
+      'A solução completa de RH: gestão de experiência, desligamento e desempenho unificados.',
+    popular: true,
+    tag: 'Mais Vantajoso • Desconto Especial',
+    monthly: {
+      name: 'Combo Mensal',
+      price_id: 'price_1UZs2BLpoAima4qdHILjzxQG',
+      payment_link: '',
+      price_label: '397,00',
+      amount_cents: 39700,
+      active: true,
+      interval: 'month',
+      badge: 'De R$ 447 por R$ 397/mês (Economia de R$ 50/mês)',
+      is_official: true,
+    },
+    annual: {
+      name: 'Combo Anual',
+      price_id: 'price_1UZs2HLpoAima4qdkMumJCvL',
+      payment_link: '',
+      price_label: '3.897,00',
+      amount_cents: 389700,
+      active: true,
+      interval: 'year',
+      badge: 'De R$ 4.298 por R$ 3.897/ano (Economia de R$ 401)',
+      is_official: true,
+    },
+  },
+}
+
 export const FALLBACK_CHECKOUT_CONFIG: StripeCheckoutConfig = {
   payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
   price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
   price_label: 'R$ 297,00',
   stripe_connected: true,
   is_official_link: true,
-  monthly: {
-    name: 'Plano Mensal',
-    price_id: 'price_1UW08YLpoAima4qdNrVsYYC5',
-    payment_link: 'https://buy.stripe.com/14AdRa2IK9FJ42gfqb3Nm00',
-    price_label: '297,00',
-    amount_cents: 29700,
-    active: true,
-    interval: 'month',
-    is_official: true,
-  },
-  annual: {
-    name: 'Plano Anual',
-    price_id: 'price_1UW0OhLpoAima4qdRW4Xmqs0',
-    payment_link: 'https://buy.stripe.com/aFa7sMgzAf0342ga5R3Nm02',
-    price_label: '2.899,00',
-    amount_cents: 289900,
-    active: true,
-    interval: 'year',
-    badge: '2 meses grátis • Economia de R$ 665',
-    is_official: true,
-  },
+  monthly: FALLBACK_MODULE_OFFERS.experiencia.monthly,
+  annual: FALLBACK_MODULE_OFFERS.experiencia.annual,
+  offers: FALLBACK_MODULE_OFFERS,
 }
 
 export interface SaleRecord {
@@ -130,6 +217,7 @@ export async function getStripeCheckoutConfig(): Promise<StripeCheckoutConfig> {
             badge: data.annual?.badge || '2 meses grátis • Economia de R$ 665',
             is_official: annualIsOfficial,
           },
+          offers: data.offers || FALLBACK_MODULE_OFFERS,
         }
       }
     }
@@ -252,6 +340,29 @@ export function buildCheckoutUrl(
   } catch {
     return baseUrl
   }
+}
+
+/**
+ * Cria sessão de checkout via endpoint /backend/v1/billing/create-checkout-session
+ */
+export async function createCheckoutSession(params: {
+  price_id: string
+  email?: string
+  name?: string
+  success_url?: string
+  cancel_url?: string
+}): Promise<{ url: string }> {
+  const backendUrl = import.meta.env.VITE_POCKETBASE_URL || ''
+  const endpoint = `${backendUrl.replace(/\/+$/, '')}/backend/v1/billing/create-checkout-session`
+  const res = await pb.send(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(params),
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!res || !res.url) {
+    throw new Error('Não foi possível gerar a sessão de checkout.')
+  }
+  return { url: res.url }
 }
 
 /**

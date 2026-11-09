@@ -10,6 +10,7 @@ import {
   XCircle,
   AlertCircle,
   Shield,
+  ShieldCheck,
   Eye,
   EyeOff,
   UserPlus,
@@ -76,6 +77,8 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
     plan: 'MENSAL' as 'MENSAL' | 'ANUAL' | 'OUTRO',
     status: 'active' as ClientStatus,
     paid_until: '',
+    experiencia_until: '',
+    desempenho_until: '',
     notes: '',
   })
 
@@ -147,13 +150,16 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
     setEditingClient(null)
     const defDate = new Date()
     defDate.setDate(defDate.getDate() + 30)
+    const defIso = defDate.toISOString().split('T')[0]
     setClientForm({
       name: '',
       email: '',
       password: 'Skip@' + Math.floor(100000 + Math.random() * 900000),
       plan: 'MENSAL',
       status: 'active',
-      paid_until: defDate.toISOString().split('T')[0],
+      paid_until: defIso,
+      experiencia_until: defIso,
+      desempenho_until: defIso,
       notes: '',
     })
     setShowPassword(false)
@@ -171,6 +177,16 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
       plan: c.plan,
       status: effectiveStatus,
       paid_until: c.paid_until ? c.paid_until.split(' ')[0].split('T')[0] : '',
+      experiencia_until: c.experiencia_until
+        ? c.experiencia_until.split(' ')[0].split('T')[0]
+        : c.paid_until
+          ? c.paid_until.split(' ')[0].split('T')[0]
+          : '',
+      desempenho_until: c.desempenho_until
+        ? c.desempenho_until.split(' ')[0].split('T')[0]
+        : c.paid_until
+          ? c.paid_until.split(' ')[0].split('T')[0]
+          : '',
       notes: c.notes || '',
     })
     setShowPassword(false)
@@ -190,6 +206,8 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
           notes: clientForm.notes.trim(),
           status: clientForm.status,
           paid_until: clientForm.paid_until || undefined,
+          experiencia_until: clientForm.experiencia_until || undefined,
+          desempenho_until: clientForm.desempenho_until || undefined,
           active: clientForm.status === 'active',
           password: clientForm.password.trim() ? clientForm.password : undefined,
         })
@@ -208,6 +226,8 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
           notes: clientForm.notes.trim(),
           status: clientForm.status,
           paid_until: clientForm.paid_until || undefined,
+          experiencia_until: clientForm.experiencia_until || undefined,
+          desempenho_until: clientForm.desempenho_until || undefined,
           active: clientForm.status === 'active',
         })
         setFeedbackMsg(
@@ -481,8 +501,9 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
                 <th className="w-[22%] px-3 py-2.5">Cliente / Empresa</th>
                 <th className="w-[18%] px-2 py-2.5">E-mail (Login)</th>
                 <th className="w-[9%] px-2 py-2.5 text-center">Plano</th>
-                <th className="w-[12%] px-2 py-2.5 text-center">Vencimento</th>
-                <th className="w-[14%] px-1.5 py-2.5 text-center">Situação</th>
+                <th className="w-[11%] px-2 py-2.5 text-center">Vencimento</th>
+                <th className="w-[14%] px-2 py-2.5 text-center">Módulos</th>
+                <th className="w-[11%] px-1.5 py-2.5 text-center">Situação</th>
                 <th className="w-[13%] px-2 py-2.5 text-center">Avisos E-mail</th>
                 <th className="w-[12%] px-3 py-2.5 text-right">Ações</th>
               </tr>
@@ -577,6 +598,60 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
                         ) : (
                           <span className="text-gray-400 text-xs">-</span>
                         )}
+                      </td>
+                      <td className="px-2 py-2.5 text-center text-[11px]">
+                        {(() => {
+                          const nowIso = new Date().toISOString().split('T')[0]
+                          const expIso = c.experiencia_until
+                            ? c.experiencia_until.split(' ')[0].split('T')[0]
+                            : c.paid_until
+                              ? c.paid_until.split(' ')[0].split('T')[0]
+                              : ''
+                          const desIso = c.desempenho_until
+                            ? c.desempenho_until.split(' ')[0].split('T')[0]
+                            : ''
+                          const isExpActive =
+                            expIso &&
+                            expIso >= nowIso &&
+                            c.active !== false &&
+                            c.status === 'active'
+                          const isDesActive =
+                            desIso &&
+                            desIso >= nowIso &&
+                            c.active !== false &&
+                            c.status === 'active'
+
+                          return (
+                            <div className="flex flex-col gap-1 items-center">
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${
+                                  isExpActive
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    : 'bg-slate-100 text-slate-500 line-through'
+                                }`}
+                                title={
+                                  expIso
+                                    ? `Experiência até ${formatDateBR(expIso)}`
+                                    : 'Não liberado'
+                                }
+                              >
+                                Exp: {expIso ? formatDateBR(expIso) : 'Inativo'}
+                              </span>
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${
+                                  isDesActive
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                    : 'bg-slate-100 text-slate-500 line-through'
+                                }`}
+                                title={
+                                  desIso ? `Desempenho até ${formatDateBR(desIso)}` : 'Não liberado'
+                                }
+                              >
+                                Desemp: {desIso ? formatDateBR(desIso) : 'Inativo'}
+                              </span>
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="px-1.5 py-2.5 text-center">
                         {(() => {
@@ -801,14 +876,68 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
 
               <div>
                 <Label className="text-xs font-semibold text-gray-700">
-                  Data de Vencimento (paid_until)
+                  Data de Vencimento Geral
                 </Label>
                 <Input
                   type="date"
                   value={clientForm.paid_until}
-                  onChange={(e) => setClientForm({ ...clientForm, paid_until: e.target.value })}
+                  onChange={(e) => {
+                    const nextVal = e.target.value
+                    setClientForm({
+                      ...clientForm,
+                      paid_until: nextVal,
+                      // se ainda vazios, atualiza módulos junto
+                      experiencia_until: clientForm.experiencia_until || nextVal,
+                      desempenho_until: clientForm.desempenho_until || nextVal,
+                    })
+                  }}
                   className="mt-1 text-xs"
                 />
+              </div>
+            </div>
+
+            {/* Vencimento Individual por Módulo */}
+            <div className="p-3 rounded-xl border border-emerald-100 bg-emerald-50/40 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-[#2CA840]" />
+                  Validade Isolada por Módulo
+                </span>
+                <span className="text-[10px] text-emerald-700">Permissões independentes</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <Label className="text-[11px] font-semibold text-gray-700">
+                    Avaliação de Experiência & Desligamento
+                  </Label>
+                  <Input
+                    type="date"
+                    value={clientForm.experiencia_until}
+                    onChange={(e) =>
+                      setClientForm({ ...clientForm, experiencia_until: e.target.value })
+                    }
+                    className="mt-1 text-xs bg-white"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    Libera contratos 45/90 dias e Entrevista de Desligamento.
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-gray-700">
+                    Avaliação de Desempenho
+                  </Label>
+                  <Input
+                    type="date"
+                    value={clientForm.desempenho_until}
+                    onChange={(e) =>
+                      setClientForm({ ...clientForm, desempenho_until: e.target.value })
+                    }
+                    className="mt-1 text-xs bg-white"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    Libera módulo autônomo de Avaliação de Desempenho Nível I e II.
+                  </p>
+                </div>
               </div>
             </div>
 

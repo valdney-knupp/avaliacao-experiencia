@@ -36,7 +36,7 @@ import NotFound from '@/pages/NotFound'
  * - Enquanto carrega a sessão, exibe a página de vendas sem flash ou espera suavemente.
  */
 const RootRoute: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, hasExperienciaAccess, hasDesempenhoAccess } = useAuth()
 
   if (loading) {
     // Durante a validação inicial do token, se ainda estiver pendente, renderiza a Sales
@@ -45,6 +45,9 @@ const RootRoute: React.FC = () => {
   }
 
   if (isAuthenticated) {
+    if (!hasExperienciaAccess && hasDesempenhoAccess) {
+      return <Navigate to="/avaliacao-desempenho" replace />
+    }
     return <Navigate to="/dashboard" replace />
   }
 
@@ -81,12 +84,54 @@ export const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               >
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/dashboard/detail" element={<DashboardDetail />} />
-                <Route path="/evaluations" element={<Evaluations />} />
-                <Route path="/evaluations/desligamento" element={<Evaluations />} />
-                <Route path="/avaliacao-experiencia/desligamento" element={<Evaluations />} />
-                <Route path="/avaliacao-desempenho" element={<PerformanceEvaluation />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute requiredModule="experiencia">
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/detail"
+                  element={
+                    <ProtectedRoute requiredModule="experiencia">
+                      <DashboardDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/evaluations"
+                  element={
+                    <ProtectedRoute requiredModule="experiencia">
+                      <Evaluations />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/evaluations/desligamento"
+                  element={
+                    <ProtectedRoute requiredModule="experiencia">
+                      <Evaluations />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/avaliacao-experiencia/desligamento"
+                  element={
+                    <ProtectedRoute requiredModule="experiencia">
+                      <Evaluations />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/avaliacao-desempenho"
+                  element={
+                    <ProtectedRoute requiredModule="desempenho">
+                      <PerformanceEvaluation />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/collaborators" element={<Collaborators />} />
                 <Route
                   path="/collaborators/new"

@@ -23,6 +23,10 @@ vi.mock('@/hooks/use-auth', () => ({
     canCreateCollaborator: true,
     canEvaluate: true,
     isMasterUser: true,
+    hasExperienciaAccess: true,
+    hasDesempenhoAccess: true,
+    experienciaUntil: null,
+    desempenhoUntil: null,
   }),
 }))
 

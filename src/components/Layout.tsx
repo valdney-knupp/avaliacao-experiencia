@@ -34,8 +34,16 @@ import { AppLogo } from '@/components/AppLogo'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export const Layout: React.FC = () => {
-  const { user, signOut, canAccessAdmin, canAccessImport, canExportReports, canViewAudit } =
-    useAuth()
+  const {
+    user,
+    signOut,
+    canAccessAdmin,
+    canAccessImport,
+    canExportReports,
+    canViewAudit,
+    hasExperienciaAccess,
+    hasDesempenhoAccess,
+  } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
   const navigate = useNavigate()
@@ -115,13 +123,13 @@ export const Layout: React.FC = () => {
       to: '/dashboard',
       label: 'Visão geral',
       icon: LayoutDashboard,
-      show: true,
+      show: hasExperienciaAccess,
     },
     {
       to: '/evaluations',
       label: 'Próximas avaliações',
       icon: CalendarCheck,
-      show: true,
+      show: hasExperienciaAccess,
     },
     {
       to: '/collaborators',
@@ -133,7 +141,7 @@ export const Layout: React.FC = () => {
       to: '/avaliacao-desempenho',
       label: 'Avaliação de Desempenho',
       icon: CalendarCheck,
-      show: true,
+      show: hasDesempenhoAccess,
     },
     {
       to: '/admin',
@@ -145,7 +153,7 @@ export const Layout: React.FC = () => {
       to: '/import',
       label: 'Importação de dados',
       icon: Upload,
-      show: canAccessImport,
+      show: canAccessImport && hasExperienciaAccess,
     },
     {
       to: '/reports',

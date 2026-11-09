@@ -28,6 +28,18 @@ routerAdd(
     const notes = String(body.notes || '').trim()
     const active = body.active !== false
     const paidUntil = body.paid_until ? String(body.paid_until).trim() : null
+    const experienciaUntil =
+      body.experiencia_until !== undefined
+        ? body.experiencia_until
+          ? String(body.experiencia_until).trim()
+          : null
+        : undefined
+    const desempenhoUntil =
+      body.desempenho_until !== undefined
+        ? body.desempenho_until
+          ? String(body.desempenho_until).trim()
+          : null
+        : undefined
     const explicitStatus = body.status ? String(body.status).trim() : null
 
     if (!clientName || !cleanEmail) {
@@ -73,6 +85,16 @@ routerAdd(
         now.setDate(now.getDate() + daysToAdd)
         clientRec.set('paid_until', now.toISOString().split('T')[0])
       }
+
+      // Validades específicas por módulo:
+      // Se não foram informadas explicitamente, herdam a validade de paid_until
+      const targetExp =
+        experienciaUntil !== undefined ? experienciaUntil : clientRec.getString('paid_until')
+      const targetDes =
+        desempenhoUntil !== undefined ? desempenhoUntil : clientRec.getString('paid_until')
+      if (targetExp) clientRec.set('experiencia_until', targetExp)
+      if (targetDes) clientRec.set('desempenho_until', targetDes)
+
       const initialStatus = explicitStatus || (active ? 'active' : 'blocked_manually')
       clientRec.set('status', initialStatus)
       $app.save(clientRec)
@@ -220,6 +242,8 @@ routerAdd(
         active: clientRec.getBool('active'),
         status: clientRec.getString('status'),
         paid_until: clientRec.getString('paid_until'),
+        experiencia_until: clientRec.getString('experiencia_until'),
+        desempenho_until: clientRec.getString('desempenho_until'),
         notes: clientRec.getString('notes'),
         created: clientRec.getString('created'),
         buyer_user_id: userRec.id,
@@ -268,6 +292,18 @@ routerAdd(
     const active = body.active !== undefined ? body.active === true : null
     const paidUntil =
       body.paid_until !== undefined ? (body.paid_until ? String(body.paid_until).trim() : '') : null
+    const experienciaUntil =
+      body.experiencia_until !== undefined
+        ? body.experiencia_until
+          ? String(body.experiencia_until).trim()
+          : ''
+        : null
+    const desempenhoUntil =
+      body.desempenho_until !== undefined
+        ? body.desempenho_until
+          ? String(body.desempenho_until).trim()
+          : ''
+        : null
     const explicitStatus = body.status ? String(body.status).trim() : null
     const newPassword = body.password ? String(body.password) : null
 
@@ -275,6 +311,8 @@ routerAdd(
     if (plan && ['MENSAL', 'ANUAL', 'OUTRO'].includes(plan)) clientRec.set('plan', plan)
     if (notes !== null) clientRec.set('notes', notes)
     if (paidUntil !== null) clientRec.set('paid_until', paidUntil || null)
+    if (experienciaUntil !== null) clientRec.set('experiencia_until', experienciaUntil || null)
+    if (desempenhoUntil !== null) clientRec.set('desempenho_until', desempenhoUntil || null)
 
     if (explicitStatus) {
       clientRec.set('status', explicitStatus)
@@ -347,6 +385,8 @@ routerAdd(
         active: clientRec.getBool('active'),
         status: clientRec.getString('status'),
         paid_until: clientRec.getString('paid_until'),
+        experiencia_until: clientRec.getString('experiencia_until'),
+        desempenho_until: clientRec.getString('desempenho_until'),
         notes: clientRec.getString('notes'),
         updated: clientRec.getString('updated'),
       })

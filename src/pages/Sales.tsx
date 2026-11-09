@@ -35,7 +35,10 @@ import {
 import {
   getStripeCheckoutConfig,
   FALLBACK_CHECKOUT_CONFIG,
+  FALLBACK_MODULE_OFFERS,
   StripeCheckoutConfig,
+  ModuleOfferConfig,
+  createCheckoutSession,
   buildCheckoutUrl,
 } from '@/lib/stripeCheckout'
 import { useSearchParams } from 'react-router-dom'
@@ -43,9 +46,11 @@ import { initGoogleAds } from '@/lib/googleAds'
 
 export const Sales: React.FC = () => {
   const [config, setConfig] = useState<StripeCheckoutConfig>(FALLBACK_CHECKOUT_CONFIG)
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly')
   const [searchParams] = useSearchParams()
   const customerEmailParam = searchParams.get('email') || searchParams.get('prefilled_email') || ''
   const [loadingCheckout, setLoadingCheckout] = useState(true)
+  const [checkoutOfferId, setCheckoutOfferId] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   // Garante que a tag global do Google Ads esteja sempre ativa na página de vendas
@@ -86,40 +91,61 @@ export const Sales: React.FC = () => {
     }
   }, [])
 
-  const handleCheckout = (plan: 'monthly' | 'annual') => {
+  const offersList: ModuleOfferConfig[] = [
+    config.offers?.experiencia || FALLBACK_MODULE_OFFERS.experiencia,
+    config.offers?.desempenho || FALLBACK_MODULE_OFFERS.desempenho,
+    config.offers?.combo || FALLBACK_MODULE_OFFERS.combo,
+  ]
+
+  const handleCheckoutOffer = async (offer: ModuleOfferConfig) => {
     setCheckoutError(null)
-    const planConfig = plan === 'monthly' ? config.monthly : config.annual
-    let url = planConfig?.payment_link
+    setCheckoutOfferId(offer.id)
 
-    // Anexa prefilled_email caso o link tenha sido aberto para um cliente específico
-    if (url && customerEmailParam) {
-      url = buildCheckoutUrl(url, { email: customerEmailParam })
-    }
+    const planConfig = billingPeriod === 'monthly' ? offer.monthly : offer.annual
+    const priceId = planConfig?.price_id
+    let paymentLink = planConfig?.payment_link
 
-    // Se o link for um placeholder de teste e o Stripe ainda não estiver conectado,
-    // não jogamos o visitante em uma URL falsa que falhará. Em vez disso, mostramos
-    // uma mensagem amigável convidando para finalizar a assinatura via WhatsApp oficial.
-    const isPlaceholder = !url || url.includes('test_avaliacao_experiencia')
-
-    // Aceita URLs oficiais Stripe: buy.stripe.com ou pay.stripe.com
-    const isOfficialStripeUrl =
-      url &&
-      (url.startsWith('https://buy.stripe.com/') || url.startsWith('https://pay.stripe.com/')) &&
-      !isPlaceholder
-
-    if (config.stripe_connected && url && url.startsWith('http') && !isPlaceholder) {
-      window.location.href = url
+    // 1. Se existir um link direto oficial (como os de Experiência já existentes)
+    if (
+      paymentLink &&
+      (paymentLink.startsWith('https://buy.stripe.com/') ||
+        paymentLink.startsWith('https://pay.stripe.com/'))
+    ) {
+      if (customerEmailParam) {
+        paymentLink = buildCheckoutUrl(paymentLink, { email: customerEmailParam })
+      }
+      window.location.href = paymentLink
       return
     }
 
-    if (isOfficialStripeUrl) {
-      window.location.href = url
+    // 2. Tenta gerar a Checkout Session via endpoint oficial /backend/v1/billing/create-checkout-session
+    try {
+      const res = await createCheckoutSession({
+        price_id: priceId,
+        email: customerEmailParam || undefined,
+      })
+      if (res && res.url) {
+        window.location.href = res.url
+        return
+      }
+    } catch (err: any) {
+      console.warn('Falha ao chamar create-checkout-session:', err)
+    }
+
+    // 3. Fallback se paymentLink tiver URL válida
+    if (
+      paymentLink &&
+      paymentLink.startsWith('http') &&
+      !paymentLink.includes('test_avaliacao_experiencia')
+    ) {
+      window.location.href = paymentLink
       return
     }
 
-    // Link real ainda não sincronizado da conta Stripe
+    // 4. Mensagem com WhatsApp se a conta Stripe ainda estiver configurando os links
+    setCheckoutOfferId(null)
     setCheckoutError(
-      'O checkout direto da Stripe está sendo sincronizado com a conta do contratante. Por favor, finalize sua contratação diretamente com nossa equipe pelo WhatsApp ou tente em instantes.',
+      `O link de checkout para "${offer.title}" (${billingPeriod === 'monthly' ? 'Mensal' : 'Anual'}) está em sincronização. Finalize agora mesmo com atendimento imediato pelo WhatsApp ou tente novamente em instantes.`,
     )
   }
 
@@ -586,204 +612,257 @@ export const Sales: React.FC = () => {
         </div>
       </section>
 
-      {/* PLANOS & PREÇOS (MENSAL E ANUAL) */}
+      {/* PLANOS & PREÇOS (3 OFERTAS: EXPERIÊNCIA, DESEMPENHO E COMBO) */}
       <section
         id="precos"
         className="py-20 bg-gradient-to-b from-slate-100/80 via-white to-slate-50 border-t border-slate-200"
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold uppercase tracking-wider mb-4 shadow-xs">
-            Planos Transparentes & Flexíveis
+            Módulos Independentes & Combo Completo
           </div>
           <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-950">
-            Investimento que se paga na primeira rescisão evitada
+            Escolha o módulo ideal ou leve a solução completa
           </h2>
-          <p className="mt-4 text-slate-600 text-sm sm:text-base max-w-xl mx-auto">
-            Sem pegadinhas, sem cobrança por colaborador cadastrado. Escolha a periodicidade ideal
-            para a sua empresa.
+          <p className="mt-4 text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
+            Sem pegadinhas, sem cobrança por colaborador. Contrate apenas o módulo que a sua empresa
+            precisa ou garanta o Combo com desconto especial.
           </p>
 
-          <div className="mt-14 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
-            {/* CARD 1: PLANO MENSAL */}
-            {config.monthly?.active !== false && (
-              <div className="rounded-3xl p-1 bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
-                <div className="bg-white rounded-[22px] p-8 sm:p-9 text-left flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                          Assinatura Flexível
-                        </span>
-                        <h3 className="text-2xl font-black text-slate-900 mt-1">Plano Mensal</h3>
-                      </div>
-                      <div className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
-                        Sem Fidelidade
-                      </div>
-                    </div>
+          {/* TOGGLE MENSAL / ANUAL */}
+          <div className="mt-8 flex items-center justify-center">
+            <div className="p-1.5 bg-slate-200/80 rounded-2xl flex items-center gap-1 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setBillingPeriod('monthly')}
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                  billingPeriod === 'monthly'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Faturamento Mensal
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingPeriod('annual')}
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+                  billingPeriod === 'annual'
+                    ? 'bg-gradient-to-r from-[#2CA840] to-emerald-700 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>Faturamento Anual</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950">
+                  Desconto
+                </span>
+              </button>
+            </div>
+          </div>
 
-                    <div className="mt-6 flex items-baseline">
-                      <span className="text-xs text-slate-500 mr-1.5 font-semibold">R$</span>
-                      <span className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight">
-                        {config.monthly?.price_label || '297,00'}
-                      </span>
-                      <span className="text-slate-500 ml-2 font-medium">/mês</span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Cobrança mensal recorrente com cancelamento livre a qualquer momento.
-                    </p>
-
-                    <div className="my-7 border-t border-slate-200" />
-
-                    <div className="space-y-3 text-sm">
-                      {[
-                        'Colaboradores ilimitados em experiência',
-                        'Gestão completa de 45 e 90 dias',
-                        'Centros de custo e setores ilimitados',
-                        'Critérios personalizáveis (Obra e Escritório)',
-                        'Múltiplos perfis (Admin, RH, Gestores, Assistentes)',
-                        'Importação e exportação de planilhas Excel',
-                        'Notificações e alertas preventivos diários',
-                        'Log de auditoria e segurança LGPD',
-                        'Suporte e atualizações inclusas',
-                      ].map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-3 text-slate-700">
-                          <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                          <span className="text-xs sm:text-sm">{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-8 pt-4">
-                    {checkoutError && (
-                      <div className="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-col gap-2">
-                        <div className="flex items-start gap-2">
-                          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-                          <span>{checkoutError}</span>
-                        </div>
-                        <a
-                          href={SYSTEM_CONTACTS.whatsappLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-bold text-emerald-800 hover:text-emerald-950 underline text-xs"
-                        >
-                          <MessageCircle className="h-3.5 w-3.5" />
-                          Contratar via WhatsApp ({SYSTEM_CONTACTS.whatsapp})
-                        </a>
-                      </div>
-                    )}
-                    <Button
-                      size="lg"
-                      onClick={() => handleCheckout('monthly')}
-                      disabled={loadingCheckout}
-                      variant="outline"
-                      className="w-full h-13 text-sm sm:text-base font-bold border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-800 rounded-xl transition-all"
-                    >
-                      {loadingCheckout ? 'Carregando checkout...' : 'Assinar Plano Mensal'}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                    <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
-                      <Lock className="h-3 w-3 text-slate-400" />
-                      <span>Processado com segurança pelo Stripe</span>
-                    </div>
-                  </div>
-                </div>
+          {checkoutError && (
+            <div className="max-w-2xl mx-auto mt-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs sm:text-sm text-amber-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
+                <span>{checkoutError}</span>
               </div>
-            )}
+              <a
+                href={SYSTEM_CONTACTS.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 font-bold text-emerald-800 hover:text-emerald-950 underline whitespace-nowrap"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Falar no WhatsApp
+              </a>
+            </div>
+          )}
 
-            {/* CARD 2: PLANO ANUAL (DESTAQUE / MELHOR VALOR) */}
-            {config.annual?.active !== false && (
-              <div className="rounded-3xl p-1 bg-gradient-to-b from-emerald-400 via-[#54D769] to-[#2CA840] shadow-xl shadow-emerald-500/20 flex flex-col justify-between relative">
-                {/* Badge Destaque */}
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5 whitespace-nowrap">
-                  <Sparkles className="h-3.5 w-3.5 text-[#54D769]" />
-                  {config.annual?.badge || 'Economia de R$ 665 • Melhor valor'}
-                </div>
+          {/* GRID COM AS 3 OFERTAS */}
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            {offersList.map((offer) => {
+              const plan = billingPeriod === 'monthly' ? offer.monthly : offer.annual
+              const isCombo = offer.id === 'combo'
 
-                <div className="bg-white rounded-[22px] p-8 sm:p-9 text-left flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-[#2CA840]">
-                          Economia Máxima
+              return (
+                <div
+                  key={offer.id}
+                  className={`rounded-3xl p-1 flex flex-col justify-between relative transition-all ${
+                    isCombo
+                      ? 'bg-gradient-to-b from-emerald-400 via-[#54D769] to-[#2CA840] shadow-xl shadow-emerald-500/20 md:-translate-y-2'
+                      : 'bg-white border border-slate-200 shadow-sm hover:shadow-md'
+                  }`}
+                >
+                  {/* Badge de Destaque no Combo */}
+                  {isCombo && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5 whitespace-nowrap">
+                      <Sparkles className="h-3.5 w-3.5 text-[#54D769]" />
+                      {offer.tag || 'Mais Vantajoso • Desconto Especial'}
+                    </div>
+                  )}
+
+                  <div className="bg-white rounded-[22px] p-7 sm:p-8 text-left flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span
+                            className={`text-xs font-bold uppercase tracking-wider ${
+                              isCombo ? 'text-[#2CA840]' : 'text-slate-500'
+                            }`}
+                          >
+                            {offer.id === 'experiencia'
+                              ? 'Módulo 1'
+                              : offer.id === 'desempenho'
+                                ? 'Módulo 2'
+                                : 'Solução Completa'}
+                          </span>
+                          <h3 className="text-xl sm:text-2xl font-black text-slate-950 mt-1 leading-snug">
+                            {offer.title}
+                          </h3>
+                        </div>
+                        {isCombo && (
+                          <div className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold whitespace-nowrap">
+                            Combo 2 em 1
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-slate-600 mt-2 min-h-[32px]">{offer.subtitle}</p>
+
+                      <div className="mt-6 flex items-baseline">
+                        <span className="text-xs text-slate-500 mr-1.5 font-semibold">R$</span>
+                        <span className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight">
+                          {plan.price_label}
                         </span>
-                        <h3 className="text-2xl font-black text-slate-950 mt-1">Plano Anual</h3>
+                        <span className="text-slate-500 ml-2 font-medium">
+                          /{billingPeriod === 'monthly' ? 'mês' : 'ano'}
+                        </span>
                       </div>
-                      <div className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold">
-                        Economia de R$ 665/ano
+
+                      {plan.badge && (
+                        <p className="text-xs text-[#2CA840] mt-1.5 font-bold">{plan.badge}</p>
+                      )}
+
+                      <div className="my-6 border-t border-slate-200" />
+
+                      {/* Lista de Features por Oferta */}
+                      <div className="space-y-3 text-xs sm:text-sm">
+                        {offer.id === 'experiencia' && (
+                          <>
+                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Gestão do período de experiência (45 e 90 dias)</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Entrevistas de desligamento integradas</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Alertas preventivos de prazo CLT</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Critérios customizáveis (Obra e Escritório)</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Importação e exportação de planilhas</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Colaboradores e centros de custo ilimitados</span>
+                            </div>
+                          </>
+                        )}
+
+                        {offer.id === 'desempenho' && (
+                          <>
+                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Avaliação contínua por competências</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Formulários oficiais Nível I e Nível II</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Ciclos anuais e semestrais por colaborador</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Notas ponderadas e histórico evolutivo</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Comentários de feedback e plano de ação</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Exportação de relatórios para diretoria</span>
+                            </div>
+                          </>
+                        )}
+
+                        {offer.id === 'combo' && (
+                          <>
+                            <div className="flex items-start gap-2.5 text-emerald-950 font-bold bg-emerald-50/80 p-2 rounded-xl border border-emerald-200">
+                              <Sparkles className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Acesso Total: Experiência + Desempenho</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Tudo do módulo de Experiência e Desligamento</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Tudo do módulo de Avaliação de Desempenho</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-800 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Maior economia: desconto direto na assinatura</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Gestão unificada em um único painel e login</span>
+                            </div>
+                            <div className="flex items-start gap-2.5 text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
+                              <span>Atendimento e suporte prioritários</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
-                    <div className="mt-6 flex items-baseline">
-                      <span className="text-xs text-slate-500 mr-1.5 font-semibold">R$</span>
-                      <span className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight">
-                        {config.annual?.price_label || '2.899,00'}
-                      </span>
-                      <span className="text-slate-500 ml-2 font-medium">/ano</span>
-                    </div>
-                    <p className="text-xs text-[#2CA840] mt-1 font-semibold">
-                      Equivalente a cerca de R$ 241,58/mês (economia de R$ 665 no ano).
-                    </p>
-
-                    <div className="my-7 border-t border-slate-200" />
-
-                    <div className="space-y-3 text-sm">
-                      {[
-                        'Tudo incluído no Plano Mensal',
-                        'Economia garantida de R$ 665 vs 12 mensalidades',
-                        'Colaboradores e avaliações ilimitadas',
-                        'Atendimento e onboarding prioritário',
-                        'Garantia de preço congelado por 12 meses',
-                        'Relatórios consolidados anuais para auditoria',
-                        'Notificações automáticas ativas o ano todo',
-                        'Faturamento unificado e nota fiscal anual',
-                        'Acesso prioritário a novos módulos do sistema',
-                      ].map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-3 text-slate-800">
-                          <CheckCircle2 className="h-4 w-4 text-[#2CA840] shrink-0 mt-0.5" />
-                          <span className="text-xs sm:text-sm font-medium">{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-8 pt-4">
-                    {checkoutError && (
-                      <div className="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-col gap-2">
-                        <div className="flex items-start gap-2">
-                          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-                          <span>{checkoutError}</span>
-                        </div>
-                        <a
-                          href={SYSTEM_CONTACTS.whatsappLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-bold text-emerald-800 hover:text-emerald-950 underline text-xs"
-                        >
-                          <MessageCircle className="h-3.5 w-3.5" />
-                          Contratar via WhatsApp ({SYSTEM_CONTACTS.whatsapp})
-                        </a>
+                    <div className="mt-8 pt-4">
+                      <Button
+                        size="lg"
+                        onClick={() => handleCheckoutOffer(offer)}
+                        disabled={loadingCheckout || checkoutOfferId === offer.id}
+                        className={`w-full h-13 text-sm sm:text-base font-extrabold rounded-xl transition-all ${
+                          isCombo
+                            ? 'bg-gradient-to-r from-[#54D769] to-[#2CA840] hover:from-[#43c457] hover:to-[#228734] text-white shadow-md shadow-emerald-500/25 transform hover:scale-[1.02]'
+                            : 'border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100 text-emerald-900 border'
+                        }`}
+                      >
+                        {checkoutOfferId === offer.id
+                          ? 'Iniciando checkout...'
+                          : isCombo
+                            ? `Garantir Combo (${billingPeriod === 'monthly' ? 'Mensal' : 'Anual'})`
+                            : `Assinar ${offer.title.replace('Avaliação de ', '')}`}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                      <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
+                        <Lock className="h-3 w-3 text-slate-400" />
+                        <span>Processado com segurança pelo Stripe</span>
                       </div>
-                    )}
-                    <Button
-                      size="lg"
-                      onClick={() => handleCheckout('annual')}
-                      disabled={loadingCheckout}
-                      className="w-full h-14 text-base font-extrabold bg-gradient-to-r from-[#54D769] to-[#2CA840] hover:from-[#43c457] hover:to-[#228734] text-white rounded-xl shadow-md shadow-emerald-500/25 transition-all transform hover:scale-[1.02]"
-                    >
-                      {loadingCheckout
-                        ? 'Carregando checkout...'
-                        : 'Assinar Plano Anual (Melhor Valor)'}
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                    <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
-                      <Lock className="h-3 w-3 text-slate-400" />
-                      <span>Processado com segurança pelo Stripe</span>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )
+            })}
           </div>
         </div>
       </section>

@@ -32,6 +32,8 @@ export interface ClientRecord {
   active: boolean
   status?: ClientStatus
   paid_until?: string
+  experiencia_until?: string
+  desempenho_until?: string
   notes?: string
   notified_milestones?: Record<string, string> | string
   created: string
@@ -46,6 +48,8 @@ export interface CreateClientPayload {
   notes?: string
   active?: boolean
   paid_until?: string
+  experiencia_until?: string
+  desempenho_until?: string
   status?: ClientStatus
 }
 
@@ -56,6 +60,8 @@ export interface UpdateClientPayload {
   active?: boolean
   password?: string
   paid_until?: string
+  experiencia_until?: string
+  desempenho_until?: string
   status?: ClientStatus
 }
 
