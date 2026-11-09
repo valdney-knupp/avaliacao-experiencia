@@ -1147,12 +1147,7 @@ export const AdminAccessRelease: React.FC<AdminAccessReleaseProps> = ({ isMaster
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ADMIN">Administrador do Cliente</SelectItem>
-                  <SelectItem value="HR">Gestão de Pessoas (RH)</SelectItem>
-                  <SelectItem value="MANAGER_WORKSITE">Gestor de Obra</SelectItem>
-                  <SelectItem value="MANAGER_DEPARTMENT">Gestor de Setor</SelectItem>
-                  <SelectItem value="ADMIN_ASSISTANT">Assistente Administrativo</SelectItem>
-                  <SelectItem value="VIEWER">Consulta</SelectItem>
+                  <SelectItem value="MANAGER_WORKSITE">Gestor</SelectItem>
                 </SelectContent>
               </Select>
             </div>
